@@ -5,15 +5,22 @@ import (
 	"time"
 
 	"github.com/team-orion/ez-aquarii/gen"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func main() {
-	packet := gen.Packet{
-		Time: time.Now(),
+	for {
+		packet := &gen.Packet{
+			Time: timestamppb.New(
+				time.Now(),
+			),
+		}
+		bin, err := proto.Marshal(packet)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(bin))
+		time.Sleep(1 * time.Second)
 	}
-	bin, err := proto.Marshal(packet)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(bin)
 }
