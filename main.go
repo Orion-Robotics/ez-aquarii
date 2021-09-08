@@ -1,6 +1,11 @@
 package main
 
-import "github.com/team-orion/ez-aquarii/gen"
+import (
+	"fmt"
+	"time"
+
+	"github.com/team-orion/ez-aquarii/gen"
+)
 
 func main() {
 	packet := gen.Packet{
