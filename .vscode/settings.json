@@ -1,0 +1,39 @@
+{
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.snippetSuggestions": "none",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "gopls": {
+    "usePlaceholders": true, // add parameter placeholders when completing a function
+    // Experimental settings
+    "completeUnimported": true, // autocomplete unimported packages
+    "deepCompletion": true, // enable deep completion,
+    // "experimentalWorkspaceModule": true,
+    "formatting.gofumpt": true
+  },
+  "go.languageServerExperimentalFeatures": {
+    "format": true,
+    "autoComplete": true,
+    "rename": true,
+    "goToDefinition": true,
+    "hover": true,
+    "signatureHelp": true,
+    "goToTypeDefinition": true,
+    "goToImplementation": true,
+    "documentSymbols": true,
+    "workspaceSymbols": true,
+    "findReferences": true,
+    "diagnostics": true,
+    "documentLink": true
+  },
+  "go.coverOnSave": true,
+  "go.coverageDecorator": {
+    "uncoveredHighlightColor": "rgba(128,64,64,0.25)"
+  },
+  "go.coverOnSingleTest": true,
+  "python.formatting.provider": "autopep8",
+}
