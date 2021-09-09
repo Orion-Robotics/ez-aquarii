@@ -1,26 +1,39 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"time"
+	"os/exec"
 
-	"github.com/team-orion/ez-aquarii/gen"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/golang/protobuf/proto"
+	"github.com/team-orion/ez-aquarii/gen/protocol"
 )
 
+func newCommandScanner(command string) (*bufio.Scanner, error) {
+	cmd := exec.Command(command, "")
+	output, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	scanner := bufio.NewScanner(output)
+	return scanner, nil
+}
+
 func main() {
-	for {
-		packet := &gen.Packet{
-			Time: timestamppb.New(
-				time.Now(),
-			),
+	scanner, err := newCommandScanner("./camera.sh")
+	if err != nil {
+		panic(err)
+	}
+	for scanner.Scan() {
+		data := scanner.Bytes()
+		fmt.Printf("%#v\n", string(data))
+		parsed := &protocol.Packet{}
+		if err := proto.Unmarshal(data, parsed); err != nil {
+			fmt.Printf("failed to parse: %v", err)
 		}
-		bin, err := proto.Marshal(packet)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(string(bin))
-		time.Sleep(1 * time.Second)
+		fmt.Println(parsed.GetTime())
 	}
 }

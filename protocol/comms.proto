@@ -2,6 +2,29 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
+message Point2D {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message Robot {
+  Point2D position = 1;
+  bool team = 2; // 0 means own team, 1 means enemy
+}
+
+message Goal {
+  Point2D point = 1;
+  bool color = 2;
+}
+
+message UpdateField {
+  Goal blueGoal = 1;
+  Goal yellowGoal = 2;
+  Point2D ball = 3;
+  repeated Robot robots = 4;
+}
+
 message Packet {
-  google.protobuf.Timestamp time = 1;
+  google.protobuf.Timestamp time = 1; // i'll leave this since i dont want to break the test
+  UpdateField field = 2;
 }

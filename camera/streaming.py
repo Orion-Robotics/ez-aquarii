@@ -3,6 +3,9 @@ from picamera import PiCamera
 from threading import Condition
 import io
 import time
+from gen.protocol.comms_pb2 import Packet
+from google.protobuf.timestamp_pb2 import Timestamp
+import sys
 
 class StreamingOutput(object):
     def __init__(self):
@@ -31,5 +34,8 @@ with PiCamera(resolution='640x480', framerate=120) as camera:
       with output.condition:
         output.condition.wait()
         frame = output.frame
-        print(time.time() - stamp)
+        out = Packet()
+        out.time.GetCurrentTime()
+        sys.stdout.buffer.write(out.SerializeToString())
+        sys.stdout.flush()
         stamp = time.time()

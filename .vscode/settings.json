@@ -30,7 +30,7 @@
     "diagnostics": true,
     "documentLink": true
   },
-  "go.coverOnSave": true,
+  "go.coverOnSave": false,
   "go.coverageDecorator": {
     "uncoveredHighlightColor": "rgba(128,64,64,0.25)"
   },
