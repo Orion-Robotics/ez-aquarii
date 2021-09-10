@@ -9,8 +9,9 @@ class IPC:
   
   def send_data(self, data: bytes):
     size = len(data)
-    self.io.write(bytes(size))
+    self.io.write(size.to_bytes(4, 'little')) # 4 bytes = 32 bits
     self.io.write(data)
+    self.io.flush()
   
   def receive_data(self) -> bytes:
     size = int.from_bytes(self.io.read(2), byteorder='little')

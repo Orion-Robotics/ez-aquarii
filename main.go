@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/team-orion/ez-aquarii/gen/protocol"
@@ -11,16 +11,18 @@ import (
 )
 
 func main() {
-	if err := exec.Command("./camera.sh", "").Start(); err != nil {
-		panic(err)
-	}
+	// if err := exec.Command("./camera.sh", "").Start(); err != nil {
+	// 	panic(err)
+	// }
 
 	cameraStream, err := os.OpenFile("./camerastream", os.O_RDONLY, os.ModeNamedPipe)
 	if err != nil {
 		panic(err)
 	}
 
-	for {
+	start := time.Now()
+	for i := 0; i < 3000; i++ {
+		fmt.Println(i)
 		data, err := ipc.Read(cameraStream)
 		if err != nil {
 			panic(err)
@@ -29,6 +31,6 @@ func main() {
 		if err := proto.Unmarshal(data, parsed); err != nil {
 			fmt.Printf("failed to parse: %v", err)
 		}
-		fmt.Println(parsed.GetTime())
 	}
+	fmt.Printf("%v\n", time.Since(start))
 }

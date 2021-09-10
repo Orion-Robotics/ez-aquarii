@@ -5,6 +5,7 @@ from threading import Condition
 import io
 from gen.protocol.comms_pb2 import Packet
 from os import mkfifo
+import os
 
 class StreamingOutput(object):
     def __init__(self):
@@ -23,7 +24,14 @@ class StreamingOutput(object):
             self.buffer.seek(0)
         return self.buffer.write(buf)
 
-comms = new_fifo_ipc("camerastream")
+STREAM_PATH = "camerastream"
+
+try:
+  os.remove(STREAM_PATH)
+except OSError:
+  pass
+
+comms = new_fifo_ipc(STREAM_PATH)
 
 with PiCamera(resolution='640x480', framerate=120) as camera:
     output = StreamingOutput()

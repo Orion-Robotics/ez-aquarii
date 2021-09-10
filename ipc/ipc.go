@@ -2,10 +2,12 @@ package ipc
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
 func Read(in io.Reader) ([]byte, error) {
+	fmt.Println("reading..")
 	var length int32
 	if err := binary.Read(in, binary.LittleEndian, &length); err != nil {
 		return nil, err
