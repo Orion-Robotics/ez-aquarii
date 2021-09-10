@@ -1,36 +1,47 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"time"
+	"syscall"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/team-orion/ez-aquarii/gen/protocol"
-	"github.com/team-orion/ez-aquarii/ipc"
+	"github.com/fsnotify/fsnotify"
+	"github.com/team-orion/ez-aquarii/config"
+	"github.com/team-orion/ez-aquarii/controller"
+	"github.com/team-orion/ez-aquarii/logger"
 )
 
 func main() {
-	// if err := exec.Command("./camera.sh", "").Start(); err != nil {
-	// 	panic(err)
-	// }
+	l := logger.New()
+	cfgReader := config.New("config")
+	cfg, err := cfgReader.ParseConfig()
+	if err != nil {
+		l.Err(err).Msg("failed to parse config")
+	}
 
-	cameraStream, err := os.OpenFile("./camerastream", os.O_RDONLY, os.ModeNamedPipe)
+	cfgReader.WatchConfig(func(fsnotify.Event) {
+		l.Info().Msg("Reloading config")
+		newConfig, err := cfgReader.ParseConfig()
+		if err != nil {
+			l.Err(err).Msg("failed to reload config")
+		}
+		*cfg = *newConfig
+	}, func(err error) {
+		l.Err(err).Send()
+	})
+
+	cameraStream, err := openReadFIFO("./camerastream")
 	if err != nil {
 		panic(err)
 	}
+	c := controller.New(l, cameraStream)
+	l.Err(c.Start()).Send()
+}
 
-	start := time.Now()
-	for i := 0; i < 3000; i++ {
-		fmt.Println(i)
-		data, err := ipc.Read(cameraStream)
-		if err != nil {
-			panic(err)
-		}
-		parsed := &protocol.Packet{}
-		if err := proto.Unmarshal(data, parsed); err != nil {
-			fmt.Printf("failed to parse: %v", err)
+func openReadFIFO(path string) (*os.File, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err := syscall.Mkfifo(path, 0666); err != nil {
+			return nil, err
 		}
 	}
-	fmt.Printf("%v\n", time.Since(start))
+	return os.OpenFile(path, os.O_RDONLY, os.ModeNamedPipe)
 }

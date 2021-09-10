@@ -1,0 +1,3 @@
+cameraStreamPath: camerastream
+enable:
+  - camera

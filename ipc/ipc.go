@@ -2,12 +2,12 @@ package ipc
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
+
+	"google.golang.org/protobuf/proto"
 )
 
 func Read(in io.Reader) ([]byte, error) {
-	fmt.Println("reading..")
 	var length int32
 	if err := binary.Read(in, binary.LittleEndian, &length); err != nil {
 		return nil, err
@@ -27,4 +27,12 @@ func Write(out io.Writer, buffer []byte) error {
 
 	_, err := out.Write(buffer)
 	return err
+}
+
+func ReadProto(in io.Reader, message proto.Message) error {
+	data, err := Read(in)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data, message)
 }
