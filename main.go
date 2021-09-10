@@ -1,35 +1,30 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/team-orion/ez-aquarii/gen/protocol"
+	"github.com/team-orion/ez-aquarii/ipc"
 )
 
-func newCommandScanner(command string) (*bufio.Scanner, error) {
-	cmd := exec.Command(command, "")
-	output, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(output)
-	return scanner, nil
-}
-
 func main() {
-	scanner, err := newCommandScanner("./camera.sh")
+	if err := exec.Command("./camera.sh", "").Start(); err != nil {
+		panic(err)
+	}
+
+	cameraStream, err := os.OpenFile("./camerastream", os.O_RDONLY, os.ModeNamedPipe)
 	if err != nil {
 		panic(err)
 	}
-	for scanner.Scan() {
-		data := scanner.Bytes()
-		fmt.Printf("%#v\n", string(data))
+
+	for {
+		data, err := ipc.Read(cameraStream)
+		if err != nil {
+			panic(err)
+		}
 		parsed := &protocol.Packet{}
 		if err := proto.Unmarshal(data, parsed); err != nil {
 			fmt.Printf("failed to parse: %v", err)

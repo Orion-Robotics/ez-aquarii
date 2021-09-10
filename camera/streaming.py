@@ -1,11 +1,10 @@
 # import the necessary packages
+from lib.ipc import new_fifo_ipc
 from picamera import PiCamera
 from threading import Condition
 import io
-import time
 from gen.protocol.comms_pb2 import Packet
-from google.protobuf.timestamp_pb2 import Timestamp
-import sys
+from os import mkfifo
 
 class StreamingOutput(object):
     def __init__(self):
@@ -24,18 +23,17 @@ class StreamingOutput(object):
             self.buffer.seek(0)
         return self.buffer.write(buf)
 
+comms = new_fifo_ipc("camerastream")
+
 with PiCamera(resolution='640x480', framerate=120) as camera:
     output = StreamingOutput()
     #Uncomment the next line to change your Pi's Camera rotation (in degrees)
     #camera.rotation = 90
     camera.start_recording(output, format='mjpeg')
-    stamp = time.time()
     while True:
       with output.condition:
         output.condition.wait()
         frame = output.frame
         out = Packet()
         out.time.GetCurrentTime()
-        sys.stdout.buffer.write(out.SerializeToString())
-        sys.stdout.flush()
-        stamp = time.time()
+        comms.send_data(out.SerializeToString())
