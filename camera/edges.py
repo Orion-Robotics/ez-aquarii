@@ -5,7 +5,7 @@ max_lowThreshold = 100
 window_name = 'Edge Map'
 title_trackbar = 'Min Threshold:'
 ratio = 3
-kernel_size = 3
+kernel_size = 7
 def CannyThreshold(val):
     low_threshold = val
     img_blur = cv.blur(src_gray, (3,3))
