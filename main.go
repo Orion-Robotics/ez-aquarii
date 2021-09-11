@@ -29,12 +29,9 @@ func main() {
 		l.Err(err).Send()
 	})
 
-	cameraStream, err := openReadFIFO("./camerastream")
-	if err != nil {
-		panic(err)
-	}
-	c := controller.New(l, cameraStream)
-	l.Err(c.Start()).Send()
+	l.Err(
+		controller.New(cfg, l).Start(),
+	).Send()
 }
 
 func openReadFIFO(path string) (*os.File, error) {

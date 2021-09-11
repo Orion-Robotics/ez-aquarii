@@ -14,13 +14,9 @@ import (
 //go:embed default.yml
 var defaultConfig []byte
 
-type Enable struct {
-	Camera bool
-}
-
 type Config struct {
 	CameraStreamPath string `yaml:"cameraStreamPath"`
-	Enable           Enable
+	Enable           []string
 }
 
 type ConfigReader struct {
