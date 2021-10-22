@@ -115,9 +115,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //! @name LTC2496 Command Constraints
 //!@{
 //! Command Constants.
-#define LTC2496_DISABLE     0x80
-#define LTC2496_ENABLE      0xA0
-
+#define LTC2496_DISABLE 0x80
+#define LTC2496_ENABLE 0xA0
 
 //!Channel Selection OR with ENABLE or select DISABLE to use previous selection
 /*!
@@ -152,29 +151,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*! @name LTC2496 Differential Channel Selection
 @{*/
 
-#define LTC2496_P0_N1          0x00
-#define LTC2496_P1_N0          0x08
+#define LTC2496_P0_N1 0x00
+#define LTC2496_P1_N0 0x08
 
-#define LTC2496_P2_N3          0x01
-#define LTC2496_P3_N2          0x09
+#define LTC2496_P2_N3 0x01
+#define LTC2496_P3_N2 0x09
 
-#define LTC2496_P4_N5          0x02
-#define LTC2496_P5_N4          0x0A
+#define LTC2496_P4_N5 0x02
+#define LTC2496_P5_N4 0x0A
 
-#define LTC2496_P6_N7          0x03
-#define LTC2496_P7_N6          0x0B
+#define LTC2496_P6_N7 0x03
+#define LTC2496_P7_N6 0x0B
 
-#define LTC2496_P8_N9          0x04
-#define LTC2496_P9_N8          0x0C
+#define LTC2496_P8_N9 0x04
+#define LTC2496_P9_N8 0x0C
 
-#define LTC2496_P10_N11        0x05
-#define LTC2496_P11_N10        0x0D
+#define LTC2496_P10_N11 0x05
+#define LTC2496_P11_N10 0x0D
 
-#define LTC2496_P12_N13        0x06
-#define LTC2496_P13_N12        0x0E
+#define LTC2496_P12_N13 0x06
+#define LTC2496_P13_N12 0x0E
 
-#define LTC2496_P14_N15        0x07
-#define LTC2496_P15_N14        0x0F
+#define LTC2496_P14_N15 0x07
+#define LTC2496_P15_N14 0x0F
 
 /*!
 |LTC2496 Channel Selection     | Value    |
@@ -199,43 +198,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*! @name LTC2496 Single-Ended Channel Selection
 @{ */
 
-#define LTC2496_CH0            0x10
-#define LTC2496_CH1            0x18
-#define LTC2496_CH2            0x11
-#define LTC2496_CH3            0x19
-#define LTC2496_CH4            0x12
-#define LTC2496_CH5            0x1A
-#define LTC2496_CH6            0x13
-#define LTC2496_CH7            0x1B
-#define LTC2496_CH8            0x14
-#define LTC2496_CH9            0x1C
-#define LTC2496_CH10           0x15
-#define LTC2496_CH11           0x1D
-#define LTC2496_CH12           0x16
-#define LTC2496_CH13           0x1E
-#define LTC2496_CH14           0x17
-#define LTC2496_CH15           0x1F
-
+#define LTC2496_CH0 0x10
+#define LTC2496_CH1 0x18
+#define LTC2496_CH2 0x11
+#define LTC2496_CH3 0x19
+#define LTC2496_CH4 0x12
+#define LTC2496_CH5 0x1A
+#define LTC2496_CH6 0x13
+#define LTC2496_CH7 0x1B
+#define LTC2496_CH8 0x14
+#define LTC2496_CH9 0x1C
+#define LTC2496_CH10 0x15
+#define LTC2496_CH11 0x1D
+#define LTC2496_CH12 0x16
+#define LTC2496_CH13 0x1E
+#define LTC2496_CH14 0x17
+#define LTC2496_CH15 0x1F
 
 //! Checks for EOC with a specified timeout
 //! @return Returns 0=successful, 1=unsuccessful (exceeded timeout)
-int8_t LTC2496_EOC_timeout(uint8_t cs,            //!< Chip Select pin
-                           uint16_t miso_timeout  //!< Timeout (in millisends)
-                          );
+int8_t LTC2496_EOC_timeout(uint8_t cs,           //!< Chip Select pin
+                           uint16_t miso_timeout //!< Timeout (in millisends)
+);
 
 //! Read LTC2496 result, program configuration for next conversion
 // Example - read channel external input with 60Hz rejection and 2X enabled.
 // adc_command = LTC2496_ENABLE|LTC2496_P0_N1;
 //! @return void
-void LTC2496_read(uint8_t cs,           //!< Chip Select pin
-                  uint8_t adc_command,  //!< Command byte
-                  int32_t *adc_code     //!< Returns raw 32-bit code read from ADC
-                 );
-
+void LTC2496_read(uint8_t cs,          //!< Chip Select pin
+                  uint8_t adc_command, //!< Command byte
+                  int32_t *adc_code    //!< Returns raw 32-bit code read from ADC
+);
 
 //! Calculates the LTC2496 input voltage
 //! @return Calculated voltage
-float LTC2496_code_to_voltage(int32_t adc_code,   //!< Raw ADC code
-                              float vref          //!< the reference voltage to the ADC
-                             );
+float LTC2496_code_to_voltage(int32_t adc_code, //!< Raw ADC code
+                              float vref        //!< the reference voltage to the ADC
+);
 #endif
