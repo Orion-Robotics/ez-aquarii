@@ -1,5 +1,6 @@
 /*!
-LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current Cancellation
+LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current
+Cancellation
 
 @verbatim
 
@@ -59,12 +60,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //! @ingroup Analog_to_Digital_Converters
 //! @{
-//! @defgroup LTC2496 LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current Cancellation
+//! @defgroup LTC2496 LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy
+//! Drive Input Current Cancellation
 //! @}
 
 /*! @file
   @ingroup LTC2496
-  Library for LTC2496 LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current Cancellation
+  Library for LTC2496 LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy
+  Drive Input Current Cancellation
 */
 
 #include "LTC2496.h"

@@ -1,5 +1,6 @@
 /*!
-LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current Cancellation
+LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current
+Cancellation
 
 @verbatim
 
@@ -17,10 +18,11 @@ line frequencies of 50Hz and 60Hz, simultaneously.
 
 SPI DATA FORMAT (MSB First):
 
-            Byte #1                            Byte #2                           Byte #3
+            Byte #1                            Byte #2 Byte #3
 
-Data Out :  !EOC DMY SIG MSB D15 D14 D13 D12   D11 D10 D9  D8  D7  D6  D5  D4    D3  D2  D1  D0  -   -   -   -
-Data In  :  1    0   EN  SGL OS  S2  S1  S0    X   X   X   X   X   X   X   X     X   X   X   X   X   X   X   X
+Data Out :  !EOC DMY SIG MSB D15 D14 D13 D12   D11 D10 D9  D8  D7  D6  D5  D4 D3
+D2  D1  D0  -   -   -   - Data In  :  1    0   EN  SGL OS  S2  S1  S0    X   X
+X   X   X   X   X   X     X   X   X   X   X   X   X   X
 
 !EOC : End of Conversion Bit (Active Low)
 DMY  : Dummy Bit (Always 0)
@@ -44,18 +46,22 @@ Example Code:
 Read Channel 0 in Single-Ended mode
 
     uint16_t miso_timeout = 1000;
-    adc_command = LTC2496_CH0;                          // Build ADC command for channel 0
+    adc_command = LTC2496_CH0;                          // Build ADC command for
+channel 0
 
     if(LTC2496_EOC_timeout(LTC2496_CS, miso_timeout))    // Check for EOC
         return(1);
-    LTC2496_read(LTC2496_CS, adc_command, &adc_code);   // Throws out last reading
+    LTC2496_read(LTC2496_CS, adc_command, &adc_code);   // Throws out last
+reading
 
     if(LTC2496_EOC_timeout(LTC2496_CS, miso_timeout))    // Check for EOC
         return(1);
-    LTC2496_read(LTC2496_CS, adc_command, &adc_code);   // Obtains the current reading and stores to adc_code variable
+    LTC2496_read(LTC2496_CS, adc_command, &adc_code);   // Obtains the current
+reading and stores to adc_code variable
 
     // Convert adc_code to voltage
-    adc_voltage = LTC2496_code_to_voltage(adc_code, LTC2496_lsb , LTC2496_offset_code);
+    adc_voltage = LTC2496_code_to_voltage(adc_code, LTC2496_lsb ,
+LTC2496_offset_code);
 
 @endverbatim
 
@@ -101,8 +107,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*! @file
   @ingroup LTC2496
-  Header for LTC2496 LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy Drive Input Current Cancellation
+  Header for LTC2496 LTC2496: 16-Bit 8-/16-Channel Delta Sigma ADC with Easy
+  Drive Input Current Cancellation
 */
+
+#include <Arduino.h>
 
 #ifndef LTC2496_H
 #define LTC2496_H
@@ -118,7 +127,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LTC2496_DISABLE 0x80
 #define LTC2496_ENABLE 0xA0
 
-//!Channel Selection OR with ENABLE or select DISABLE to use previous selection
+//! Channel Selection OR with ENABLE or select DISABLE to use previous selection
 /*!
 //!Use table to select address
 /*!
@@ -217,22 +226,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //! Checks for EOC with a specified timeout
 //! @return Returns 0=successful, 1=unsuccessful (exceeded timeout)
-int8_t LTC2496_EOC_timeout(uint8_t cs,           //!< Chip Select pin
-                           uint16_t miso_timeout //!< Timeout (in millisends)
+int8_t LTC2496_EOC_timeout(uint8_t cs,            //!< Chip Select pin
+                           uint16_t miso_timeout  //!< Timeout (in millisends)
 );
 
 //! Read LTC2496 result, program configuration for next conversion
 // Example - read channel external input with 60Hz rejection and 2X enabled.
 // adc_command = LTC2496_ENABLE|LTC2496_P0_N1;
 //! @return void
-void LTC2496_read(uint8_t cs,          //!< Chip Select pin
-                  uint8_t adc_command, //!< Command byte
-                  int32_t *adc_code    //!< Returns raw 32-bit code read from ADC
+void LTC2496_read(uint8_t cs,           //!< Chip Select pin
+                  uint8_t adc_command,  //!< Command byte
+                  int32_t *adc_code  //!< Returns raw 32-bit code read from ADC
 );
 
 //! Calculates the LTC2496 input voltage
 //! @return Calculated voltage
-float LTC2496_code_to_voltage(int32_t adc_code, //!< Raw ADC code
-                              float vref        //!< the reference voltage to the ADC
+float LTC2496_code_to_voltage(int32_t adc_code,  //!< Raw ADC code
+                              float vref  //!< the reference voltage to the ADC
 );
 #endif
