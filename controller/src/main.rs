@@ -1,10 +1,10 @@
 use anyhow::anyhow;
 use anyhow::{Context, Result};
-use config::{Config, Module};
+use config::Config;
 use crossbeam_channel::{select, unbounded};
 use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use std::fs;
-use std::{fs::read_to_string, io, path::Path};
+use std::{fs::read_to_string, path::Path};
 
 pub mod config;
 pub mod ipc;
@@ -60,12 +60,12 @@ fn read_and_watch_config(
 fn main() -> Result<()> {
     let (_watcher, cfg_chan, err_chan) = read_and_watch_config(CONFIG_FILE)
         .with_context(|| format!("Failed to read config file {}", CONFIG_FILE))?;
-    let mut modules: Vec<Box<dyn modules::Module>> = vec![];
+    let _modules: Vec<Box<dyn modules::Module>> = vec![];
     loop {
         select! {
           default() => {
           },
-          recv(cfg_chan) -> config => {
+          recv(cfg_chan) -> _config => {
           },
           recv(err_chan) -> err => {
             println!("{:?}", err);
