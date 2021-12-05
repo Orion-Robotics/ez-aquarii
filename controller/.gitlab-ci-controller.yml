@@ -2,6 +2,7 @@ image: "rust:latest"
 
 default:
   before_script:
+    - cd ./controller
     - rustc --version 
     - cargo --version
 
