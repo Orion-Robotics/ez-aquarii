@@ -1,20 +1,24 @@
+use std::{collections::HashSet, path::PathBuf};
+
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Hash, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Module {
-    Camera,
+    Camera { path: PathBuf },
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub modules: Vec<Module>,
+    pub modules: HashSet<Module>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            modules: vec![Module::Camera],
+            modules: HashSet::from([Module::Camera {
+                path: PathBuf::from("./socket"),
+            }]),
         }
     }
 }

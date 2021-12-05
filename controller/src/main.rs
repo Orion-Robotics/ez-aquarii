@@ -10,13 +10,13 @@ pub mod config;
 pub mod ipc;
 pub mod modules;
 
-const CONFIG_FILE: &str = "./config.toml";
+const CONFIG_FILE: &str = "./config.yaml";
 
 fn read_config(path: &str) -> Result<config::Config> {
     match read_to_string(path) {
-        Ok(config) => Ok(toml::from_str::<Config>(&config)?),
+        Ok(config) => Ok(serde_yaml::from_str::<Config>(&config)?),
         Err(_) => {
-            fs::write(&path, toml::to_string_pretty(&Config::default())?)?;
+            fs::write(&path, serde_yaml::to_string(&Config::default())?)?;
             read_config(path)
         }
     }
@@ -60,12 +60,22 @@ fn read_and_watch_config(
 fn main() -> Result<()> {
     let (_watcher, cfg_chan, err_chan) = read_and_watch_config(CONFIG_FILE)
         .with_context(|| format!("Failed to read config file {}", CONFIG_FILE))?;
-    let _modules: Vec<Box<dyn modules::Module>> = vec![];
+
+    let mut modules: Vec<Box<dyn modules::Module>> = vec![];
+
     loop {
         select! {
           default() => {
+            if let Err(err) = modules.iter().map(|m| m.tick().with_context(|| format!("error ticking {:?}", m.name()))).collect::<Result<()>>() {
+                println!("{:?}", err);
+            }
           },
-          recv(cfg_chan) -> _config => {
+          recv(cfg_chan) -> received => {
+            let config = received?;
+            let new_modules: Result<Vec<Box<dyn modules::Module>>> = config.modules.iter().map(|m| match m {
+              config::Module::Camera { path } => modules::camera::Camera::new(path.to_path_buf()).map(|m| Box::new(m) as Box<dyn modules::Module>),
+            }).collect();
+            modules = new_modules?;
           },
           recv(err_chan) -> err => {
             println!("{:?}", err);
