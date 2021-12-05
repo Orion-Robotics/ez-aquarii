@@ -1,0 +1,2 @@
+include:
+  - local: '/controller/.gitlab-ci-controller.yml'
