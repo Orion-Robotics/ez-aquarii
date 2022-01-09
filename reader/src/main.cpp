@@ -12,7 +12,7 @@
 #define READER_MOSI 11
 #define READER_MISO 12
 #define READER_VREF 3.3
-#define MISO_TIMEOUT 1000
+#define MISO_TIMEOUT 2147483647
 
 int gochans[16] = {
     LTC2496_CH0,
@@ -32,11 +32,12 @@ int gochans[16] = {
     LTC2496_CH14,
     LTC2496_CH15};
 
+int32_t adc_code = 0;
+
 float readADC(int readercs, int ch)
 {
   int32_t adc_code = 0;
   byte adc_command = gochans[ch]; // | LTC24XX_MULTI_CH_OSR_32768 | LTC24XX_HS_MULTI_SPEED_2X;
-  ;
   LTC2496_read(readercs, LTC2496_CH11,
                &adc_code); // Obtains the current reading and stores to
                            // adc_code variable
@@ -61,10 +62,10 @@ void setup()
 
   Serial.begin(9600);
   // put your setup code here, to run once:
-  if (LTC2496_EOC_timeout(READER_CS, MISO_TIMEOUT)) // Check for EOC
+  if (LTC2496_EOC_timeout(READER0_CS, MISO_TIMEOUT)) // Check for EOC
     return 1;
-  LTC2496_read(READER0_CS, LTC2496_CH0, &adc_code); // Throws out last reading
-  if (LTC2496_EOC_timeout(READER_CS, MISO_TIMEOUT)) // Check for EOC
+  LTC2496_read(READER0_CS, LTC2496_CH0, &adc_code);  // Throws out last reading
+  if (LTC2496_EOC_timeout(READER0_CS, MISO_TIMEOUT)) // Check for EOC
     return 1;
 }
 
@@ -78,6 +79,7 @@ void loop()
 
   for (int i = 0; i < 16; i++)
   {
+    delay(150);
     Serial.print(readADC(READER0_CS, i));
     Serial.print(" ");
   }
