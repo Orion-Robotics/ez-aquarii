@@ -1,35 +1,36 @@
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use controller::comms;
-use std::{
-    fs::{File, OpenOptions},
-    os::unix::prelude::OpenOptionsExt,
-    path::PathBuf,
-};
+use std::path::PathBuf;
+use tokio::fs::{File, OpenOptions};
 
 use crate::ipc;
 
-use super::Module;
+use super::{state::State, Module};
 
 pub struct Camera {
     pub socket_file: File,
 }
 
 impl Camera {
-    pub fn new(path: PathBuf) -> Result<Camera> {
+    pub async fn new(path: PathBuf) -> Result<Camera> {
         let f = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .mode(0o600)
             .open(path)
+            .await
             .with_context(|| "failed to open file")?;
         Ok(Camera { socket_file: f })
     }
 }
 
+#[async_trait]
 impl Module for Camera {
-    fn tick(&self) -> Result<()> {
-        let data = ipc::read_proto::<comms::Packet, _>(&self.socket_file)
+    async fn tick(&mut self, state: &mut State) -> Result<()> {
+        let data = ipc::read_proto::<comms::Packet, _>(&mut self.socket_file)
+            .await
             .with_context(|| "failed to read packet")?;
         println!("{:?}", data.time);
         Ok(())
@@ -37,5 +38,13 @@ impl Module for Camera {
 
     fn name(&self) -> &'static str {
         "camera"
+    }
+
+    fn start(&mut self) -> Result<()> {
+        todo!()
+    }
+
+    async fn stop(&mut self) -> Result<()> {
+        Ok(())
     }
 }

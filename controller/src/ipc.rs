@@ -1,20 +1,18 @@
-use std::io::{Read, Take};
-
 use anyhow::Result;
-use byteorder::{LittleEndian, ReadBytesExt};
 use bytes::Bytes;
+use tokio::io::{AsyncRead, AsyncReadExt, Take};
 
-pub fn read<T: Read>(mut input: T) -> Result<Take<T>> {
-    let length = input.read_i32::<LittleEndian>()?;
+pub async fn read<T: AsyncRead + Unpin>(mut input: T) -> Result<Take<T>> {
+    let length = input.read_i32_le().await?;
     Ok(input.take(length as u64))
 }
 
-pub fn read_proto<T, R>(input: R) -> Result<T>
+pub async fn read_proto<T, R>(input: R) -> Result<T>
 where
     T: prost::Message + Default,
-    R: Read,
+    R: AsyncRead + Unpin,
 {
     let mut buf = Vec::new();
-    read(input)?.read_to_end(&mut buf)?;
+    read(input).await?.read_to_end(&mut buf).await?;
     Ok(T::decode(Bytes::from(buf))?)
 }

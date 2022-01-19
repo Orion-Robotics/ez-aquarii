@@ -2,3 +2,6 @@
 modules:
   - camera:
       path: "./socket"
+state_history:
+  enable: true
+  path: "./state_history"
