@@ -12,10 +12,6 @@ pub struct RawData {
 pub struct State {
 	// raw sensor data, not to be used by actual program logic
 	pub data: RawData,
-	// raw_line_vec, the current line vector from the sensors.
-	pub raw_line_vec: Vec2,
-	// prev_line_vec, the previous raw line vector
-	pub prev_line_vec: Vec2,
 	// line_vec, the current vector pointing towards the field at all times.
 	pub line_vec: Vec2,
 }

@@ -16,12 +16,6 @@ impl Line {
 #[async_trait]
 impl Module for Line {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
-		let current_vec = state.raw_line_vec;
-		let prev_vec = state.prev_line_vec;
-
-		let diff = angle_between(current_vec, prev_vec);
-
-		tracing::debug!("Angle difference: {:?}", diff);
 		Ok(())
 	}
 
@@ -43,8 +37,6 @@ impl Module for Line {
 async fn test_line_flip() -> Result<()> {
 	let mut module = Line {};
 	let mut state = State::default();
-	state.raw_line_vec = Vec2 { x: 1.0, y: 0.0 };
-	state.prev_line_vec = Vec2 { x: -1.0, y: 0.0 };
 	module.tick(&mut state).await?;
 	Ok(())
 }

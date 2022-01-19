@@ -68,20 +68,22 @@ async fn main() -> Result<()> {
 async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<State>>) {
 	let tick_futures = modules.iter_mut().map(|m| async {
 		tracing::debug!("{} tick", m.name());
-		let mut robot_state_copy = robot_state.lock().clone();
+		let mut robot_state = robot_state.lock();
 		let tick_future =
-			tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state_copy));
+			tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
 		match tick_future.await {
 			Ok(res) => {
 				if let Err(e) = res {
 					tracing::error!("{} encountered an error while ticking: {:?}", m.name(), e);
 				}
-				*robot_state.lock() = robot_state_copy;
 			}
 			Err(e) => tracing::warn!("{} took too long to process: {}", m.name(), e),
 		}
 	});
-	join_all(tick_futures).await;
+	// TODO: get this working with join_all for concurrent processing.
+	for future in tick_futures {
+		future.await;
+	}
 }
 
 async fn handle_config_change(new_config: Config) -> (Vec<AnyModule>, Option<std::fs::File>) {
