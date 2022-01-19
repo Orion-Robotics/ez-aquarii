@@ -14,6 +14,7 @@ use tokio::sync::{mpsc, watch};
 #[serde(rename_all = "lowercase")]
 pub enum Module {
     Camera { path: PathBuf },
+    Line {},
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -32,9 +33,12 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            modules: HashSet::from([Module::Camera {
-                path: PathBuf::from("./socket"),
-            }]),
+            modules: HashSet::from([
+                Module::Camera {
+                    path: PathBuf::from("./socket"),
+                },
+                Module::Line {},
+            ]),
             state_history: StateHistory {
                 enable: false,
                 path: PathBuf::from("./state.json"),

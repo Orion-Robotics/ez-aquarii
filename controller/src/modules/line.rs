@@ -7,6 +7,12 @@ use super::{state::State, Module};
 
 pub struct Line {}
 
+impl Line {
+    pub fn new() -> Self {
+        Line {}
+    }
+}
+
 #[async_trait]
 impl Module for Line {
     async fn tick(&mut self, state: &mut State) -> Result<()> {
@@ -24,7 +30,7 @@ impl Module for Line {
     }
 
     fn start(&mut self) -> Result<()> {
-        todo!()
+        Ok(())
     }
 
     async fn stop(&mut self) -> Result<()> {

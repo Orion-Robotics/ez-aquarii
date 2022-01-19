@@ -15,6 +15,7 @@ use tracing::Instrument;
 use tracing::Level;
 
 use crate::modules::camera;
+use crate::modules::line;
 use crate::modules::Module;
 
 pub mod config;
@@ -67,16 +68,15 @@ async fn main() -> Result<()> {
 async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<State>>) {
     let tick_futures = modules.iter_mut().map(|m| async {
         tracing::debug!("{} tick", m.name());
-        let span = tracing::span!(Level::DEBUG, "tick", module = m.name()).entered();
-        let mut robot_state = robot_state.lock();
+        let mut robot_state_copy = robot_state.lock().clone();
         let tick_future =
-            tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state))
-                .in_current_span();
+            tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state_copy));
         match tick_future.await {
             Ok(res) => {
                 if let Err(e) = res {
                     tracing::error!("{} encountered an error while ticking: {:?}", m.name(), e);
                 }
+                *robot_state.lock() = robot_state_copy;
             }
             Err(e) => tracing::warn!("{} took too long to process: {}", m.name(), e),
         }
@@ -90,10 +90,13 @@ async fn handle_config_change(new_config: Config) -> (Vec<AnyModule>, Option<std
 
     let mut new_modules: Vec<Box<dyn Module>> = Vec::new();
     for m in module_configs {
-        let module_instance = match m {
-            config::Module::Camera { path } => camera::Camera::new(path.clone()).await.unwrap(),
+        let module_instance: AnyModule = match m {
+            config::Module::Camera { path } => {
+                Box::new(camera::Camera::new(path.clone()).await.unwrap())
+            }
+            config::Module::Line { .. } => Box::new(line::Line::new()),
         };
-        new_modules.push(Box::new(module_instance));
+        new_modules.push(module_instance);
     }
 
     let mut history_file = None;

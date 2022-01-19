@@ -41,7 +41,7 @@ impl Module for Camera {
     }
 
     fn start(&mut self) -> Result<()> {
-        todo!()
+        Ok(())
     }
 
     async fn stop(&mut self) -> Result<()> {
