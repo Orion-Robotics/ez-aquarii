@@ -19,6 +19,7 @@ use crate::modules::Module;
 
 pub mod config;
 pub mod ipc;
+pub mod math;
 pub mod modules;
 pub mod recorder;
 
