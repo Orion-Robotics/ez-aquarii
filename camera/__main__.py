@@ -7,7 +7,7 @@ import numpy as np
 from picamera import PiCamera
 from picamera.array import PiRGBArray
 
-from experiments.constants import *
+from handlers.constants import *
 from handlers import BaseFrameHandler
 from handlers.display import DisplayHandler
 from lib.ipc import new_fifo_ipc
@@ -70,9 +70,9 @@ class Camera:
 
 if __name__ == "__main__":
     cam = None
-    try:
-        cam = Camera(DisplayHandler())
-        cam.run()
-    except:
-        if cam:
-            cam.stop()
+    # try:
+    cam = Camera(DisplayHandler())
+    cam.run()
+    # except:
+        # if cam:
+            # cam.stop()

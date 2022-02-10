@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from ..experiments.utils import *
-from ..experiments.constants import *
+from .utils import *
+from .constants import *
 
 from . import BaseFrameHandler
 
@@ -12,7 +12,7 @@ class DisplayHandler(BaseFrameHandler):
         # cv2.namedWindow("trolling", cv2.WINDOW_NORMAL)
 
     def handle_frame(self, frame: np.ndarray):
-        mask = mask(frame, (100, 100, 100))
-        cv2.imshow("trolling", mask)
+        ke = mask(frame, (100, 100, 100))
+        cv2.imshow("trolling", ke)
         cv2.waitKey(1)
-        pass
+        

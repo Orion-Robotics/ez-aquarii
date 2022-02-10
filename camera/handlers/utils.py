@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from constants import *
+from .constants import *
 from math import pi, atan2, sqrt, pow
 
 
