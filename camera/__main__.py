@@ -27,23 +27,19 @@ class Camera:
         self.handler = handler
         self.frame = None
         self.camera = PiCamera(
-            sensor_mode=7, framerate=framerate, resolution=resolution
+            sensor_mode=5, framerate=framerate, resolution=resolution
         )
         self.camera.resolution = resolution
         self.camera.framerate = framerate
         self.raw_capture = PiRGBArray(self.camera, size=resolution)
-        print("a")
         self.camera.start_recording(
             self,
             format="bgr",
         )
-        print("b")
-        print("c")
         self.frame = None
         self.stopped = False
         if enable_ipc:
             self.ipc = new_fifo_ipc(ipc_path)
-        print("d")
 
     def run(self):
         while True:
