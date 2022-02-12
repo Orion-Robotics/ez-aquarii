@@ -1,8 +1,10 @@
 ---
 modules:
+  - line:
+      sensor_count: 46
+      pickup_threshold: 24
   - camera:
       path: "./socket"
-  - line: {}
 state_history:
   enable: false
   path: "./state.json"

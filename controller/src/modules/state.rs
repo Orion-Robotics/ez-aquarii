@@ -4,7 +4,7 @@ use serde::Serialize;
 
 #[derive(Serialize, Default, Clone)]
 pub struct RawData {
-	sensor_data: ArrayVec<u8, 46>,
+	sensor_data: Vec<u8>,
 }
 
 // State contains all of the robot's data for each tick.
@@ -12,6 +12,8 @@ pub struct RawData {
 pub struct State {
 	// raw sensor data, not to be used by actual program logic
 	pub data: RawData,
-	// line_vec, the current vector pointing towards the field at all times.
-	pub line_vec: Vec2,
+	pub line_detections: Vec<bool>,
+	pub line_flipped: bool,
+	pub line_vector: Vec2,
+	pub move_vector: Vec2,
 }

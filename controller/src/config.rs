@@ -13,8 +13,13 @@ use tokio::sync::mpsc;
 #[derive(Debug, Deserialize, Serialize, Hash, PartialEq, Eq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Module {
-	Camera { path: PathBuf },
-	Line {},
+	Camera {
+		path: PathBuf,
+	},
+	Line {
+		sensor_count: usize,
+		pickup_threshold: usize,
+	},
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -37,7 +42,10 @@ impl Default for Config {
 				Module::Camera {
 					path: PathBuf::from("./socket"),
 				},
-				Module::Line {},
+				Module::Line {
+					sensor_count: 46,
+					pickup_threshold: 24,
+				},
 			]),
 			state_history: StateHistory {
 				enable: false,
