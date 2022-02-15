@@ -1,0 +1,14 @@
+html,
+body,
+#app {
+  @apply w-full h-full dark:bg-dark-900 dark:text-white;
+  font-family: Roboto, sans-serif;
+}
+
+* {
+  outline: none;
+}
+
+hr {
+  @apply border-1 border-dark-100;
+}

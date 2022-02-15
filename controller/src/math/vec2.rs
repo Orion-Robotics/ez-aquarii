@@ -1,4 +1,7 @@
-use std::ops::{Add, Mul};
+use std::{
+	fmt::Display,
+	ops::{Add, Mul},
+};
 
 use serde::Serialize;
 
@@ -33,11 +36,11 @@ impl Vec2 {
 	}
 
 	pub fn angle_rad(&self) -> f64 {
-		self.y.atan2(self.x)
+		f64::atan2(self.y, self.x)
 	}
 
 	pub fn magnitude(&self) -> f64 {
-		self.x.hypot(self.y)
+		f64::hypot(self.x, self.y)
 	}
 
 	pub fn abs(&self) -> Self {
@@ -45,6 +48,20 @@ impl Vec2 {
 			x: self.x.abs(),
 			y: self.y.abs(),
 		}
+	}
+
+	pub fn normalize(&self) -> Self {
+		let magnitude = self.magnitude();
+		Self {
+			x: self.x / magnitude,
+			y: self.y / magnitude,
+		}
+	}
+}
+
+impl Display for Vec2 {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_fmt(format_args!("({}, {})", self.x, self.y))
 	}
 }
 
@@ -79,4 +96,10 @@ impl Add for Vec2 {
 			y: self.y + rhs.y,
 		}
 	}
+}
+
+#[test]
+pub fn test_normalize() {
+	let vec = Vec2::new(0.0, 5.0);
+	assert_eq!(vec.normalize(), Vec2::new(0.0, 1.0));
 }

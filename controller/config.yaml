@@ -6,5 +6,5 @@ modules:
   - camera:
       path: "./socket"
 state_history:
-  enable: false
+  enable: true
   path: "./state.json"

@@ -112,20 +112,21 @@ impl Module for Line {
 		let length = line_detections.len();
 		let (a, b) = self.get_farthest_detections(line_detections);
 		let (vec_a, vec_b) = (vec_for_sensor(a, length), vec_for_sensor(b, length));
-		let vec = vec_a + vec_b; // add the vectors of both sensors.
+		let vec = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
 
 		if let Some(previous_vec) = self.previous_vec {
 			if self.did_cross_line(vec, previous_vec) {
 				state.line_flipped = !state.line_flipped;
 			}
 		}
+		let koig_vec = if state.line_flipped { vec * -1.0 } else { vec };
+		println!("original: {vec} new: {koig_vec}");
 
-		let vec = if state.line_flipped { vec * -1.0 } else { vec };
+		state.line_vector = koig_vec;
 
-		state.line_vector = vec;
 		// TODO: If line should run, then make the robot move away from the line.
 		if let (true, _) = self.should_run(line_detections, state.line_flipped) {
-			state.move_vector = vec;
+			state.move_vector = koig_vec;
 		}
 
 		self.previous_vec = Some(vec);
@@ -146,31 +147,34 @@ impl Module for Line {
 }
 
 #[tokio::test]
-pub async fn test_tick() {
+pub async fn test_koig() {
 	let mut state = State::default();
 	let mut line = Line::default();
 
 	state.line_detections = vec![
-		true, false, false, false, false, true, false, false, true, false,
+		true, false, false, false, false, false, false, true, false, false,
 	];
 
 	line.tick(&mut state).await.unwrap();
 	let old_vec = state.line_vector.clone();
-
 	state.line_detections = vec![
-		true, false, false, false, true, false, false, false, true, false,
+		true, false, false, true, false, false, false, false, false, false,
 	];
 	line.tick(&mut state).await.unwrap();
 	let new_vec = state.line_vector.clone();
 
-	assert_eq!(old_vec, new_vec);
+	assert_eq!(old_vec.x.is_sign_positive(), new_vec.x.is_sign_positive());
+	assert_eq!(old_vec.y.is_sign_positive(), new_vec.y.is_sign_positive());
 
+	let mut state = State::default();
+	let mut line = Line::default();
 	state.line_detections = vec![
 		true, false, false, false, false, true, false, false, true, false,
 	];
 	line.tick(&mut state).await.unwrap();
 
-	assert_ne!(old_vec, new_vec);
+	assert_eq!(old_vec.x.is_sign_positive(), new_vec.x.is_sign_positive());
+	assert_eq!(old_vec.y.is_sign_positive(), new_vec.y.is_sign_positive());
 }
 
 #[test_case(Vec2::new(-0.1, 0.0), Vec2::new(0.1, 0.0), true; "crosses line when crosses axis")]
