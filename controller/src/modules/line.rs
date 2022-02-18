@@ -146,6 +146,12 @@ impl Module for Line {
 	}
 }
 
+/// test_koig
+/// data:
+/// {"data":{"sensor_data":[]},"line_detections":[true,false,false,false,false,false,false,true,false,false],"line_flipped":false,"line_vector":{"x":0.0,"y":0.0},"move_vector":{"x":0.0,"y":0.0}}
+/// {"data":{"sensor_data":[]},"line_detections":[true,false,false,true,false,false,false,false,false,false],"line_flipped":false,"line_vector":{"x":0.0,"y":0.0},"move_vector":{"x":0.0,"y":0.0}}
+/// {"data":{"sensor_data":[]},"line_detections":[true,false,false,false,false,true,false,false,true,false],"line_flipped":false,"line_vector":{"x":0.0,"y":0.0},"move_vector":{"x":0.0,"y":0.0}}
+///
 #[tokio::test]
 pub async fn test_koig() {
 	let mut state = State::default();
@@ -154,6 +160,7 @@ pub async fn test_koig() {
 	state.line_detections = vec![
 		true, false, false, false, false, false, false, true, false, false,
 	];
+	state.print_state();
 
 	line.tick(&mut state).await.unwrap();
 	let old_vec = state.line_vector.clone();

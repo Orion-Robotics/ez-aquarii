@@ -1,9 +1,10 @@
 import io
-import picamera
 import logging
 import socketserver
-from threading import Condition
 from http import server
+from threading import Condition
+
+import picamera
 
 PAGE="""\
 <html>

@@ -17,3 +17,10 @@ pub struct State {
 	pub line_vector: Vec2,
 	pub move_vector: Vec2,
 }
+
+impl State {
+	// convenience function to print the entire state as a json string
+	pub fn print_state(&self) -> () {
+		println!("{}", serde_json::to_string(&self).unwrap());
+	}
+}
