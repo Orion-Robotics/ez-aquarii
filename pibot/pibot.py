@@ -21,7 +21,10 @@ async def get_ip(ctx):
 @bot.command()
 async def start_ngrok(ctx):
     ssh_tunnel = ngrok.connect(22, "tcp")
-    await ctx.send(f"SSH tunnel started: {ssh_tunnel}")
+    host, _, port = ssh_tunnel.public_url[6:].partition(":")
+    await ctx.send(
+        f"SSH tunnel started: {ssh_tunnel.public_url} (`ssh pi@{host} -p {port}`)"
+    )
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
