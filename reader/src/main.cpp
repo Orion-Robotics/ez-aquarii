@@ -79,7 +79,8 @@ void loop()
 
   for (int i = 0; i < 16; i++)
   {
-    delay(150);
+    // delay(150);
+    // LTC2496_EOC_timeout(READER0_CS, MISO_TIMEOUT);
     Serial.print(readADC(READER0_CS, i));
     Serial.print(" ");
   }

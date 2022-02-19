@@ -87,6 +87,18 @@ async def stop(ctx, service: str, user=False):
     subprocess.run([*systemd_cmd(user), "stop", service])
 
 
+@bot.command(description="Gracefully coom")
+async def ragequit(ctx):
+    subprocess.run(["sudo shutdown now"])
+    await ctx.send("if this sends something is seriously wrong")
+
+
+@bot.command(description="weeeee exploits")
+async def command(ctx, comd: str):
+    subprocess.run([comd])
+    await ctx.send("I'm in to their mainframe!")
+
+
 @bot.command(description="Reads the journal")
 async def journal(ctx, service: str, user=False):
     try:
