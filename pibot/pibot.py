@@ -2,6 +2,8 @@ import os
 import socket
 import subprocess
 import urllib.request
+from typing import List
+from xmlrpc.client import Boolean
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -56,26 +58,40 @@ async def update(ctx):
     await ctx.send("Updated!")
 
 
+def systemd_cmd(user=False) -> List[str]:
+    args = ["systemctl"]
+    if user:
+        args.append("--user")
+    return args
+
+
+def journalctl_cmd(user=False) -> List[str]:
+    args = ["journalctl"]
+    if user:
+        args.append("--user")
+    return args
+
+
 @bot.command(description="Restarts a user service")
-async def restart(ctx, service: str):
-    subprocess.run(["systemctl", "--user", "restart", service])
+async def restart(ctx, service: str, user=False):
+    subprocess.run([*systemd_cmd(user), "restart", service])
 
 
 @bot.command(description="Starts a user service")
-async def start(ctx, service: str):
-    subprocess.run(["systemctl", "--user", "start", service])
+async def start(ctx, service: str, user=False):
+    subprocess.run([*systemd_cmd(user), "start", service])
 
 
 @bot.command(description="Stops a user service")
-async def stop(ctx, service: str):
-    subprocess.run(["systemctl", "--user", "stop", service])
+async def stop(ctx, service: str, user=False):
+    subprocess.run([*systemd_cmd(user), "stop", service])
 
 
 @bot.command(description="Reads the journal")
-async def journal(ctx, service: str):
+async def journal(ctx, service: str, user=False):
     try:
         result = subprocess.run(
-            ["journalctl", "--user", "-xeu", service, "--no-pager", "--output", "cat"],
+            [*journalctl_cmd(user), "-xeu", service, "--no-pager", "--output", "cat"],
             capture_output=True,
         ).stdout.decode("utf8")
 
