@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 
+from . import BaseFrameHandler
+
+
 class DisplayHandler(BaseFrameHandler):
-    def handle(frame: np.array):
-        cv2.imshow(frame)
+    def handle(self, frame: np.ndarray):
+        cv2.imshow("trolsdfsdfling", frame)
+        # pass

@@ -1,4 +1,5 @@
 from threading import Thread
+from time import time
 
 import cv2
 import numpy as np
@@ -7,47 +8,54 @@ from picamera.array import PiRGBArray
 
 from handlers import BaseFrameHandler
 from handlers.display import DisplayHandler
-from lib.ipc import IPC, new_fifo_ipc
+from lib.ipc import new_fifo_ipc
 
 
 class Camera:
     def __init__(
         self,
         handler: BaseFrameHandler,
-        resolution=(640, 480),
-        framerate=60,
+        resolution=(1280, 720),
+        framerate=90,
         enable_ipc=False,
         ipc_path="./camera",
     ):
+        self.frames = 0
+        self.last_time = time()
         self.handler = handler
 
-        self.camera = PiCamera()
+        self.camera = PiCamera(
+            sensor_mode=7, framerate=framerate, resolution=resolution
+        )
         self.camera.resolution = resolution
         self.camera.framerate = framerate
         self.raw_capture = PiRGBArray(self.camera, size=resolution)
-        self.stream = self.camera.capture_continuous(
-            self.raw_capture,
-            format="bgr",
-            use_video_port=True,
+        self.camera.start_recording(
+            self,
+            format="yuv",
         )
+        self.camera.wait_recording(100)
         self.frame = None
         self.stopped = False
-        Thread(target=self.handle_stream, args=()).start()
         if enable_ipc:
             self.ipc = new_fifo_ipc(ipc_path)
 
     def stop(self):
         self.stopped = True
 
-    def handle_stream(self):
-        for frame in self.stream:
-            self.frame = frame.array
-            self.handler.handle_frame(self.frame)
-            self.raw_capture.truncate(0)
-            if self.stopped:
-                self.stream.close()
-                self.camera.close()
-                self.raw_capture.close()
+    def write(self, buf):
+        self.frames += 1
+        if time() - self.last_time > 1:
+            print(f"FPS: {self.frames}")
+            self.frames = 0
+            self.last_time = time()
+        # self.frame = frame.array
+        # self.handler.handle_frame(self.frame)
+        # self.raw_capture.truncate(0)
+        # if self.stopped:
+        #     self.stream.close()
+        #     self.camera.close()
+        #     self.raw_capture.close()
 
 
 if __name__ == "__main__":
