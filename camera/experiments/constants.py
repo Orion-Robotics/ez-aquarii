@@ -1,0 +1,5 @@
+HDIFF = 15
+SDIFF = 30
+VDIFF = 30
+w = 350
+h = 200
