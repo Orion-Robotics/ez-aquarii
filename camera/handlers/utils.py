@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from constants import *
+from .constants import *
 from math import pi, atan2, sqrt, pow
 
 
@@ -29,34 +29,42 @@ def find_blob(image, target):
     mask = cv2.inRange(image, lower, upper)
     mask = cv2.GaussianBlur(mask, (5, 5), 0)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    blob = max(contours, key=lambda el: cv2.contourArea(el))
+    try: 
+        blob = max(contours, key=lambda el: cv2.contourArea(el))
+    except:
+        return None
     return blob
 
 
 def loc(blob):
-    m = cv2.moments(blob)
-    cx = int(m["m10"] / m["m00"])
-    cy = int(m["m01"] / m["m00"])
-    return (
-        atan2(cy - h, cx - w) / pi * 180,
-        sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
-        cx - w,
-        cy - h,
-    )  # angle, distance, h, w
+    if blob is not None:
+        m = cv2.moments(blob)
+        cx = int(m["m10"] / m["m00"])
+        cy = int(m["m01"] / m["m00"])
+        return (
+            atan2(cy - h, cx - w) / pi * 180,
+            sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
+            cx,
+            cy,
+        )  # angle, distance, w, h
+    else:
+        return None
 
 
 def draw(image, blob, color=(0, 0, 255)):
-    angle, distance, bx, by = loc(blob)
-    cv2.line(
-        image,
-        (350, 200),
-        (int(bx), int(by)),
-        color,
-    )
-    cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
+    if blob is not None:
+        angle, distance, bx, by = loc(blob)
+        cv2.line(
+            image,
+            (mw, mh),
+            (int(bx), int(by)),
+            color,
+        )
+        cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
 
 
 def preprocess(image):
+<<<<<<< HEAD:camera/experiments/utils.py
     frame = adjust_gamma(image, 0.8)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     return hsv
@@ -92,3 +100,11 @@ def detectlines(img):
     # Draw the lines on the  image
     lines_edges = cv2.addWeighted(line_image, 0.8, line_image, 1, 0)
     return line_image
+=======
+    fr = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    ke = adjust_gamma(fr, 0.7)
+    return ke
+
+def rgbhsv(c1, c2, c3):
+    return cv2.cvtColor(np.uint8([[[c1, c2, c3]]]), cv2.COLOR_RGB2HSV)[0][0]
+>>>>>>> e08b4e9177cf7d87014d6eeefbe02df045362e3a:camera/handlers/utils.py

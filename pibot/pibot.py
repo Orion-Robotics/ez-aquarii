@@ -113,5 +113,6 @@ async def journal(ctx, service: str, user=False):
     except Exception as e:
         await ctx.send(f"Error reading journal data {e}")
 
+subprocess.run(["bluetoothctl", "system-alias", get_ip_address()])
 
 bot.run(os.getenv("DISCORD_TOKEN"))
