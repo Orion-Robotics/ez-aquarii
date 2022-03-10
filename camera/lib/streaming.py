@@ -1,19 +1,22 @@
 import io
 import logging
 import socketserver
+import threading
 from http import server
 from threading import Condition
 
-import picamera
+import cv2
+import numpy as np
+from handlers import BaseFrameHandler, constants
 
-PAGE = """\
+PAGE = f"""\
 <html>
 <head>
 <title>Raspberry Pi - Surveillance Camera</title>
 </head>
 <body>
 <center><h1>Raspberry Pi - Surveillance Camera</h1></center>
-<center><img src="stream.mjpg" width="640" height="480"></center>
+<center><img src="stream.mjpg" width="{constants.w}" height="{constants.h}"></center>
 </body>
 </html>
 """
@@ -37,22 +40,11 @@ class StreamingOutput(object):
         return self.buffer.write(buf)
 
 
-class StreamingHandler(server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/":
-            self.send_response(301)
-            self.send_header("Location", "/index.html")
-            self.end_headers()
-        elif self.path == "/index.html":
-            content = PAGE.encode("utf-8")
+def generate_stream(output: StreamingOutput):
+    class StreamingHandler(server.BaseHTTPRequestHandler):
+        def do_GET(self):
             self.send_response(200)
-            self.send_header("Content-Type", "text/html")
-            self.send_header("Content-Length", len(content))
-            self.end_headers()
-            self.wfile.write(content)
-        elif self.path == "/stream.mjpg":
-            self.send_response(200)
-            self.send_header("Age", 0)
+            self.send_header("Age", str(0))
             self.send_header("Cache-Control", "no-cache, private")
             self.send_header("Pragma", "no-cache")
             self.send_header(
@@ -64,9 +56,11 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                     with output.condition:
                         output.condition.wait()
                         frame = output.frame
+                    if not frame:
+                        continue
                     self.wfile.write(b"--FRAME\r\n")
                     self.send_header("Content-Type", "image/jpeg")
-                    self.send_header("Content-Length", len(frame))
+                    self.send_header("Content-Length", str(len(frame)))
                     self.end_headers()
                     self.wfile.write(frame)
                     self.wfile.write(b"\r\n")
@@ -74,9 +68,8 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                 logging.warning(
                     "Removed streaming client %s: %s", self.client_address, str(e)
                 )
-        else:
-            self.send_error(404)
-            self.end_headers()
+
+    return StreamingHandler
 
 
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
@@ -84,14 +77,22 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 
-with picamera.PiCamera(resolution="640x480", framerate=60) as camera:
-    output = StreamingOutput()
-    # Uncomment the next line to change your Pi's Camera rotation (in degrees)
-    # camera.rotation = 90
-    camera.start_recording(output, format="mjpeg")
-    try:
-        address = ("", 8000)
-        server = StreamingServer(address, StreamingHandler)
-        server.serve_forever()
-    finally:
-        camera.stop_recording()
+class StreamingFrameHandler(BaseFrameHandler):
+    def __init__(self, inner: BaseFrameHandler, addr: tuple[str, int]) -> None:
+        super().__init__()
+        self.inner = inner
+
+        self.output = StreamingOutput()
+
+        self.server = StreamingServer(addr, generate_stream(self.output))
+        threading.Thread(target=self.server.serve_forever).start()
+
+    def stop(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+    def handle_frame(self, frame: np.ndarray) -> np.ndarray:
+        res = self.inner.handle_frame(frame)
+        _, encoded = cv2.imencode(".jpg", res)
+        self.output.write(encoded.tobytes())
+        return res

@@ -1,5 +1,4 @@
 import os
-from threading import Thread
 from time import time
 
 import cv2
@@ -7,10 +6,12 @@ import numpy as np
 from picamera import PiCamera
 from picamera.array import PiRGBArray
 
+from handlers import BaseFrameHandler, constants
 from handlers.constants import *
-from handlers import BaseFrameHandler
 from handlers.display import DisplayHandler
+from handlers.noop import NoopHandler
 from lib.ipc import new_fifo_ipc
+from lib.streaming import StreamingFrameHandler
 
 
 class Camera:
@@ -61,18 +62,14 @@ class Camera:
         )  # this HAS to be width first or else stripes appear
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         self.frame = image
-        # self.raw_capture.truncate(0)
-        # if self.stopped:
-        #     self.stream.close()
-        #     self.camera.close()
-        #     self.raw_capture.close()
 
 
 if __name__ == "__main__":
-    cam = None
-    # try:
-    cam = Camera(DisplayHandler())
-    cam.run()
-    # except:
-        # if cam:
-            # cam.stop()
+    try:
+        handler = DisplayHandler()
+        handler = StreamingFrameHandler(handler, constants.SERVER_ADDRESS)
+        cam = None
+        cam = Camera(handler)
+        cam.run()
+    except SystemExit:
+        os._exit(0)
