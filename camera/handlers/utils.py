@@ -37,26 +37,30 @@ def find_blob(image, target):
 
 
 def loc(blob):
-    m = cv2.moments(blob)
-    cx = int(m["m10"] / m["m00"])
-    cy = int(m["m01"] / m["m00"])
-    return (
-        atan2(cy - h, cx - w) / pi * 180,
-        sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
-        cx - w,
-        cy - h,
-    )  # angle, distance, h, w
+    if blob is not None:
+        m = cv2.moments(blob)
+        cx = int(m["m10"] / m["m00"])
+        cy = int(m["m01"] / m["m00"])
+        return (
+            atan2(cy - h, cx - w) / pi * 180,
+            sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
+            cx,
+            cy,
+        )  # angle, distance, w, h
+    else:
+        return None
 
 
 def draw(image, blob, color=(0, 0, 255)):
-    angle, distance, bx, by = loc(blob)
-    cv2.line(
-        image,
-        (mw, mh),
-        (int(bx), int(by)),
-        color,
-    )
-    cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
+    if blob is not None:
+        angle, distance, bx, by = loc(blob)
+        cv2.line(
+            image,
+            (mw, mh),
+            (int(bx), int(by)),
+            color,
+        )
+        cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
 
 
 def preprocess(image):
