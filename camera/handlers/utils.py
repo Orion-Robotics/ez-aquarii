@@ -29,7 +29,10 @@ def find_blob(image, target):
     mask = cv2.inRange(image, lower, upper)
     mask = cv2.GaussianBlur(mask, (5, 5), 0)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    blob = max(contours, key=lambda el: cv2.contourArea(el))
+    try: 
+        blob = max(contours, key=lambda el: cv2.contourArea(el))
+    except:
+        return None
     return blob
 
 
@@ -49,7 +52,7 @@ def draw(image, blob, color=(0, 0, 255)):
     angle, distance, bx, by = loc(blob)
     cv2.line(
         image,
-        (350, 200),
+        (mw, mh),
         (int(bx), int(by)),
         color,
     )
@@ -57,6 +60,9 @@ def draw(image, blob, color=(0, 0, 255)):
 
 
 def preprocess(image):
-    frame = adjust_gamma(image, 0.8)
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    return hsv
+    fr = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    ke = adjust_gamma(fr, 0.7)
+    return ke
+
+def rgbhsv(c1, c2, c3):
+    return cv2.cvtColor(np.uint8([[[c1, c2, c3]]]), cv2.COLOR_RGB2HSV)[0][0]
