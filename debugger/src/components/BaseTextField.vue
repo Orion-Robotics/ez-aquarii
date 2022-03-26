@@ -5,7 +5,12 @@
     v-bind="$attrs"
     v-if="multiline"
   />
-  <input v-bind="$attrs" v-else />
+  <input
+    @input="$emit('update:modelValue', $event.target?.value)"
+    :value="modelValue"
+    v-bind="$attrs"
+    v-else
+  />
 </template>
 
 <script lang="ts" setup>

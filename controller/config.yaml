@@ -1,10 +1,12 @@
 ---
 modules:
+  - camera:
+      path: "./socket"
   - line:
       sensor_count: 46
       pickup_threshold: 24
-  - camera:
-      path: "./socket"
+      uart_path: /dev/ttyUSB0
+      baud_rate: 500000
 state_history:
-  enable: true
+  enable: false
   path: "./state.json"

@@ -1,21 +1,14 @@
-use anyhow::Context;
-use anyhow::Result;
-use controller::config;
-use controller::config::read_and_watch_config;
-use controller::config::Config;
-use controller::modules::camera;
-use controller::modules::line;
-use controller::modules::state;
-use controller::modules::state::State;
-use controller::modules::AnyModule;
-use controller::modules::Module;
-use controller::recorder::Recorder;
+use anyhow::{Context, Result};
+use controller::{
+	config,
+	config::{read_and_watch_config, Config},
+	modules::{camera, line, state, state::State, AnyModule, Module},
+	recorder::Recorder,
+};
 use parking_lot::Mutex;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 use tokio;
-use tracing::Instrument;
-use tracing::Level;
+use tracing::{Instrument, Level};
 
 const CONFIG_FILE: &str = "./config.yaml";
 
@@ -92,7 +85,17 @@ async fn handle_config_change(new_config: Config) -> (Vec<AnyModule>, Option<std
 			config::Module::Line {
 				pickup_threshold,
 				sensor_count,
-			} => Box::new(line::Line::new(*pickup_threshold, *sensor_count)),
+				baud_rate,
+				uart_path,
+			} => Box::new(
+				line::Line::new(
+					uart_path.to_string(),
+					*baud_rate,
+					*pickup_threshold,
+					*sensor_count,
+				)
+				.unwrap(),
+			),
 		};
 		new_modules.push(module_instance);
 	}

@@ -8,6 +8,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use cached::proc_macro::cached;
 use test_case::test_case;
+use tokio::io::AsyncReadExt;
+use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 use super::{state::State, Module};
 
@@ -15,6 +17,18 @@ pub struct Line {
 	pub sensor_count: usize,
 	pub pickup_threshold: usize,
 	pub previous_vec: Option<Vec2>,
+	pub serial: Option<SerialStream>,
+}
+
+impl Default for Line {
+	fn default() -> Self {
+		Self {
+			sensor_count: 46,
+			pickup_threshold: 24,
+			previous_vec: None,
+			serial: None,
+		}
+	}
 }
 
 #[cached]
@@ -29,23 +43,21 @@ pub fn vec_for_sensor(i: usize, length: usize) -> Vec2 {
 	Vec2::from_rad(angle as f64)
 }
 
-impl Default for Line {
-	fn default() -> Self {
-		Line {
-			sensor_count: 42,
-			pickup_threshold: 24,
-			previous_vec: None,
-		}
-	}
-}
-
 impl Line {
-	pub fn new(pickup_threshold: usize, sensor_count: usize) -> Self {
-		Line {
+	pub fn new(
+		uart_path: String,
+		baud_rate: u32,
+		pickup_threshold: usize,
+		sensor_count: usize,
+	) -> Result<Self> {
+		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+
+		Ok(Line {
 			pickup_threshold,
 			sensor_count,
 			previous_vec: None,
-		}
+			serial: Some(serial),
+		})
 	}
 
 	// did_cross_line determines if two vectors indicate a line crossing.
@@ -108,6 +120,15 @@ impl Line {
 #[async_trait]
 impl Module for Line {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
+		if let Some(ref mut serial) = self.serial {
+			let mut raw_data = vec![0; self.sensor_count];
+			serial.read_buf(&mut raw_data).await?;
+			state.line_detections = raw_data
+				.iter()
+				.map(|&x| x > self.pickup_threshold as u8)
+				.collect();
+		}
+
 		let line_detections = state.line_detections.as_slice();
 		let length = line_detections.len();
 		let (a, b) = self.get_farthest_detections(line_detections);

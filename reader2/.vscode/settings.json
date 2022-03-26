@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "*.tmpl": "html",
+    "array": "cpp",
+    "sstream": "cpp",
+    "*.tcc": "cpp",
+    "istream": "cpp",
+    "typeinfo": "cpp",
+    "string": "cpp",
+    "iosfwd": "cpp"
+  }
+}

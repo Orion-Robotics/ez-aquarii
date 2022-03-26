@@ -1,7 +1,6 @@
 use anyhow::Result;
 use async_recursion::async_recursion;
-use notify::Watcher;
-use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode};
+use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::{
 	collections::HashSet,
@@ -19,6 +18,8 @@ pub enum Module {
 	Line {
 		sensor_count: usize,
 		pickup_threshold: usize,
+		uart_path: String,
+		baud_rate: u32,
 	},
 }
 
@@ -45,6 +46,8 @@ impl Default for Config {
 				Module::Line {
 					sensor_count: 46,
 					pickup_threshold: 24,
+					uart_path: "/dev/ttyUSB0".to_string(),
+					baud_rate: 500000,
 				},
 			]),
 			state_history: StateHistory {

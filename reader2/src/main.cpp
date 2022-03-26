@@ -1,50 +1,48 @@
-/***************************************************
-Simple example of reading the MCP3008 analog input channels and printing
-them all out.
-
-Author: Carter Nelson
-License: Public Domain
-****************************************************/
-
 #include <Adafruit_MCP3008.h>
-#include <Wire.h>
 #include <Arduino.h>
+#include <Wire.h>
 
-// Adafruit_MCP3008 adc;
-Adafruit_MCP3008 adcs[6];
+#include <array>
 
-int count = 0;
-int pins[6] = {6, 2, 14, 17, 10, 15};
-int vals[48] = {0};
+#include "SerialReader.h"
 
-void setup()
-{
-  Serial.begin(9600);
-  while (!Serial)
-    ;
+#define LINE_ADC_COUNT 6
+#define LINE_SENSOR_COUNT 48
+#define CONTROLLER_PORT Serial
+const auto LINE_ADC_PINS = std::array<int, LINE_ADC_COUNT>{6, 2, 14, 17, 10, 15};
 
-  for (int i = 0; i < 6; i++)
-  {
-    adcs[i].begin(13, 11, 12, pins[i]);
+auto adcs = std::array<Adafruit_MCP3008, 6>();
+auto input = SerialReader(CONTROLLER_PORT);
+
+void applyCommands() {
+  input.update();
+  if (!input.complete()) return;
+  Serial.print("Received command: [");
+  for (auto value : input.data()) {
+    Serial.printf("%d, ", value);
   }
-
-  // (sck, mosi, miso, cs);
-  // adc.begin(13, 11, 12, 10); // 6 2 14 17 10 15
+  Serial.print("]\r\n");
 }
 
-void loop()
-{
-  int q;
-  for (int adc = 0; adc < 6; adc++)
-  {
-    for (int channel = 0; channel < 8; channel++)
-    {
-      q = adcs[t].readADC(channel);
-      Serial.print(String(q) + " ");
-      vals[6 * adc + channel] = q;
-    }
-    Serial.print("\t");
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    continue;
   }
-  Serial.println();
-  delay(200);
+
+  for (int i = 0; i < LINE_ADC_PINS.size(); i++) {
+    // (sck, mosi, miso, cs);
+    adcs[i].begin(13, 11, 12, LINE_ADC_PINS[i]);
+  }
+}
+
+void loop() {
+  applyCommands();
+
+  for (size_t i = 0; i < LINE_ADC_PINS.size(); i++) {
+    for (int channel = 0; channel < 8; channel++) {
+      const auto value = adcs[i].readADC(channel);
+      Serial.write(value);
+    }
+  }
 }
