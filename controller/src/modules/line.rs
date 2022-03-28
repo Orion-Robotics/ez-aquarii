@@ -31,13 +31,11 @@ impl Default for Line {
 	}
 }
 
-#[cached]
 pub fn angle_for_sensor(i: usize, length: usize) -> f32 {
 	let percent = i as f32 / length as f32;
 	percent * std::f32::consts::PI * 2.0
 }
 
-#[cached]
 pub fn vec_for_sensor(i: usize, length: usize) -> Vec2 {
 	let angle = angle_for_sensor(i, length);
 	Vec2::from_rad(angle as f64)
@@ -123,7 +121,10 @@ impl Module for Line {
 		if let Some(ref mut serial) = self.serial {
 			let mut raw_data = vec![0; self.sensor_count];
 			serial.read_buf(&mut raw_data).await?;
-			state.line_detections = raw_data
+			state.data.sensor_data = raw_data;
+			state.line_detections = state
+				.data
+				.sensor_data
 				.iter()
 				.map(|&x| x > self.pickup_threshold as u8)
 				.collect();

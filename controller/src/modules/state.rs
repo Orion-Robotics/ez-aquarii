@@ -1,10 +1,9 @@
 use crate::math::vec2::Vec2;
-use arrayvec::ArrayVec;
 use serde::Serialize;
 
 #[derive(Serialize, Default, Clone)]
 pub struct RawData {
-	sensor_data: Vec<u8>,
+	pub sensor_data: Vec<u8>,
 }
 
 // State contains all of the robot's data for each tick.
