@@ -120,7 +120,7 @@ impl Module for Line {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
 		if let Some(ref mut serial) = self.serial {
 			let mut raw_data = vec![0; self.sensor_count];
-			serial.read_buf(&mut raw_data).await?;
+			serial.read(&mut raw_data[..]).await?;
 			state.data.sensor_data = raw_data;
 			state.line_detections = state
 				.data
@@ -135,6 +135,7 @@ impl Module for Line {
 		let (a, b) = self.get_farthest_detections(line_detections);
 		let (vec_a, vec_b) = (vec_for_sensor(a, length), vec_for_sensor(b, length));
 		let vec = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
+		println!("previous: {:?}, current: {vec}", self.previous_vec);
 
 		if let Some(previous_vec) = self.previous_vec {
 			if self.did_cross_line(vec, previous_vec) {
@@ -142,7 +143,6 @@ impl Module for Line {
 			}
 		}
 		let koig_vec = if state.line_flipped { vec * -1.0 } else { vec };
-		println!("original: {vec} new: {koig_vec}");
 
 		state.line_vector = koig_vec;
 
