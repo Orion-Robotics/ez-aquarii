@@ -15,6 +15,7 @@ use super::{state::State, Module};
 pub struct Line {
 	pub sensor_count: usize,
 	pub pickup_threshold: usize,
+	pub trigger_threshold: usize,
 	pub previous_vec: Option<Vec2>,
 	pub serial: Option<SerialStream>,
 }
@@ -23,6 +24,7 @@ impl Default for Line {
 	fn default() -> Self {
 		Self {
 			sensor_count: 46,
+			trigger_threshold: 400,
 			pickup_threshold: 24,
 			previous_vec: None,
 			serial: None,
@@ -44,6 +46,7 @@ impl Line {
 	pub fn new(
 		uart_path: String,
 		baud_rate: u32,
+		trigger_threshold: usize,
 		pickup_threshold: usize,
 		sensor_count: usize,
 	) -> Result<Self> {
@@ -51,6 +54,7 @@ impl Line {
 
 		Ok(Line {
 			pickup_threshold,
+			trigger_threshold,
 			sensor_count,
 			previous_vec: None,
 			serial: Some(serial),
@@ -118,14 +122,15 @@ impl Line {
 impl Module for Line {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
 		if let Some(ref mut serial) = self.serial {
-			let mut raw_data = vec![0; self.sensor_count];
-			serial.read(&mut raw_data[..]).await?;
+			while serial.read_u8().await? != 255 {}
+			let mut raw_data: Vec<u8> = vec![0; self.sensor_count];
+			serial.read_exact(&mut raw_data).await?;
 			state.data.sensor_data = raw_data;
 			state.line_detections = state
 				.data
 				.sensor_data
 				.iter()
-				.map(|&x| x > self.pickup_threshold as u8)
+				.map(|&x| x > self.trigger_threshold as u8)
 				.collect();
 		}
 

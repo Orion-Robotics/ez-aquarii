@@ -84,6 +84,7 @@ async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
 				Box::new(camera::Camera::new(path.clone()).await.unwrap())
 			}
 			config::Module::Line {
+				trigger_threshold,
 				pickup_threshold,
 				sensor_count,
 				baud_rate,
@@ -92,6 +93,7 @@ async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
 				line::Line::new(
 					uart_path.to_string(),
 					*baud_rate,
+					*trigger_threshold,
 					*pickup_threshold,
 					*sensor_count,
 				)
