@@ -53,9 +53,24 @@
       </div>
       <base-tabs class="w-full bg-base-300" :items="tabs" v-model="active_tab" />
       <div class="w-full relative flex-1 flex-col flex">
-        <div class="absolute bottom-0 border-4 font-mono">
-          <div class="px-2 py-1 w-full bg-primary">{{ frame_number }}</div>
-          <div class="px-2 py-1 bg-secondary w-full">{{ frame_count }}</div>
+        <div
+          class="absolute bottom-0 border-4 font-mono text-primary-content border-4"
+          :style="{
+            color: '#ffff'
+          }"
+        >
+          <div
+            class="px-2 py-1 w-full"
+            :style="{ backgroundColor: 'rgb(91, 206, 250)' }"
+          >{{ frame_number }}</div>
+          <div
+            class="px-2 py-1 bg-secondary w-full"
+            :style="{ backgroundColor: 'rgb(245, 169, 184)' }"
+          >
+            {{
+              frame_count
+            }}
+          </div>
         </div>
         <img
           class="h-full"
