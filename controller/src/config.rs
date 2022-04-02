@@ -21,19 +21,15 @@ pub enum Module {
 		uart_path: String,
 		baud_rate: u32,
 	},
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all = "lowercase")]
-pub struct StateHistory {
-	pub enable: bool,
-	pub path: PathBuf,
+	StateRandomizer,
+	Server {
+		addr: String,
+	},
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
 	pub modules: HashSet<Module>,
-	pub state_history: StateHistory,
 }
 
 impl Default for Config {
@@ -49,11 +45,10 @@ impl Default for Config {
 					uart_path: "/dev/ttyUSB0".to_string(),
 					baud_rate: 500000,
 				},
+				Module::Server {
+					addr: "0.0.0.0:7272".to_string(),
+				},
 			]),
-			state_history: StateHistory {
-				enable: false,
-				path: PathBuf::from("./state.json"),
-			},
 		}
 	}
 }

@@ -6,7 +6,6 @@ use crate::math::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
-use cached::proc_macro::cached;
 use test_case::test_case;
 use tokio::io::AsyncReadExt;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
@@ -159,7 +158,7 @@ impl Module for Line {
 		"line"
 	}
 
-	fn start(&mut self) -> Result<()> {
+	async fn start(&mut self) -> Result<()> {
 		Ok(())
 	}
 

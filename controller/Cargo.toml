@@ -20,7 +20,7 @@ tokio = { version = "1.15.0", features = ["full"] }
 tracing = "0.1.29"
 async-trait = "0.1.52"
 futures = "0.3.19"
-tracing-subscriber = "0.3.5"
+tracing-subscriber = { version = "0.3.5", features = ["env-filter"] }
 async-recursion = "1.0.0"
 serde_json = "1.0.74"
 arrayvec = { version = "0.7.2", features = ['serde'] }
@@ -28,6 +28,9 @@ num = "0.4.0"
 test-case = "1.2.3"
 cached = "0.30.0"
 tokio-serial = "5.4.2"
+axum = { version = "0.5.0", features = ["ws"] }
+tower-http = { version = "0.2.5", features = ["cors"] }
+rand = "0.8.5"
 
 [build-dependencies]
 prost-build = "0.9.0"

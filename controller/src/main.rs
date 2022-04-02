@@ -2,13 +2,16 @@ use anyhow::{Context, Result};
 use controller::{
 	config,
 	config::{read_and_watch_config, Config},
-	modules::{camera, line, state, state::State, AnyModule, Module},
-	recorder::Recorder,
+	modules::{
+		camera, line, state, state::State, state_randomizer, state_recorder::StateRecorder,
+		AnyModule, Module,
+	},
 };
 use parking_lot::Mutex;
 use std::{sync::Arc, time::Duration};
 use tokio;
-use tracing::{Instrument, Level};
+use tracing::Instrument;
+use tracing_subscriber::EnvFilter;
 
 const CONFIG_FILE: &str = "./config.yaml";
 
@@ -16,7 +19,9 @@ const CONFIG_FILE: &str = "./config.yaml";
 async fn main() -> Result<()> {
 	// sets the debug level to show all traces
 	tracing_subscriber::fmt()
-		.with_max_level(Level::TRACE)
+		.with_env_filter(
+			EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug")),
+		)
 		.init();
 
 	let (_watcher, mut cfg_chan) = read_and_watch_config(CONFIG_FILE)
@@ -28,32 +33,27 @@ async fn main() -> Result<()> {
 	let mut modules: Vec<AnyModule> = Vec::new();
 	let history_file: Arc<Mutex<Option<std::fs::File>>> = Arc::new(Mutex::new(None));
 
-	let recorder: Recorder<_, State> = Recorder::new(history_file.clone());
-
 	loop {
 		if let Ok(new_config) = cfg_chan.try_recv() {
-			let (new_modules, new_history_file) = handle_config_change(new_config).await;
+			let new_modules = handle_config_change(new_config).await;
 
 			for module in modules.iter_mut() {
 				module.stop().await?;
 			}
 
 			modules = new_modules;
-			*history_file.lock() = new_history_file;
 
 			for module in modules.iter_mut() {
-				module.start()?;
+				module.start().await?;
 			}
 		}
 		tick_modules(&mut modules, &mut robot_state).await;
-		let robot_state = &*robot_state.lock();
-		let _ = recorder.record(robot_state.clone());
 	}
 }
 
 async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<State>>) {
 	let tick_futures = modules.iter_mut().map(|m| async {
-		tracing::debug!("{} tick", m.name());
+		tracing::trace!("{} tick", m.name());
 		let mut robot_state = robot_state.lock();
 		let tick_future =
 			tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
@@ -72,13 +72,14 @@ async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<
 	}
 }
 
-async fn handle_config_change(new_config: Config) -> (Vec<AnyModule>, Option<std::fs::File>) {
+async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
 	tracing::info!("config changed, reloading...");
 	let module_configs = &new_config.modules;
 
 	let mut new_modules: Vec<Box<dyn Module>> = Vec::new();
 	for m in module_configs {
 		let module_instance: AnyModule = match m {
+			config::Module::StateRandomizer => Box::new(state_randomizer::StateRandomizer {}),
 			config::Module::Camera { path } => {
 				Box::new(camera::Camera::new(path.clone()).await.unwrap())
 			}
@@ -96,22 +97,12 @@ async fn handle_config_change(new_config: Config) -> (Vec<AnyModule>, Option<std
 				)
 				.unwrap(),
 			),
+			config::Module::Server { addr } => {
+				Box::new(StateRecorder::new(addr.clone()).await.unwrap())
+			}
 		};
 		new_modules.push(module_instance);
 	}
 
-	let mut history_file = None;
-
-	if new_config.state_history.enable {
-		history_file = Some(
-			std::fs::OpenOptions::new()
-				.write(true)
-				.create(true)
-				.append(true)
-				.open(&new_config.state_history.path)
-				.unwrap(),
-		);
-	}
-
-	(new_modules, history_file)
+	new_modules
 }

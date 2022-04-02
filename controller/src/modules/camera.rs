@@ -40,7 +40,7 @@ impl Module for Camera {
 		"camera"
 	}
 
-	fn start(&mut self) -> Result<()> {
+	async fn start(&mut self) -> Result<()> {
 		Ok(())
 	}
 
