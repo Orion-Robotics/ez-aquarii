@@ -1,10 +1,12 @@
 use std::net::SocketAddr;
 
 use super::{state::State, Module};
+use crate::config::Config;
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{ws::WebSocketUpgrade, Extension};
+use axum::Json;
 use axum::{response::IntoResponse, routing::get, Router};
 use tokio::sync::{broadcast, oneshot};
 use tower_http::cors::{Any, CorsLayer};
@@ -32,13 +34,16 @@ async fn websocket(mut stream: WebSocket, state: broadcast::Sender<State>) -> Re
 	}
 }
 
+async fn get_config(Extension(config): Extension<Config>) -> impl IntoResponse {
+	Json(config)
+}
 pub struct StateRecorder {
 	sender: broadcast::Sender<State>,
 	kill_sender: Option<oneshot::Sender<bool>>,
 }
 
 impl StateRecorder {
-	pub async fn new(addr: String) -> Result<Self> {
+	pub async fn new(config: Config, addr: String) -> Result<Self> {
 		let (sender, _) = broadcast::channel(1);
 		let addr = addr.parse::<SocketAddr>()?;
 
@@ -46,8 +51,10 @@ impl StateRecorder {
 
 		let app = Router::new()
 			.route("/state", get(websocket_handler))
+			.route("/config", get(get_config))
 			.layer(CorsLayer::new().allow_origin(Any).allow_methods(Any))
-			.layer(Extension(sender.clone()));
+			.layer(Extension(sender.clone()))
+			.layer(Extension(config.clone()));
 
 		tokio::spawn(
 			axum::Server::bind(&addr)

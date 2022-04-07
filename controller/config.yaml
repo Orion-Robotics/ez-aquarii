@@ -1,7 +1,7 @@
 ---
 modules:
   # - camera:
-      # path: "./socket"
+  # path: "./socket"
   - line:
       sensor_count: 46
       trigger_threshold: 128

@@ -31,7 +31,6 @@ async fn main() -> Result<()> {
 
 	let mut robot_state = Arc::new(Mutex::new(state::State::default()));
 	let mut modules: Vec<AnyModule> = Vec::new();
-	let history_file: Arc<Mutex<Option<std::fs::File>>> = Arc::new(Mutex::new(None));
 
 	loop {
 		if let Ok(new_config) = cfg_chan.try_recv() {
@@ -99,9 +98,11 @@ async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
 				)
 				.unwrap(),
 			),
-			config::Module::Server { addr } => {
-				Box::new(StateRecorder::new(addr.clone()).await.unwrap())
-			}
+			config::Module::Server { addr } => Box::new(
+				StateRecorder::new(new_config.clone(), addr.clone())
+					.await
+					.unwrap(),
+			),
 		};
 		new_modules.push(module_instance);
 	}
