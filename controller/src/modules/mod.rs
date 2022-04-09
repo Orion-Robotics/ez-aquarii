@@ -5,6 +5,8 @@ use self::state::State;
 
 pub mod camera;
 pub mod line;
+#[cfg(test)]
+pub mod line_test;
 pub mod state;
 pub mod state_randomizer;
 pub mod state_recorder;

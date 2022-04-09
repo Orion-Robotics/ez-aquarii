@@ -1,14 +1,14 @@
 use std::f32::consts::PI;
 
+use anyhow::Result;
+use async_trait::async_trait;
+use tokio::io::AsyncReadExt;
+use tokio_serial::{SerialPortBuilderExt, SerialStream};
+
 use crate::math::{
 	angles::distance,
 	vec2::{dot, Vec2},
 };
-use anyhow::Result;
-use async_trait::async_trait;
-use test_case::test_case;
-use tokio::io::AsyncReadExt;
-use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 use super::{state::State, Module};
 
@@ -138,8 +138,12 @@ impl Module for Line {
 		let length = line_detections.len();
 		let (a, b) = self.get_farthest_detections(line_detections);
 		let (vec_a, vec_b) = (vec_for_sensor(a, length), vec_for_sensor(b, length));
-		let vec = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
-		println!("previous: {:?}, current: {vec}", self.previous_vec);
+		let mut vec = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
+		if vec.y == 0.0 && vec.x == 0.0 {
+			// if the vector is zero, then the added vectors are perfectly perpendicular.
+			let vec_a = vec_a + Vec2 { x: 1e-5, y: 0.0 };
+			vec = (vec_a + vec_b).normalize();
+		}
 
 		if let Some(previous_vec) = self.previous_vec {
 			if self.did_cross_line(vec, previous_vec) {
@@ -170,73 +174,4 @@ impl Module for Line {
 	async fn stop(&mut self) -> Result<()> {
 		Ok(())
 	}
-}
-
-/// test_koig
-/// data:
-/// {"data":{"sensor_data":[]},"line_detections":[true,false,false,false,false,false,false,true,false,false],"line_flipped":false,"line_vector":{"x":0.0,"y":0.0},"move_vector":{"x":0.0,"y":0.0}}
-/// {"data":{"sensor_data":[]},"line_detections":[true,false,false,true,false,false,false,false,false,false],"line_flipped":false,"line_vector":{"x":0.0,"y":0.0},"move_vector":{"x":0.0,"y":0.0}}
-/// {"data":{"sensor_data":[]},"line_detections":[true,false,false,false,false,true,false,false,true,false],"line_flipped":false,"line_vector":{"x":0.0,"y":0.0},"move_vector":{"x":0.0,"y":0.0}}
-///
-#[tokio::test]
-pub async fn test_koig() {
-	let mut state = State::default();
-	let mut line = Line::default();
-
-	state.line_detections = vec![
-		true, false, false, false, false, false, false, true, false, false,
-	];
-	state.print_state();
-
-	line.tick(&mut state).await.unwrap();
-	let old_vec = state.line_vector.clone();
-	state.line_detections = vec![
-		true, false, false, true, false, false, false, false, false, false,
-	];
-	line.tick(&mut state).await.unwrap();
-	let new_vec = state.line_vector.clone();
-
-	assert_eq!(old_vec.x.is_sign_positive(), new_vec.x.is_sign_positive());
-	assert_eq!(old_vec.y.is_sign_positive(), new_vec.y.is_sign_positive());
-
-	let mut state = State::default();
-	let mut line = Line::default();
-	state.line_detections = vec![
-		true, false, false, false, false, true, false, false, true, false,
-	];
-	line.tick(&mut state).await.unwrap();
-
-	assert_eq!(old_vec.x.is_sign_positive(), new_vec.x.is_sign_positive());
-	assert_eq!(old_vec.y.is_sign_positive(), new_vec.y.is_sign_positive());
-}
-
-#[test_case(Vec2::new(-0.1, 0.0), Vec2::new(0.1, 0.0), true; "crosses line when crosses axis")]
-#[test_case(Vec2::new(0.2, 0.0), Vec2::new(0.1, 0.0), false; "does not cross when on same side")]
-pub fn test_line_cross_over(a: Vec2, b: Vec2, expected: bool) {
-	let line = Line::default();
-	assert_eq!(line.did_cross_line(a, b), expected);
-}
-
-#[test_case(&[true, false, true, false, false], true, true, 2; "2 sensors, pointing out")]
-#[test_case(&[true, false, true, false, false], true, true, 2; "2 sensors, pointing in")]
-#[test_case(&[true, false, false, false, false], true, true, 1; "1 sensor, pointing out")]
-#[test_case(&[true, false, false, false, false], false, false, 1; "1 sensor, pointing in")]
-pub fn test_line_should_run(
-	triggers: &[bool],
-	pointing_out: bool,
-	expected: bool,
-	expected_detections: usize,
-) {
-	let line = Line::default();
-	let (should_run, detection_count) = line.should_run(triggers, pointing_out);
-	assert_eq!(should_run, expected);
-	assert_eq!(detection_count, expected_detections);
-}
-
-#[test_case(&[true, false, false, false, false, true], (0, 5); "6 sensors, 2 activated")]
-#[test_case(&[true, false, false, true, false, false, true], (0, 3); "7 sensors, 3 activated")]
-#[test_case(&[true, true, true, true, true, true, true], (0, 3); "7 sensors, 7 activated")]
-pub fn test_line_get_farthest_detections(sensors: &[bool], expected: (usize, usize)) {
-	let line = Line::default();
-	assert_eq!(line.get_farthest_detections(sensors), expected);
 }
