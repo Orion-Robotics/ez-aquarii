@@ -14,12 +14,12 @@
 // DO NOT COMMENT OUT ADCS WITHOUT UNPLUGGING TEENSY
 // HOURS WASTED: 1
 const auto LINE_ADC_PINS = std::array<int, 6>{
-    15,
-    10,
     6,
+    10,
     2,
     24,
     14,
+    15,
 };
 
 auto adcs = std::array<Adafruit_MCP3008, LINE_ADC_PINS.size()>();
@@ -61,7 +61,7 @@ void loop() {
   for (int i = 0; i < adcs.size(); i++) {
     for (int channel = 0; channel < 8; channel++) {
       const auto channel_num = (i * 8) + channel;
-      if (channel_num == 22 || channel_num == 23) continue;
+      if (channel_num == 31 || channel_num == 32) continue;
       const auto value = adcs[i].readADC(7 - channel);
       const auto magnitude = (uint8_t)((value / 2048.0) * 253);
       // Serial.write(magnitude);
