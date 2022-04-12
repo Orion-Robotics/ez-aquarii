@@ -1,0 +1,29 @@
+#include <Adafruit_MCP3008.h>
+#include <Arduino.h>
+#include <Wire.h>
+
+#include <array>
+
+#define LINE_SCK 13
+#define LINE_MOSI 11
+#define LINE_MISO 12
+#define LINE_CS 6
+#define CONTROLLER_PORT Serial
+
+Adafruit_MCP3008 adc;
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    continue;
+  }
+  adc.begin(LINE_SCK, LINE_MOSI, LINE_MISO, LINE_CS);
+}
+
+void loop() {
+  for (int channel = 0; channel < 8; channel++) {
+    const auto value = adc.readADC(channel);
+    Serial.printf("%d ", value);
+  }
+  Serial.println();
+}
