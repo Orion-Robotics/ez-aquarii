@@ -10,10 +10,12 @@ tput setaf 5
 echo -e "Watching $CONTROLLER_PATH for changes..."
 tput sgr0
 
-inotifywait -rqme modify,create,delete,move $CONTROLLER_PATH |
-while read -r filename event; do
-  tput setaf 3
-  echo "uploading binary..."
-  tput sgr0
-  rsync -avz $CONTROLLER_PATH/controller $PI_USER@$PI_HOST:/home/$PI_USER/ez-aquarii/controller/target
+inotifywait -qme modify,create,delete,move $CONTROLLER_PATH |
+while read -r dir event file; do
+  if [ "$file" = "controller" ]; then
+    tput setaf 3
+    echo "uploading binary..."
+    tput sgr0
+    rsync -avz $CONTROLLER_PATH/controller $PI_USER@$PI_HOST:/home/$PI_USER/ez-aquarii/controller/target
+  fi
 done
