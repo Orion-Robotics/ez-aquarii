@@ -3,8 +3,8 @@ use controller::{
 	config,
 	config::{read_and_watch_config, Config},
 	modules::{
-		camera, line, state, state::State, state_randomizer, state_recorder::StateRecorder,
-		AnyModule, Module,
+		camera, line, motors::Motors, state, state::State, state_randomizer,
+		state_recorder::StateRecorder, AnyModule, Module,
 	},
 };
 use parking_lot::Mutex;
@@ -100,6 +100,15 @@ async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
 			),
 			config::Module::Server { addr } => Box::new(
 				StateRecorder::new(new_config.clone(), addr.clone())
+					.await
+					.unwrap(),
+			),
+			config::Module::Motors {
+				uart_path,
+				baud_rate,
+				motor_offset,
+			} => Box::new(
+				Motors::new(uart_path.to_string(), *baud_rate, *motor_offset)
 					.await
 					.unwrap(),
 			),

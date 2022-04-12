@@ -3,13 +3,12 @@ use async_recursion::async_recursion;
 use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::{
-	collections::HashSet,
 	fs::{self, read_to_string},
 	path::{Path, PathBuf},
 };
 use tokio::sync::mpsc;
 
-#[derive(Debug, Deserialize, Serialize, Hash, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Module {
 	Camera {
@@ -26,17 +25,22 @@ pub enum Module {
 	Server {
 		addr: String,
 	},
+	Motors {
+		uart_path: String,
+		baud_rate: u32,
+		motor_offset: f64,
+	},
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
-	pub modules: HashSet<Module>,
+	pub modules: Vec<Module>,
 }
 
 impl Default for Config {
 	fn default() -> Self {
 		Self {
-			modules: HashSet::from([
+			modules: Vec::from([
 				Module::Camera {
 					path: PathBuf::from("./socket"),
 				},
