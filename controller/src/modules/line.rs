@@ -60,62 +60,6 @@ impl Line {
 			serial: Some(serial),
 		})
 	}
-
-	// did_cross_line determines if two vectors indicate a line crossing.
-	pub fn did_cross_line(&self, current_vec: Vec2, previous_vec: Vec2) -> bool {
-		dot(current_vec, previous_vec) < 0.0
-	}
-
-	/// should_run determines if koig ring (line avoidance) should run.
-	/// The following criteria are checked to determine if the line should be run:
-	/// 1. If two or more line sensors trigger, then the line avoidance should activate,
-	/// because it is the minimum amount of sensors needed to trigger in order to orient against the line.
-	///
-	/// 2. If the robot is currently outside of the line, then the line should ALWAYS be running
-	/// so that it can come back in.
-	pub fn should_run(&self, triggers: &[bool], pointing_out: bool) -> (bool, usize) {
-		let detections = triggers.iter().filter(|&x| *x).count();
-
-		let should_run = detections >= 2 || (detections <= 1 && pointing_out);
-
-		(should_run, detections)
-	}
-
-	/// get_farthest_detections returns the two indexes in the line sensor array that are the
-	/// most perpendicular from each other.
-	///
-	/// Specifically, this means that in the following ring configuration:
-	/// +-1-2--+
-	/// 0			 3
-	/// |			 |
-	/// +------+
-	///
-	/// It should return (0, 3), because it forms a perfect angle of 180 degrees, which is the most perpendicular.  
-	pub fn get_farthest_detections(&self, detections: &[bool]) -> (usize, usize) {
-		let mut first_detection = 0;
-		let mut second_detection = 0;
-		let mut closest_angle = 2.0 * PI;
-
-		let triggered_only = detections
-			.iter()
-			.enumerate()
-			.filter(|(_, &x)| x)
-			.map(|(i, _)| i); // iterator of only triggered sensors
-
-		for i in triggered_only.clone() {
-			for j in triggered_only.clone() {
-				let angle_1 = angle_for_sensor(i, detections.len());
-				let angle_2 = angle_for_sensor(j, detections.len());
-				let diff = distance(angle_1, angle_2);
-				if PI - diff < closest_angle {
-					closest_angle = PI - diff;
-					first_detection = i;
-					second_detection = j;
-				}
-			}
-		}
-		(first_detection, second_detection)
-	}
 }
 
 #[async_trait]
@@ -136,7 +80,7 @@ impl Module for Line {
 
 		let line_detections = state.line_detections.as_slice();
 		let length = line_detections.len();
-		let (a, b) = self.get_farthest_detections(line_detections);
+		let (a, b) = get_farthest_detections(line_detections);
 		let (vec_a, vec_b) = (vec_for_sensor(a, length), vec_for_sensor(b, length));
 		let mut vec = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
 		if vec.y == 0.0 && vec.x == 0.0 {
@@ -146,7 +90,7 @@ impl Module for Line {
 		}
 
 		if let Some(previous_vec) = self.previous_vec {
-			if self.did_cross_line(vec, previous_vec) {
+			if did_cross_line(vec, previous_vec) {
 				state.line_flipped = !state.line_flipped;
 			}
 		}
@@ -155,7 +99,7 @@ impl Module for Line {
 		state.line_vector = koig_vec;
 
 		// TODO: If line should run, then make the robot move away from the line.
-		if let (true, _) = self.should_run(line_detections, state.line_flipped) {
+		if let (true, _) = should_run(line_detections, state.line_flipped) {
 			state.move_vector = koig_vec;
 		}
 
@@ -174,4 +118,60 @@ impl Module for Line {
 	async fn stop(&mut self) -> Result<()> {
 		Ok(())
 	}
+}
+
+// did_cross_line determines if two vectors indicate a line crossing.
+pub fn did_cross_line(current_vec: Vec2, previous_vec: Vec2) -> bool {
+	dot(current_vec, previous_vec) < 0.0
+}
+
+/// should_run determines if koig ring (line avoidance) should run.
+/// The following criteria are checked to determine if the line should be run:
+/// 1. If two or more line sensors trigger, then the line avoidance should activate,
+/// because it is the minimum amount of sensors needed to trigger in order to orient against the line.
+///
+/// 2. If the robot is currently outside of the line, then the line should ALWAYS be running
+/// so that it can come back in.
+pub fn should_run(triggers: &[bool], pointing_out: bool) -> (bool, usize) {
+	let detections = triggers.iter().filter(|&x| *x).count();
+
+	let should_run = detections >= 2 || (detections <= 1 && pointing_out);
+
+	(should_run, detections)
+}
+
+/// get_farthest_detections returns the two indexes in the line sensor array that are the
+/// most perpendicular from each other.
+///
+/// Specifically, this means that in the following ring configuration:
+/// +-1-2--+
+/// 0			 3
+/// |			 |
+/// +------+
+///
+/// It should return (0, 3), because it forms a perfect angle of 180 degrees, which is the most perpendicular.  
+pub fn get_farthest_detections(detections: &[bool]) -> (usize, usize) {
+	let mut first_detection = 0;
+	let mut second_detection = 0;
+	let mut closest_angle = 2.0 * PI;
+
+	let triggered_only = detections
+		.iter()
+		.enumerate()
+		.filter(|(_, &x)| x)
+		.map(|(i, _)| i); // iterator of only triggered sensors
+
+	for i in triggered_only.clone() {
+		for j in triggered_only.clone() {
+			let angle_1 = angle_for_sensor(i, detections.len());
+			let angle_2 = angle_for_sensor(j, detections.len());
+			let diff = distance(angle_1, angle_2);
+			if PI - diff < closest_angle {
+				closest_angle = PI - diff;
+				first_detection = i;
+				second_detection = j;
+			}
+		}
+	}
+	(first_detection, second_detection)
 }

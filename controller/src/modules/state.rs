@@ -15,6 +15,7 @@ pub struct State {
 	pub line_flipped: bool,
 	pub line_vector: Vec2,
 	pub move_vector: Vec2,
+	pub motor_powers: Vec<f32>,
 }
 
 impl State {

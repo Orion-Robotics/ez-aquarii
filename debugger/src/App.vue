@@ -16,7 +16,7 @@
         />
       </div>
       <template v-if="source_type === 'text'">
-        <BaseTextField v-model="textData" multiline placeholder="Paste data in here..." />
+        <BaseTextField v-model="textData" multiline @input="onStart" placeholder="Paste data in here..." />
       </template>
       <template v-else-if="source_type === 'server'">
         <p class="text-sm">Stream Host</p>
@@ -129,6 +129,7 @@ const onStart = () => {
   }, 20, {
     maxWait: 20
   }))
+  source.value?.next();
 };
 
 const onStop = () => {
