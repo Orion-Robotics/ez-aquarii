@@ -39,7 +39,12 @@ async fn get_config(Extension(config): Extension<Config>) -> impl IntoResponse {
 }
 pub struct StateRecorder {
 	sender: broadcast::Sender<State>,
-	kill_sender: Option<oneshot::Sender<bool>>,
+	kill_sender: Option<oneshot::Sender<()>>,
+	kill_receiver: Option<oneshot::Receiver<()>>,
+	kill_complete_sender: Option<oneshot::Sender<()>>,
+	kill_complete_receiver: Option<oneshot::Receiver<()>>,
+	addr: SocketAddr,
+	config: Config,
 }
 
 impl StateRecorder {
@@ -48,25 +53,16 @@ impl StateRecorder {
 		let addr = addr.parse::<SocketAddr>()?;
 
 		let (kill_sender, kill_receiver) = oneshot::channel();
-
-		let app = Router::new()
-			.route("/state", get(websocket_handler))
-			.route("/config", get(get_config))
-			.layer(CorsLayer::new().allow_origin(Any).allow_methods(Any))
-			.layer(Extension(sender.clone()))
-			.layer(Extension(config.clone()));
-
-		tokio::spawn(
-			axum::Server::bind(&addr)
-				.serve(app.into_make_service())
-				.with_graceful_shutdown(async {
-					kill_receiver.await.ok();
-				}),
-		);
+		let (kill_complete_sender, kill_complete_receiver) = oneshot::channel();
 
 		Ok(Self {
 			sender,
 			kill_sender: Some(kill_sender),
+			kill_receiver: Some(kill_receiver),
+			kill_complete_sender: Some(kill_complete_sender),
+			kill_complete_receiver: Some(kill_complete_receiver),
+			addr,
+			config: config.clone(),
 		})
 	}
 }
@@ -78,15 +74,41 @@ impl Module for StateRecorder {
 	}
 
 	async fn start(&mut self) -> Result<()> {
+		let app = Router::new()
+			.route("/state", get(websocket_handler))
+			.route("/config", get(get_config))
+			.layer(CorsLayer::new().allow_origin(Any).allow_methods(Any))
+			.layer(Extension(self.sender.clone()))
+			.layer(Extension(self.config.clone()));
+		let addr = self.addr.clone();
+		let kill_receiver = self.kill_receiver.take().unwrap();
+		let kill_complete_sender = self.kill_complete_sender.take().unwrap();
+
+		tokio::spawn(async move {
+			axum::Server::bind(&addr)
+				.serve(app.into_make_service())
+				.with_graceful_shutdown(async {
+					kill_receiver.await.ok();
+				})
+				.await
+				.unwrap();
+			tracing::debug!("server has shut down");
+			kill_complete_sender.send(()).ok();
+		});
 		Ok(())
 	}
 
 	async fn stop(&mut self) -> Result<()> {
-		if let Some(kill_sender) = self.kill_sender.take() {
-			kill_sender
-				.send(true)
-				.map_err(|_| anyhow::anyhow!("Error sending kill signal"))?;
-		}
+		self.kill_sender
+			.take()
+			.unwrap()
+			.send(())
+			.map_err(|_| anyhow::anyhow!("Error sending kill signal"))?;
+		self.kill_complete_receiver
+			.take()
+			.unwrap()
+			.await
+			.map_err(|_| anyhow::anyhow!("Error waiting for kill_complete_sender"))?;
 		Ok(())
 	}
 
