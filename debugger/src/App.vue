@@ -4,16 +4,8 @@
       <p class="text-xl mb-2">Nebula</p>
       <p class="text-lg">Data Source</p>
       <div>
-        <base-radio-button
-          label="Server"
-          @click="source_type = 'server'"
-          :checked="source_type === 'server'"
-        />
-        <base-radio-button
-          label="Text"
-          @click="source_type = 'text'"
-          :checked="source_type === 'text'"
-        />
+        <base-radio-button label="Server" @click="source_type = 'server'" :checked="source_type === 'server'" />
+        <base-radio-button label="Text" @click="source_type = 'text'" :checked="source_type === 'text'" />
       </div>
       <template v-if="source_type === 'text'">
         <BaseTextField v-model="textData" multiline @input="onStart" placeholder="Paste data in here..." />
@@ -39,47 +31,35 @@
           </BaseButton>
         </div>
         <p class="text-lg text-gray-300">Viewer</p>
-        <input
-          @input="source?.goTo($event.target.value)"
-          type="range"
-          min="0"
-          :max="frame_count"
-          :value="frame_number"
-          class="range range-xs"
-        />
+        <input @input="source?.goTo($event.target.value)" type="range" min="0" :max="frame_count" :value="frame_number"
+          class="range range-xs" />
         <BaseButton class="btn-circle btn-sm text-lg" @click="onClear">
           <i-mdi:delete-empty-outline />
         </BaseButton>
       </div>
       <base-tabs class="w-full bg-base-300" :items="tabs" v-model="active_tab" />
       <div class="w-full relative flex-1 flex-col flex">
-        <div
-          class="absolute bottom-0 border-4 font-mono text-primary-content border-4"
-          :style="{
-            color: '#ffff'
-          }"
-        >
-          <div
-            class="px-2 py-1 w-full"
-            :style="{ backgroundColor: 'rgb(91, 206, 250)' }"
-          >{{ frame_number }}</div>
-          <div
-            class="px-2 py-1 bg-secondary w-full"
-            :style="{ backgroundColor: 'rgb(245, 169, 184)' }"
-          >
+        <div class="absolute bottom-0 border-4 font-mono text-primary-content border-4" :style="{
+          color: '#ffff'
+        }">
+          <div class="px-2 py-1 w-full" :style="{ backgroundColor: 'rgb(91, 206, 250)' }">{{ frame_number }}</div>
+          <div class="px-2 py-1 bg-secondary w-full" :style="{ backgroundColor: 'rgb(245, 169, 184)' }">
             {{
               frame_count
             }}
           </div>
         </div>
-        <img
-          class="h-full"
-          v-if="active_tab === 'Camera'"
-          :src="`http://${host}${camera_port}/stream.mjpg`"
-        />
+        <img class="h-full" v-if="active_tab === 'Camera'" :src="`http://${host}${camera_port}/stream.mjpg`" />
         <LineView v-if="current_frame && active_tab === 'Line'" :data="current_frame" />
       </div>
-      <div class="text-xs overflow-y-auto bg-neutral font-mono p-4 h-40">{{ current_frame }}</div>
+      <div class="text-xs overflow-y-auto bg-base-200 font-mono h-40 flex border-t-2 gap-2">
+        <div class="w-1/4 p-4">
+          {{ config }}
+        </div>
+        <div class="flex-1 border-l-2 p-4">
+          {{ current_frame }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -93,35 +73,36 @@ import BaseRadioButton from './components/BaseRadioButton.vue';
 import BaseTabs from './components/BaseTabs.vue';
 import BaseTextField from './components/BaseTextField.vue';
 import LineView from './LineView.vue';
-import { DataObject, DataSource, ServerSource, TextSource } from './logic/dataManager';
+import { Config, DataObject, DataSource, ServerSource, TextSource } from './logic/dataSources';
 
 const host = useLocalStorage("host", "127.0.0.1")
 const camera_port = useLocalStorage("camera_port", ref(":8000"))
 const controller_port = useLocalStorage("controller_port", ref(":7272"))
 const source_type = ref<'server' | 'text'>('server')
-
-let source = ref<DataSource | undefined>(undefined)
-
 const tabs = ['Line', 'Camera']
 const active_tab = ref(tabs[0])
+
+let source = ref<DataSource | undefined>(undefined)
 
 const started = ref(false)
 const textData = ref("");
 const current_frame = ref<DataObject | undefined>(undefined);
 const frame_count = ref(0);
 const frame_number = ref(0);
+const config = ref<Config>()
 
-const onStart = () => {
+const onStart = async () => {
   started.value = true
   try {
     if (source_type.value === 'text') {
       source.value = new TextSource(textData.value)
     } else {
-      source.value = new ServerSource(`ws://${host.value}${controller_port.value}/state`)
+      source.value = new ServerSource(`${host.value}${controller_port.value}`)
     }
   } catch (e) {
     console.error(e)
   }
+  config.value = await source.value?.currentConfig();
   source.value?.onFrame(debounce(frame => {
     current_frame.value = frame
     frame_count.value = source.value?.numFrames() ?? 0
