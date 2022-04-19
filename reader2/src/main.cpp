@@ -8,13 +8,24 @@
 
 auto adcs = std::array<Adafruit_MCP3008, LINE_ADC_PINS.size()>();
 auto input = SerialReader(CONTROLLER_PORT);
+int q = 0;
 
-void applyCommands() {
+void setPower(Motor motor, short strength)
+{
+  analogWrite(motor.powerPin, strength);
+  analogWrite(motor.directionPin, strength < 0);
+}
+
+void applyCommands()
+{
   input.update();
-  if (!input.complete()) return;
+  if (!input.complete())
+    return;
   const auto data = input.data();
-  for (int i = 0; i < data.size(); i++) {
-    if (i > 3) {
+  for (int i = 0; i < data.size(); i++)
+  {
+    if (i > 3)
+    {
       Serial.printf("<!> extra motor value, %d\r\n", data[i]);
       continue;
     }
@@ -27,15 +38,18 @@ void applyCommands() {
   Serial.println();
 }
 
-void setup() {
+void setup()
+{
   CONTROLLER_PORT.begin(CONTROLLER_BAUD);
   Serial.begin(9600);
-  while (!CONTROLLER_PORT) continue;
+  while (!CONTROLLER_PORT)
+    continue;
   // pinMode(LINE_SCK, INPUT_PULLDOWN);
   // pinMode(LINE_MOSI, );
   // input.sync();
 
-  for (int i = 0; i < LINE_ADC_PINS.size(); i++) {
+  for (int i = 0; i < LINE_ADC_PINS.size(); i++)
+  {
     // (sck, mosi, miso, cs);
     const auto cs = LINE_ADC_PINS[i];
     Serial.println(i);
@@ -45,20 +59,25 @@ void setup() {
   }
 }
 
-void loop() {
-  applyCommands();
+void loop()
+{
+  //   applyCommands();
 
   CONTROLLER_PORT.write(255);
-  for (int i = 0; i < adcs.size(); i++) {
-    for (int channel = 0; channel < 8; channel++) {
+  for (int i = 0; i < adcs.size(); i++)
+  {
+    for (int channel = 0; channel < 8; channel++)
+    {
       const auto channel_num = (i * 8) + channel;
-      if (channel_num == 32 || channel_num == 33) continue;
+      if (channel_num == 32 || channel_num == 33)
+        continue;
       const auto value = adcs[i].readADC(7 - channel);
       const auto magnitude = (uint8_t)((value / 2048.0) * 253);
       CONTROLLER_PORT.write(magnitude);
       // Serial.printf("%3d ", magnitude);
       // Serial.print(String(channel) + " " + String(i));
     }
+    Serial.print("\t");
   }
   // Serial.println("meow");
   // Serial.println();
