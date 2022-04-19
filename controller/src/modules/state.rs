@@ -1,14 +1,13 @@
 use crate::math::vec2::Vec2;
-use arrayvec::ArrayVec;
 use serde::Serialize;
 
-#[derive(Serialize, Default, Clone)]
+#[derive(Serialize, Default, Clone, Debug)]
 pub struct RawData {
-	sensor_data: Vec<u8>,
+	pub sensor_data: Vec<u8>,
 }
 
 // State contains all of the robot's data for each tick.
-#[derive(Serialize, Default, Clone)]
+#[derive(Serialize, Default, Clone, Debug)]
 pub struct State {
 	// raw sensor data, not to be used by actual program logic
 	pub data: RawData,
@@ -16,6 +15,9 @@ pub struct State {
 	pub line_flipped: bool,
 	pub line_vector: Vec2,
 	pub move_vector: Vec2,
+	pub motor_powers: Vec<f32>,
+	pub rotation: f64,
+	pub picked_up: bool,
 }
 
 impl State {

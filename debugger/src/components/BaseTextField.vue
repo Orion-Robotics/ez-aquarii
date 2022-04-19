@@ -24,6 +24,10 @@ defineEmits(['update:modelValue'])
 <style lang="postcss" scoped>
 textarea,
 input {
-  @apply p-2 bg-dark-500 focus:bg-black focus:border-dark-800 border-3 rounded-lg border-transparent transition-colors duration-100;
+  @apply input input-secondary;
+}
+
+textarea {
+  @apply textarea textarea-bordered input-secondary;
 }
 </style>

@@ -2,13 +2,16 @@ use anyhow::{Context, Result};
 use controller::{
 	config,
 	config::{read_and_watch_config, Config},
-	modules::{camera, line, state, state::State, AnyModule, Module},
-	recorder::Recorder,
+	modules::{
+		camera, line, motors::Motors, state, state::State, state_randomizer,
+		state_recorder::StateRecorder, AnyModule, Module,
+	},
 };
 use parking_lot::Mutex;
 use std::{sync::Arc, time::Duration};
 use tokio;
-use tracing::{Instrument, Level};
+use tracing::Instrument;
+use tracing_subscriber::EnvFilter;
 
 const CONFIG_FILE: &str = "./config.yaml";
 
@@ -16,7 +19,9 @@ const CONFIG_FILE: &str = "./config.yaml";
 async fn main() -> Result<()> {
 	// sets the debug level to show all traces
 	tracing_subscriber::fmt()
-		.with_max_level(Level::TRACE)
+		.with_env_filter(
+			EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug")),
+		)
 		.init();
 
 	let (_watcher, mut cfg_chan) = read_and_watch_config(CONFIG_FILE)
@@ -26,34 +31,33 @@ async fn main() -> Result<()> {
 
 	let mut robot_state = Arc::new(Mutex::new(state::State::default()));
 	let mut modules: Vec<AnyModule> = Vec::new();
-	let history_file: Arc<Mutex<Option<std::fs::File>>> = Arc::new(Mutex::new(None));
-
-	let recorder: Recorder<_, State> = Recorder::new(history_file.clone());
 
 	loop {
 		if let Ok(new_config) = cfg_chan.try_recv() {
-			let (new_modules, new_history_file) = handle_config_change(new_config).await;
-
-			for module in modules.iter_mut() {
-				module.stop().await?;
-			}
-
-			modules = new_modules;
-			*history_file.lock() = new_history_file;
-
-			for module in modules.iter_mut() {
-				module.start()?;
+			match handle_config_change(new_config).await {
+				Ok(mut new_modules) => {
+					let disabled = modules.iter().map(|x| x.name()).collect::<Vec<_>>();
+					let enabled = new_modules.iter().map(|x| x.name()).collect::<Vec<_>>();
+					tracing::info!("disabling: {:?}", disabled);
+					tracing::info!("enabling: {:?}", enabled);
+					for module in modules.iter_mut() {
+						module.stop().await?;
+					}
+					for module in new_modules.iter_mut() {
+						module.start().await?;
+					}
+					modules = new_modules;
+				}
+				Err(e) => tracing::error!("Failed to handle config change: {}", e),
 			}
 		}
 		tick_modules(&mut modules, &mut robot_state).await;
-		let robot_state = &*robot_state.lock();
-		let _ = recorder.record(robot_state.clone());
 	}
 }
 
 async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<State>>) {
 	let tick_futures = modules.iter_mut().map(|m| async {
-		tracing::debug!("{} tick", m.name());
+		tracing::trace!("{} tick", m.name());
 		let mut robot_state = robot_state.lock();
 		let tick_future =
 			tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
@@ -72,46 +76,41 @@ async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<
 	}
 }
 
-async fn handle_config_change(new_config: Config) -> (Vec<AnyModule>, Option<std::fs::File>) {
+async fn handle_config_change(new_config: Config) -> Result<Vec<AnyModule>> {
 	tracing::info!("config changed, reloading...");
 	let module_configs = &new_config.modules;
 
 	let mut new_modules: Vec<Box<dyn Module>> = Vec::new();
 	for m in module_configs {
 		let module_instance: AnyModule = match m {
-			config::Module::Camera { path } => {
-				Box::new(camera::Camera::new(path.clone()).await.unwrap())
-			}
+			config::Module::StateRandomizer => Box::new(state_randomizer::StateRandomizer {}),
+			config::Module::Camera { path } => Box::new(camera::Camera::new(path.clone()).await?),
 			config::Module::Line {
+				trigger_threshold,
 				pickup_threshold,
+				pickup_sensor_count,
 				sensor_count,
 				baud_rate,
 				uart_path,
-			} => Box::new(
-				line::Line::new(
-					uart_path.to_string(),
-					*baud_rate,
-					*pickup_threshold,
-					*sensor_count,
-				)
-				.unwrap(),
-			),
+			} => Box::new(line::Line::new(
+				uart_path.to_string(),
+				*baud_rate,
+				*trigger_threshold,
+				*pickup_threshold,
+				*pickup_sensor_count,
+				*sensor_count,
+			)?),
+			config::Module::Server { addr } => {
+				Box::new(StateRecorder::new(new_config.clone(), addr.clone()).await?)
+			}
+			config::Module::Motors {
+				uart_path,
+				baud_rate,
+				motor_offset,
+			} => Box::new(Motors::new(uart_path.to_string(), *baud_rate, *motor_offset).await?),
 		};
 		new_modules.push(module_instance);
 	}
 
-	let mut history_file = None;
-
-	if new_config.state_history.enable {
-		history_file = Some(
-			std::fs::OpenOptions::new()
-				.write(true)
-				.create(true)
-				.append(true)
-				.open(&new_config.state_history.path)
-				.unwrap(),
-		);
-	}
-
-	(new_modules, history_file)
+	Ok(new_modules)
 }

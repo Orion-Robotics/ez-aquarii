@@ -3,13 +3,12 @@ use async_recursion::async_recursion;
 use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::{
-	collections::HashSet,
 	fs::{self, read_to_string},
 	path::{Path, PathBuf},
 };
 use tokio::sync::mpsc;
 
-#[derive(Debug, Deserialize, Serialize, Hash, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Module {
 	Camera {
@@ -18,42 +17,46 @@ pub enum Module {
 	Line {
 		sensor_count: usize,
 		pickup_threshold: usize,
+		pickup_sensor_count: usize,
+		trigger_threshold: usize,
 		uart_path: String,
 		baud_rate: u32,
+	},
+	StateRandomizer,
+	Server {
+		addr: String,
+	},
+	Motors {
+		uart_path: String,
+		baud_rate: u32,
+		motor_offset: f64,
 	},
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all = "lowercase")]
-pub struct StateHistory {
-	pub enable: bool,
-	pub path: PathBuf,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
-	pub modules: HashSet<Module>,
-	pub state_history: StateHistory,
+	pub modules: Vec<Module>,
 }
 
 impl Default for Config {
 	fn default() -> Self {
 		Self {
-			modules: HashSet::from([
+			modules: Vec::from([
 				Module::Camera {
 					path: PathBuf::from("./socket"),
 				},
 				Module::Line {
 					sensor_count: 46,
 					pickup_threshold: 24,
+					pickup_sensor_count: 30,
+					trigger_threshold: 400,
 					uart_path: "/dev/ttyUSB0".to_string(),
 					baud_rate: 500000,
 				},
+				Module::Server {
+					addr: "0.0.0.0:7272".to_string(),
+				},
 			]),
-			state_history: StateHistory {
-				enable: false,
-				path: PathBuf::from("./state.json"),
-			},
 		}
 	}
 }
