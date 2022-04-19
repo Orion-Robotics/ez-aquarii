@@ -31,8 +31,8 @@
           </BaseButton>
         </div>
         <p class="text-lg text-gray-300">Viewer</p>
-        <input @input="source?.goTo($event.target.value)" type="range" min="0" :max="frame_count" :value="frame_number"
-          class="range range-xs" />
+        <input @input="(ev: Event) => source?.goTo(+(ev.target as HTMLInputElement).value)" type="range" min="0"
+          :max="frame_count" :value="frame_number" class="range range-xs" />
         <BaseButton class="btn-circle btn-sm text-lg" @click="onClear">
           <i-mdi:delete-empty-outline />
         </BaseButton>
