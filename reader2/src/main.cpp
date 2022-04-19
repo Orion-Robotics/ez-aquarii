@@ -6,45 +6,50 @@
 
 #include "SerialReader.h"
 
-#define LINE_SCK 13
-#define LINE_MOSI 11
-#define LINE_MISO 12
-
-#define CONTROLLER_PORT Serial
-// DO NOT COMMENT OUT ADCS WITHOUT UNPLUGGING TEENSY
-// HOURS WASTED: 1
-const auto LINE_ADC_PINS = std::array<int, 6>{
-    6,
-    10,
-    2,
-    24,
-    14,
-    15,
-};
-
 auto adcs = std::array<Adafruit_MCP3008, LINE_ADC_PINS.size()>();
 auto input = SerialReader(CONTROLLER_PORT);
+int q = 0;
 
-// void applyCommands() {
-//   input.update();
-//   if (!input.complete()) return;
-//   Serial.print("Received command: [");
-//   for (auto value : input.data()) {
-//     Serial.printf("%d, ", value);
-//   }
-//   Serial.print("]\r\n");
-// }
+void setPower(Motor motor, short strength)
+{
+  analogWrite(motor.powerPin, strength);
+  analogWrite(motor.directionPin, strength < 0);
+}
 
-void setup() {
-  Serial.begin(9600);
-  while (!Serial) {
-    continue;
+void applyCommands()
+{
+  input.update();
+  if (!input.complete())
+    return;
+  const auto data = input.data();
+  for (int i = 0; i < data.size(); i++)
+  {
+    if (i > 3)
+    {
+      Serial.printf("<!> extra motor value, %d\r\n", data[i]);
+      continue;
+    }
+    const auto value = data[i];
+    const auto forward = value > 127 ? true : false;
+    const auto speed = abs((value - 127) * 2);
+    analogWrite(MOVE_PINS[i], (speed / 253.0) * SPEED);
+    analogWrite(DIR_PINS[i], forward ? 255 : 0);
   }
+  Serial.println();
+}
 
+void setup()
+{
+  CONTROLLER_PORT.begin(CONTROLLER_BAUD);
+  Serial.begin(9600);
+  while (!CONTROLLER_PORT)
+    continue;
   // pinMode(LINE_SCK, INPUT_PULLDOWN);
   // pinMode(LINE_MOSI, );
+  // input.sync();
 
-  for (int i = 0; i < LINE_ADC_PINS.size(); i++) {
+  for (int i = 0; i < LINE_ADC_PINS.size(); i++)
+  {
     // (sck, mosi, miso, cs);
     const auto cs = LINE_ADC_PINS[i];
     Serial.println(i);
@@ -54,20 +59,26 @@ void setup() {
   }
 }
 
-void loop() {
-  // applyCommands();
+void loop()
+{
+  //   applyCommands();
 
-  // Serial.write(255);
-  for (int i = 0; i < adcs.size(); i++) {
-    for (int channel = 0; channel < 8; channel++) {
+  CONTROLLER_PORT.write(255);
+  for (int i = 0; i < adcs.size(); i++)
+  {
+    for (int channel = 0; channel < 8; channel++)
+    {
       const auto channel_num = (i * 8) + channel;
-      if (channel_num == 32 || channel_num == 33) continue;
+      if (channel_num == 32 || channel_num == 33)
+        continue;
       const auto value = adcs[i].readADC(7 - channel);
       const auto magnitude = (uint8_t)((value / 2048.0) * 253);
-      // Serial.write(magnitude);
-      Serial.printf("%3d ", magnitude);
+      CONTROLLER_PORT.write(magnitude);
+      // Serial.printf("%3d ", magnitude);
       // Serial.print(String(channel) + " " + String(i));
     }
+    Serial.print("\t");
   }
-  Serial.println();
+  // Serial.println("meow");
+  // Serial.println();
 }

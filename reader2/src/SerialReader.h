@@ -1,37 +1,43 @@
 #include <Arduino.h>
 
+#include <vector>
+
+#include "config.h"
+
 class SerialReader {
  private:
-  usb_serial_class input;
   bool _complete = false;
-  String line;
-  String buffer;
+  std::vector<uint8_t> line;
+  std::vector<uint8_t> buffer;
 
  public:
-  SerialReader(usb_serial_class input) {
-    this->input = input;
+  SerialReader(int baud = 115200) {
     this->_complete = false;
-    this->line = String();
-    this->buffer = String();
+    this->line = std::vector<uint8_t>();
+    this->buffer = std::vector<uint8_t>();
+  }
+
+  void sync() {
+    while (CONTROLLER_PORT.read() != 255) continue;
   }
 
   void update() {
-    const auto count = input.available();
+    const auto count = CONTROLLER_PORT.available();
     if (count > 0) {
       for (auto i = 0; i < count; i++) {
-        const char c = input.read();
-        if (c == '\n') {
-          this->line = String(this->buffer);
-          this->buffer = "";
+        const uint8_t c = CONTROLLER_PORT.read();
+        if (c == 255) {
+          this->line = std::vector<uint8_t>(this->buffer);
+          this->buffer = std::vector<uint8_t>();
           _complete = true;
         } else {
-          this->buffer.concat(c);
+          this->buffer.push_back(c);
         }
       }
     }
   }
 
-  const String data() {
+  const std::vector<uint8_t> data() {
     return line;
   }
 

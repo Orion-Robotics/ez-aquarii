@@ -1,9 +1,9 @@
+use super::super::math::map_range::MapRange;
+use super::{state::State, Module};
 use anyhow::Result;
 use async_trait::async_trait;
 use tokio::io::AsyncWriteExt;
 use tokio_serial::{self, SerialPortBuilderExt};
-
-use super::{state::State, Module};
 
 pub struct Motors {
 	serial: tokio_serial::SerialStream,
@@ -27,9 +27,9 @@ impl Module for Motors {
 		let left_offset = move_angle - self.motor_offset;
 		let right_offset = move_angle + self.motor_offset;
 
-		let [front_right, back_left, front_left, back_right] = {
+		let motor_commands = {
 			let front_right = -left_offset.sin();
-			let back_left = -left_offset.sin();
+			let back_left = left_offset.sin();
 			let front_left = right_offset.sin();
 			let back_right = -right_offset.sin();
 
@@ -42,16 +42,16 @@ impl Module for Motors {
 
 			[
 				front_right / max_power,
-				back_left / max_power,
 				front_left / max_power,
+				back_left / max_power,
 				back_right / max_power,
 			]
-			.map(|x| (x * 253.0) as u8)
+			.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
 
-		self.serial
-			.write_all(&[front_right, back_left, front_left, back_right])
-			.await?;
+		tracing::debug!("motor_commands: {:?}", motor_commands);
+
+		self.serial.write_all(&motor_commands).await?;
 
 		self.serial.write_u8(255).await?;
 

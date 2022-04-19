@@ -70,6 +70,21 @@ pub fn test_line_get_farthest_detections(sensors: &[bool], expected: (usize, usi
 	assert_eq!(line::get_farthest_detections(sensors), expected);
 }
 
+#[test_case(&[5, 5, 10, 25], 15, 3, true; "3 under threshold, 3 required")]
+#[test_case(&[5, 5, 10, 25], 15, 4, false; "3 under threshold, 4 required")]
+#[test_case(&[25, 25, 25, 25], 15, 4, false; "0 under threshold, 4 required")]
+pub fn test_line_did_pick_up(
+	line_values: &[u8],
+	pickup_threshold: usize,
+	pickup_sensor_count: usize,
+	expected: bool,
+) {
+	assert_eq!(
+		line::did_pick_up(line_values, pickup_threshold, pickup_sensor_count),
+		expected
+	);
+}
+
 // #[tokio::test]
 // pub async fn test_weird_line() {
 // 	let mut state = State::default();

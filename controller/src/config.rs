@@ -17,6 +17,7 @@ pub enum Module {
 	Line {
 		sensor_count: usize,
 		pickup_threshold: usize,
+		pickup_sensor_count: usize,
 		trigger_threshold: usize,
 		uart_path: String,
 		baud_rate: u32,
@@ -47,6 +48,7 @@ impl Default for Config {
 				Module::Line {
 					sensor_count: 46,
 					pickup_threshold: 24,
+					pickup_sensor_count: 30,
 					trigger_threshold: 400,
 					uart_path: "/dev/ttyUSB0".to_string(),
 					baud_rate: 500000,

@@ -34,16 +34,21 @@ async fn main() -> Result<()> {
 
 	loop {
 		if let Ok(new_config) = cfg_chan.try_recv() {
-			let new_modules = handle_config_change(new_config).await;
-
-			for module in modules.iter_mut() {
-				module.stop().await?;
-			}
-
-			modules = new_modules;
-
-			for module in modules.iter_mut() {
-				module.start().await?;
+			match handle_config_change(new_config).await {
+				Ok(mut new_modules) => {
+					let disabled = modules.iter().map(|x| x.name()).collect::<Vec<_>>();
+					let enabled = new_modules.iter().map(|x| x.name()).collect::<Vec<_>>();
+					tracing::info!("disabling: {:?}", disabled);
+					tracing::info!("enabling: {:?}", enabled);
+					for module in modules.iter_mut() {
+						module.stop().await?;
+					}
+					for module in new_modules.iter_mut() {
+						module.start().await?;
+					}
+					modules = new_modules;
+				}
+				Err(e) => tracing::error!("Failed to handle config change: {}", e),
 			}
 		}
 		tick_modules(&mut modules, &mut robot_state).await;
@@ -71,7 +76,7 @@ async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<
 	}
 }
 
-async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
+async fn handle_config_change(new_config: Config) -> Result<Vec<AnyModule>> {
 	tracing::info!("config changed, reloading...");
 	let module_configs = &new_config.modules;
 
@@ -79,42 +84,33 @@ async fn handle_config_change(new_config: Config) -> Vec<AnyModule> {
 	for m in module_configs {
 		let module_instance: AnyModule = match m {
 			config::Module::StateRandomizer => Box::new(state_randomizer::StateRandomizer {}),
-			config::Module::Camera { path } => {
-				Box::new(camera::Camera::new(path.clone()).await.unwrap())
-			}
+			config::Module::Camera { path } => Box::new(camera::Camera::new(path.clone()).await?),
 			config::Module::Line {
 				trigger_threshold,
 				pickup_threshold,
+				pickup_sensor_count,
 				sensor_count,
 				baud_rate,
 				uart_path,
-			} => Box::new(
-				line::Line::new(
-					uart_path.to_string(),
-					*baud_rate,
-					*trigger_threshold,
-					*pickup_threshold,
-					*sensor_count,
-				)
-				.unwrap(),
-			),
-			config::Module::Server { addr } => Box::new(
-				StateRecorder::new(new_config.clone(), addr.clone())
-					.await
-					.unwrap(),
-			),
+			} => Box::new(line::Line::new(
+				uart_path.to_string(),
+				*baud_rate,
+				*trigger_threshold,
+				*pickup_threshold,
+				*pickup_sensor_count,
+				*sensor_count,
+			)?),
+			config::Module::Server { addr } => {
+				Box::new(StateRecorder::new(new_config.clone(), addr.clone()).await?)
+			}
 			config::Module::Motors {
 				uart_path,
 				baud_rate,
 				motor_offset,
-			} => Box::new(
-				Motors::new(uart_path.to_string(), *baud_rate, *motor_offset)
-					.await
-					.unwrap(),
-			),
+			} => Box::new(Motors::new(uart_path.to_string(), *baud_rate, *motor_offset).await?),
 		};
 		new_modules.push(module_instance);
 	}
 
-	new_modules
+	Ok(new_modules)
 }

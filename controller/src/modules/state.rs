@@ -17,6 +17,7 @@ pub struct State {
 	pub move_vector: Vec2,
 	pub motor_powers: Vec<f32>,
 	pub rotation: f64,
+	pub picked_up: bool,
 }
 
 impl State {

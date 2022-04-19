@@ -15,6 +15,31 @@ export interface DataObject {
   move_vector: Vec2;
 }
 
+export type Module =
+  | {
+      line: {
+        sensor_count: number;
+        pickup_threshold: number;
+        trigger_threshold: number;
+        uart_path: string;
+        baud_rate: number;
+      };
+    }
+  | {
+      server: {
+        addr: string;
+      };
+    }
+  | {
+      camera: {
+        path: string;
+      };
+    };
+
+export interface Config {
+  modules: Module[];
+}
+
 export interface DataSource {
   stop(): void;
   next(): DataObject;
@@ -22,6 +47,7 @@ export interface DataSource {
   goTo(frame: number): DataObject;
   clear(): void;
   current(): DataObject;
+  currentConfig(): Promise<Config>;
   currentFrame(): number;
   numFrames(): number;
   onFrame(handler: (frame: DataObject) => void): void;
@@ -33,6 +59,7 @@ class BasicDataSource implements DataSource {
   frames: DataObject[] = [];
   frame = 0;
   handler: FrameCallback | undefined = undefined;
+  config = { modules: [] };
 
   clear() {
     this.frames = [];
@@ -65,6 +92,9 @@ class BasicDataSource implements DataSource {
   current(): DataObject {
     return this.frames[this.frame];
   }
+  async currentConfig() {
+    return { modules: [] };
+  }
 
   currentFrame(): number {
     return this.frame;
@@ -84,13 +114,18 @@ export class ServerSource extends BasicDataSource {
 
   constructor(private url: string) {
     super();
-    const ws = new WebSocket(url);
+
+    const ws = new WebSocket(`ws://${url}/state`);
     this.ws = ws;
     ws.addEventListener("message", (ev) => {
       this.frames.push(JSON.parse(ev.data));
       this.handler?.(this.next());
     });
     ws.addEventListener("close", (ev) => console.log(ev));
+  }
+
+  async currentConfig() {
+    return fetch(`http://${this.url}/config`).then((res) => res.json());
   }
 
   stop() {
