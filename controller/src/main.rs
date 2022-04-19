@@ -88,6 +88,7 @@ async fn handle_config_change(new_config: Config) -> Result<Vec<AnyModule>> {
 			config::Module::Line {
 				trigger_threshold,
 				pickup_threshold,
+				pickup_sensor_count,
 				sensor_count,
 				baud_rate,
 				uart_path,
@@ -96,6 +97,7 @@ async fn handle_config_change(new_config: Config) -> Result<Vec<AnyModule>> {
 				*baud_rate,
 				*trigger_threshold,
 				*pickup_threshold,
+				*pickup_sensor_count,
 				*sensor_count,
 			)?),
 			config::Module::Server { addr } => {

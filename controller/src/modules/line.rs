@@ -15,6 +15,7 @@ use super::{state::State, Module};
 pub struct Line {
 	pub sensor_count: usize,
 	pub pickup_threshold: usize,
+	pub pickup_sensor_count: usize,
 	pub trigger_threshold: usize,
 	pub previous_vec: Option<Vec2>,
 	pub serial: Option<SerialStream>,
@@ -26,6 +27,7 @@ impl Default for Line {
 			sensor_count: 46,
 			trigger_threshold: 400,
 			pickup_threshold: 24,
+			pickup_sensor_count: 10,
 			previous_vec: None,
 			serial: None,
 		}
@@ -48,12 +50,14 @@ impl Line {
 		baud_rate: u32,
 		trigger_threshold: usize,
 		pickup_threshold: usize,
+		pickup_sensor_count: usize,
 		sensor_count: usize,
 	) -> Result<Self> {
 		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
 
 		Ok(Line {
 			pickup_threshold,
+			pickup_sensor_count,
 			trigger_threshold,
 			sensor_count,
 			previous_vec: None,
@@ -69,6 +73,7 @@ impl Module for Line {
 			while serial.read_u8().await? != 255 {}
 			let mut raw_data: Vec<u8> = vec![0; self.sensor_count];
 			serial.read_exact(&mut raw_data).await?;
+			raw_data.reverse();
 			state.data.sensor_data = raw_data;
 			state.line_detections = state
 				.data
@@ -76,6 +81,16 @@ impl Module for Line {
 				.iter()
 				.map(|&x| x > self.trigger_threshold as u8)
 				.collect();
+		}
+
+		state.picked_up = did_pick_up(
+			&state.data.sensor_data,
+			self.pickup_threshold,
+			self.pickup_sensor_count,
+		);
+
+		if state.picked_up {
+			state.line_flipped = false;
 		}
 
 		let line_detections = state.line_detections.as_slice();
@@ -123,6 +138,19 @@ impl Module for Line {
 // did_cross_line determines if two vectors indicate a line crossing.
 pub fn did_cross_line(current_vec: Vec2, previous_vec: Vec2) -> bool {
 	dot(current_vec, previous_vec) < 0.0
+}
+
+// did_pick_up determines if the robot has been picked up.
+pub fn did_pick_up(
+	line_values: &[u8],
+	pickup_threshold: usize,
+	pickup_sensor_count: usize,
+) -> bool {
+	line_values
+		.iter()
+		.map(|&x| x < pickup_threshold as u8)
+		.filter(|&x| x)
+		.count() >= pickup_sensor_count
 }
 
 /// should_run determines if koig ring (line avoidance) should run.
