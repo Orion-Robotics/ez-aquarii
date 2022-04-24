@@ -9,7 +9,6 @@ use controller::{
 };
 use parking_lot::Mutex;
 use std::{sync::Arc, time::Duration};
-use tokio;
 use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
@@ -55,7 +54,7 @@ async fn main() -> Result<()> {
 	}
 }
 
-async fn tick_modules(modules: &mut Vec<AnyModule>, robot_state: &mut Arc<Mutex<State>>) {
+async fn tick_modules(modules: &mut [AnyModule], robot_state: &mut Arc<Mutex<State>>) {
 	let tick_futures = modules.iter_mut().map(|m| async {
 		tracing::trace!("{} tick", m.name());
 		let mut robot_state = robot_state.lock();
@@ -84,30 +83,12 @@ async fn handle_config_change(new_config: Config) -> Result<Vec<AnyModule>> {
 	for m in module_configs {
 		let module_instance: AnyModule = match m {
 			config::Module::StateRandomizer => Box::new(state_randomizer::StateRandomizer {}),
-			config::Module::Camera { path } => Box::new(camera::Camera::new(path.clone()).await?),
-			config::Module::Line {
-				trigger_threshold,
-				pickup_threshold,
-				pickup_sensor_count,
-				sensor_count,
-				baud_rate,
-				uart_path,
-			} => Box::new(line::Line::new(
-				uart_path.to_string(),
-				*baud_rate,
-				*trigger_threshold,
-				*pickup_threshold,
-				*pickup_sensor_count,
-				*sensor_count,
-			)?),
-			config::Module::Server { addr } => {
-				Box::new(StateRecorder::new(new_config.clone(), addr.clone()).await?)
+			config::Module::Camera(cfg) => Box::new(camera::Camera::new(cfg.clone()).await?),
+			config::Module::Line(cfg) => Box::new(line::Line::new(cfg.clone())?),
+			config::Module::Server(cfg) => {
+				Box::new(StateRecorder::new(new_config.clone(), cfg.clone()).await?)
 			}
-			config::Module::Motors {
-				uart_path,
-				baud_rate,
-				motor_offset,
-			} => Box::new(Motors::new(uart_path.to_string(), *baud_rate, *motor_offset).await?),
+			config::Module::Motors(cfg) => Box::new(Motors::new(cfg.clone()).await?),
 		};
 		new_modules.push(module_instance);
 	}

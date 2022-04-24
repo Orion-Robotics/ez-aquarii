@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use super::{state::State, Module};
-use crate::config::Config;
+use crate::config::{self, Config};
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
@@ -48,7 +48,7 @@ pub struct StateRecorder {
 }
 
 impl StateRecorder {
-	pub async fn new(config: Config, addr: String) -> Result<Self> {
+	pub async fn new(config: Config, config::Server { addr }: config::Server) -> Result<Self> {
 		let (sender, _) = broadcast::channel(1);
 		let addr = addr.parse::<SocketAddr>()?;
 
@@ -62,7 +62,7 @@ impl StateRecorder {
 			kill_complete_sender: Some(kill_complete_sender),
 			kill_complete_receiver: Some(kill_complete_receiver),
 			addr,
-			config: config.clone(),
+			config,
 		})
 	}
 }
