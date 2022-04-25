@@ -3,8 +3,8 @@ use controller::{
 	config,
 	config::{read_and_watch_config, Config},
 	modules::{
-		camera, line, motors::Motors, state, state::State, state_randomizer,
-		state_recorder::StateRecorder, AnyModule, Module,
+		camera, line, motors::Motors, server::StateRecorder, state, state::State, state_randomizer,
+		AnyModule, Module,
 	},
 };
 use parking_lot::Mutex;

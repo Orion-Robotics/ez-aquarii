@@ -25,6 +25,7 @@ pub struct DampenConfig {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Camera {
+	pub enable_reading: bool,
 	pub path: PathBuf,
 	pub orbit: OrbitConfig,
 	pub dampen: DampenConfig,
@@ -72,6 +73,7 @@ impl Default for Config {
 		Self {
 			modules: Vec::from([
 				Module::Camera(Camera {
+					enable_reading: true,
 					path: PathBuf::from("./socket"),
 					orbit: OrbitConfig {
 						curve_steepness: E,

@@ -1,7 +1,7 @@
 use crate::math::vec2::Vec2;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug, Copy)]
 pub struct CameraMessage {
 	pub angle: f64,
 	pub distance: f64,

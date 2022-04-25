@@ -1,4 +1,4 @@
-use crate::{config, math::vec2::Vec2, modules};
+use crate::{config, modules};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use num::traits::Pow;
@@ -9,7 +9,7 @@ use crate::ipc;
 use super::{state::State, Module};
 
 pub struct Camera {
-	pub socket_file: File,
+	pub socket_file: Option<File>,
 	pub orbit: config::OrbitConfig,
 	pub dampen: config::DampenConfig,
 }
@@ -17,19 +17,26 @@ pub struct Camera {
 impl Camera {
 	pub async fn new(
 		config::Camera {
+			enable_reading,
 			path,
 			orbit,
 			dampen,
 		}: config::Camera,
 	) -> Result<Camera> {
-		let f = OpenOptions::new()
-			.read(true)
-			.write(true)
-			.create(true)
-			.mode(0o600)
-			.open(path)
-			.await
-			.with_context(|| "failed to open file")?;
+		let f = if enable_reading {
+			Some(
+				OpenOptions::new()
+					.read(true)
+					.write(true)
+					.create(true)
+					.mode(0o600)
+					.open(path)
+					.await
+					.with_context(|| "failed to open file")?,
+			)
+		} else {
+			None
+		};
 		Ok(Camera {
 			socket_file: f,
 			dampen,
@@ -41,9 +48,13 @@ impl Camera {
 #[async_trait]
 impl Module for Camera {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
-		let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(&mut self.socket_file)
-			.await
-			.with_context(|| "failed to read packet")?;
+		if let Some(ref mut file) = self.socket_file {
+			let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(file)
+				.await
+				.with_context(|| "failed to read packet")?;
+			state.data.camera_data = data;
+		}
+		let data = state.data.camera_data;
 
 		let orbit_offset = {
 			let config::OrbitConfig {
@@ -65,7 +76,6 @@ impl Module for Camera {
 
 		let orbit_angle = data.angle + (orbit_offset * dampen_amount);
 
-		state.data.camera_data = data;
 		state.orbit_offset = orbit_offset;
 		state.dampen_amount = dampen_amount;
 		state.orbit_angle = orbit_angle;
