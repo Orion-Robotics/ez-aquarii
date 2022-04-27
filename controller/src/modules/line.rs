@@ -5,9 +5,12 @@ use async_trait::async_trait;
 use tokio::io::AsyncReadExt;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
-use crate::math::{
-	angles::distance,
-	vec2::{dot, Vec2},
+use crate::{
+	config,
+	math::{
+		angles::distance,
+		vec2::{dot, Vec2},
+	},
 };
 
 use super::{state::State, Module};
@@ -46,12 +49,14 @@ pub fn vec_for_sensor(i: usize, length: usize) -> Vec2 {
 
 impl Line {
 	pub fn new(
-		uart_path: String,
-		baud_rate: u32,
-		trigger_threshold: usize,
-		pickup_threshold: usize,
-		pickup_sensor_count: usize,
-		sensor_count: usize,
+		config::Line {
+			baud_rate,
+			pickup_sensor_count,
+			pickup_threshold,
+			sensor_count,
+			trigger_threshold,
+			uart_path,
+		}: config::Line,
 	) -> Result<Self> {
 		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
 
@@ -115,7 +120,7 @@ impl Module for Line {
 
 		// TODO: If line should run, then make the robot move away from the line.
 		if let (true, _) = should_run(line_detections, state.line_flipped) {
-			state.move_vector = koig_vec;
+			state.line_vector = koig_vec;
 		}
 
 		self.previous_vec = Some(vec);

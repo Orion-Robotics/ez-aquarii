@@ -2,6 +2,14 @@
 modules:
   - camera:
       path: "./socket"
+      orbit:
+        curve_steepness: 2.718281828459045
+        shift_x: 0.3
+        shift_y: 1.0
+      dampen:
+        curve_steepness: 305.0
+        shift_x: -1.0
+        shift_y: 0.0
   - line:
       sensor_count: 46
       pickup_threshold: 24

@@ -1,35 +1,58 @@
 use std::net::SocketAddr;
 
 use super::{state::State, Module};
-use crate::config::Config;
+use crate::config::{self, Config};
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{ws::WebSocketUpgrade, Extension};
 use axum::Json;
 use axum::{response::IntoResponse, routing::get, Router};
-use tokio::sync::{broadcast, oneshot};
+use futures::{SinkExt, StreamExt};
+use serde::Deserialize;
+use tokio::sync::{broadcast, mpsc, oneshot};
 use tower_http::cors::{Any, CorsLayer};
+
+#[derive(Deserialize, Debug, Clone)]
+struct ClientMessage {
+	ball_x: f32,
+	ball_y: f32,
+}
 
 async fn websocket_handler(
 	ws: WebSocketUpgrade,
-	Extension(state): Extension<broadcast::Sender<State>>,
+	Extension(state): Extension<(broadcast::Sender<State>, mpsc::Sender<ClientMessage>)>,
 ) -> impl IntoResponse {
 	tracing::warn!("woozy");
 	ws.on_upgrade(|socket| async move {
-		if let Err(e) = websocket(socket, state).await {
+		if let Err(e) = websocket(socket, state.0, state.1).await {
 			tracing::error!("Error handling websocket: {:?}", e)
 		}
 	})
 }
 
-async fn websocket(mut stream: WebSocket, state: broadcast::Sender<State>) -> Result<()> {
+async fn websocket(
+	stream: WebSocket,
+	state: broadcast::Sender<State>,
+	mut sender: mpsc::Sender<ClientMessage>,
+) -> Result<()> {
 	let mut subscriber = state.subscribe();
+	let (mut tx, mut rx) = stream.split();
+
+	tokio::spawn(async move {
+		loop {
+			if let Ok(state) = subscriber.recv().await {
+				if let Ok(message) = serde_json::to_string(&state) {
+					let _ = tx.send(Message::Text(message)).await;
+				}
+			}
+		}
+	});
+
 	loop {
-		if let Ok(state) = subscriber.recv().await {
-			stream
-				.send(Message::Text(serde_json::to_string(&state)?))
-				.await?;
+		if let Some(Ok(message)) = rx.next().await {
+			let res = serde_json::from_slice::<ClientMessage>(&message.into_data())?;
+			sender.send(res).await?;
 		}
 	}
 }
@@ -38,7 +61,9 @@ async fn get_config(Extension(config): Extension<Config>) -> impl IntoResponse {
 	Json(config)
 }
 pub struct StateRecorder {
-	sender: broadcast::Sender<State>,
+	state_sender: broadcast::Sender<State>,
+	client_message_receiver: mpsc::Receiver<ClientMessage>,
+	client_message_sender: mpsc::Sender<ClientMessage>,
 	kill_sender: Option<oneshot::Sender<()>>,
 	kill_receiver: Option<oneshot::Receiver<()>>,
 	kill_complete_sender: Option<oneshot::Sender<()>>,
@@ -48,21 +73,24 @@ pub struct StateRecorder {
 }
 
 impl StateRecorder {
-	pub async fn new(config: Config, addr: String) -> Result<Self> {
+	pub async fn new(config: Config, config::Server { addr }: config::Server) -> Result<Self> {
 		let (sender, _) = broadcast::channel(1);
+		let (client_message_sender, client_message_receiver) = mpsc::channel(1);
 		let addr = addr.parse::<SocketAddr>()?;
 
 		let (kill_sender, kill_receiver) = oneshot::channel();
 		let (kill_complete_sender, kill_complete_receiver) = oneshot::channel();
 
 		Ok(Self {
-			sender,
+			state_sender: sender,
+			client_message_receiver,
+			client_message_sender,
 			kill_sender: Some(kill_sender),
 			kill_receiver: Some(kill_receiver),
 			kill_complete_sender: Some(kill_complete_sender),
 			kill_complete_receiver: Some(kill_complete_receiver),
 			addr,
-			config: config.clone(),
+			config,
 		})
 	}
 }
@@ -78,11 +106,15 @@ impl Module for StateRecorder {
 			.route("/state", get(websocket_handler))
 			.route("/config", get(get_config))
 			.layer(CorsLayer::new().allow_origin(Any).allow_methods(Any))
-			.layer(Extension(self.sender.clone()))
+			.layer(Extension((
+				self.state_sender.clone(),
+				self.client_message_sender.clone(),
+			)))
 			.layer(Extension(self.config.clone()));
-		let addr = self.addr.clone();
+
 		let kill_receiver = self.kill_receiver.take().unwrap();
 		let kill_complete_sender = self.kill_complete_sender.take().unwrap();
+		let addr = self.addr;
 
 		tokio::spawn(async move {
 			axum::Server::bind(&addr)
@@ -112,10 +144,11 @@ impl Module for StateRecorder {
 		Ok(())
 	}
 
-	async fn tick(&mut self, robot_state: &mut State) -> Result<()> {
-		if let Err(err) = self.sender.send(robot_state.clone()) {
+	async fn tick(&mut self, state: &mut State) -> Result<()> {
+		if let Err(err) = self.state_sender.send(state.clone()) {
 			tracing::trace!("Error broadcasting new state: {:?}", err);
 		}
+		if let Ok(msg) = self.client_message_receiver.try_recv() {}
 		Ok(())
 	}
 }

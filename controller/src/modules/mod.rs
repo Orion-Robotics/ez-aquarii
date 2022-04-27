@@ -8,9 +8,10 @@ pub mod line;
 #[cfg(test)]
 pub mod line_test;
 pub mod motors;
+pub mod server;
 pub mod state;
 pub mod state_randomizer;
-pub mod state_recorder;
+pub mod strategy;
 
 #[async_trait]
 pub trait Module: Send {

@@ -1,3 +1,6 @@
+use crate::config;
+use crate::math::vec2::dot;
+
 use super::super::math::map_range::MapRange;
 use super::{state::State, Module};
 use anyhow::Result;
@@ -11,8 +14,14 @@ pub struct Motors {
 }
 
 impl Motors {
-	pub async fn new(path: String, baud_rate: u32, motor_offset: f64) -> Result<Motors> {
-		let serial = tokio_serial::new(path, baud_rate).open_native_async()?;
+	pub async fn new(
+		config::Motors {
+			baud_rate,
+			motor_offset,
+			uart_path,
+		}: config::Motors,
+	) -> Result<Motors> {
+		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
 		Ok(Motors {
 			serial,
 			motor_offset,
@@ -23,6 +32,14 @@ impl Motors {
 #[async_trait]
 impl Module for Motors {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
+		state.move_vector = {
+			let before_projection = state.ball_follow_vector;
+
+			state.line_vector
+				* (dot(before_projection, state.line_vector)
+					/ dot(state.line_vector, state.line_vector))
+		};
+
 		let move_angle = state.move_vector.angle_rad();
 		let left_offset = move_angle - self.motor_offset;
 		let right_offset = move_angle + self.motor_offset;
