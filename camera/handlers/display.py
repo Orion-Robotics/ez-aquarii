@@ -17,8 +17,10 @@ class DisplayHandler(BaseFrameHandler):
         bl = np.zeros(frame.shape[:2], dtype="uint8")
         bl = cv2.circle(bl, (mw, mh), mw, 255, -1)
         cr = cv2.bitwise_and(im, im, mask=bl)
-        blob = find_blob(im, rgbhsv(70, 30, 40))
+        # blob = find_blob(im, rgbhsv(70, 30, 40))
+        blob = find_blob(im, (50, 90, 10, 50, 20, 60))
         draw(cr, blob)
-        cv2.imshow("trolling", cr)
+        rgb = cv2.cvtColor(cr, cv2.COLOR_HSV2RGB)
+        cv2.imshow("trolling", rgb)
         cv2.waitKey(1)
-        return cr
+        return rgb 

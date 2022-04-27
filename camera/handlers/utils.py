@@ -65,7 +65,7 @@ def draw(image, blob, color=(0, 0, 255)):
 
 def preprocess(image):
     frame = adjust_gamma(image, 0.8)
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     return hsv
 
 
