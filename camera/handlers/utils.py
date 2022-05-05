@@ -16,18 +16,22 @@ def adjust_gamma(image, gamma=1.0):
 
 
 def mask(image, target):
-    lower = np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF])
-    upper = np.array([target[0] + HDIFF, target[1] + SDIFF, target[2] + VDIFF])
+    upper = np.array([target[0], target[2], target[4]])
+    lower = np.array([target[1], target[3], target[5]])
+    # lower = np.absolute(np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF]))
+    # upper = np.absolute(np.array([target[0] + HDIFF, target[1] + SDIFF, target[2] + VDIFF]))
     mask = cv2.inRange(image, lower, upper)
-    mask = cv2.GaussianBlur(mask, (5, 5), 0)
+    # mask = cv2.GaussianBlur(mask, (5, 5), 0)
     return cv2.bitwise_and(image, image, mask=mask)
 
 
 def find_blob(image, target):
-    lower = np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF])
-    upper = np.array([target[0] + HDIFF, target[1] + SDIFF, target[2] + VDIFF])
+    upper = np.array([target[0], target[2], target[4]])
+    lower = np.array([target[1], target[3], target[5]])
+    # lower = np.absolute(np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF]))
+    # upper = np.absolute(np.array([target[0] + HDIFF, target[1] + SDIFF, target[2] + VDIFF]))
     mask = cv2.inRange(image, lower, upper)
-    mask = cv2.GaussianBlur(mask, (5, 5), 0)
+    # mask = cv2.GaussianBlur(mask, (5, 5), 0)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     try:
         blob = max(contours, key=lambda el: cv2.contourArea(el))
@@ -39,33 +43,35 @@ def find_blob(image, target):
 def loc(blob):
     if blob is not None:
         m = cv2.moments(blob)
-        cx = int(m["m10"] / m["m00"])
-        cy = int(m["m01"] / m["m00"])
-        return (
-            atan2(cy - h, cx - w) / pi * 180,
-            sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
-            cx,
-            cy,
-        )  # angle, distance, w, h
-    else:
-        return None
+        if m["m00"] != 0:
+            cx = int(m["m10"] / m["m00"])
+            cy = int(m["m01"] / m["m00"])
+            return (
+                atan2(cy - h, cx - w) / pi * 180,
+                sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
+                cx,
+                cy,
+            )  # angle, distance, w, h
+    return None
 
 
 def draw(image, blob, color=(0, 0, 255)):
-    if blob is not None:
-        angle, distance, bx, by = loc(blob)
-        cv2.line(
-            image,
-            (mw, mh),
-            (int(bx), int(by)),
-            color,
-        )
-        cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
-
+    try:
+        if blob is not None:
+            angle, distance, bx, by = loc(blob)
+            cv2.line(
+                image,
+                (mw, mh),
+                (int(bx), int(by)),
+                color,
+            )
+            cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
+    except:
+        print("blanks somehow")
 
 def preprocess(image):
-    frame = adjust_gamma(image, 0.8)
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    # frame = adjust_gamma(image, 0.4)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     return hsv
 
 
