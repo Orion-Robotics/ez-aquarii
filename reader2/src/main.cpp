@@ -35,7 +35,6 @@ void applyCommands() {
     const auto value = data[i];
     const auto forward = value > 127 ? true : false;
     const auto speed_command = abs(value - 127);
-    Serial.println(speed_command);
     analogWrite(MOVE_PINS[i], speed_command);
     analogWrite(DIR_PINS[i], forward ? 255 : 0);
   }
@@ -57,7 +56,15 @@ void setup() {
     // digitalWrite(cs, HIGH);
     adcs[i].begin(LINE_SCK, LINE_MOSI, LINE_MISO, cs);
   }
+
+  for (auto pin : MOVE_PINS) {
+    analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
+                                       // TO ACHIEVE INNER HARMONY
+                                       // WITH THE UNIVERSE
+  }
 }
+
+int last_freq_update = millis();
 
 void loop() {
   applyCommands();
