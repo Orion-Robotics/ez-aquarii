@@ -2,13 +2,14 @@
 modules:
   # - camera:
       # path: "./socket"
-  - line:
-      sensor_count: 46
-      pickup_threshold: 10
-      pickup_sensor_count: 20
-      trigger_threshold: 50
-      uart_path: /dev/ttyAMA0
-      baud_rate: 500000
+  #- line:
+  #    sensor_count: 46
+  #    pickup_threshold: 10
+  #    pickup_sensor_count: 20
+  #    trigger_threshold: 50
+  #    uart_path: /dev/ttyAMA0
+  #    baud_rate: 500000
+  - staterandomizer
   - server:
       addr: "0.0.0.0:7272"
   # - motors:

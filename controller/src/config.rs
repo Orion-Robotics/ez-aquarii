@@ -1,4 +1,5 @@
 use anyhow::Result;
+use arrayvec::ArrayVec;
 use async_recursion::async_recursion;
 use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
@@ -51,6 +52,7 @@ pub struct Motors {
 	pub uart_path: String,
 	pub baud_rate: u32,
 	pub motor_offset: f64,
+	pub speed: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
