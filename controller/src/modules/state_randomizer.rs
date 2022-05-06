@@ -35,8 +35,8 @@ impl Module for StateRandomizer {
 			.normalize()
 		};
 
-		state.line_vector = random_vec();
-		state.move_vector = random_vec();
+		state.line_vector = Some(random_vec());
+		state.move_vector = Some(random_vec());
 
 		Ok(())
 	}

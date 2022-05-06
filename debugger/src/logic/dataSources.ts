@@ -11,7 +11,8 @@ export interface DataObject {
   data: Data;
   line_detections: boolean[];
   line_flipped: boolean;
-  line_vector: Vec2;
+  line_vector?: Vec2;
+  previous_vec?: Vec2;
   move_vector: Vec2;
 }
 

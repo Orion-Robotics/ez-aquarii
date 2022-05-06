@@ -20,7 +20,6 @@ pub struct Line {
 	pub pickup_threshold: usize,
 	pub pickup_sensor_count: usize,
 	pub trigger_threshold: usize,
-	pub previous_vec: Option<Vec2>,
 	pub serial: Option<SerialStream>,
 }
 
@@ -31,7 +30,6 @@ impl Default for Line {
 			trigger_threshold: 400,
 			pickup_threshold: 24,
 			pickup_sensor_count: 10,
-			previous_vec: None,
 			serial: None,
 		}
 	}
@@ -65,7 +63,6 @@ impl Line {
 			pickup_sensor_count,
 			trigger_threshold,
 			sensor_count,
-			previous_vec: None,
 			serial: Some(serial),
 		})
 	}
@@ -100,30 +97,57 @@ impl Module for Line {
 
 		let line_detections = state.line_detections.as_slice();
 		let length = line_detections.len();
-		let (a, b) = get_farthest_detections(line_detections);
-		let (vec_a, vec_b) = (vec_for_sensor(a, length), vec_for_sensor(b, length));
-		let mut vec = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
-		if vec.y == 0.0 && vec.x == 0.0 {
-			// if the vector is zero, then the added vectors are perfectly perpendicular.
-			let vec_a = vec_a + Vec2 { x: 1e-5, y: 0.0 };
-			vec = (vec_a + vec_b).normalize();
-		}
-
-		if let Some(previous_vec) = self.previous_vec {
-			if did_cross_line(vec, previous_vec) {
-				state.line_flipped = !state.line_flipped;
-			}
-		}
-		let koig_vec = if state.line_flipped { vec * -1.0 } else { vec };
-
-		state.line_vector = koig_vec;
 
 		// TODO: If line should run, then make the robot move away from the line.
-		if let (true, _) = should_run(line_detections, state.line_flipped) {
-			state.line_vector = koig_vec;
+		match should_run(line_detections, state.line_flipped) {
+			(true, detections) => {
+				// if there are no detections, then the current line vector should be set to the previous vector.
+				// situation: out of field.
+				if detections == 0 {
+					state.line_vector = state.previous_vec.map(|x| x * -1.0);
+				} else {
+					let (a, b) = get_farthest_detections(line_detections).unwrap();
+					let (vec_a, vec_b) = (vec_for_sensor(a, length), vec_for_sensor(b, length));
+					let mut towards_line = (vec_a + vec_b).normalize(); // add the vectors of both sensors.
+
+					// this is because if you look at the line PCB from the top down
+					// then the x axis is flipped, so we have to flip y.
+					// the line sensors start on the left (or right maybe who knows)
+					// and go clockwise... so reverse trig plane...
+					// so we need to flip just the y axis to fix it :)
+					towards_line = Vec2 {
+						x: towards_line.x,
+						y: -towards_line.y,
+					};
+
+					if towards_line.y == 0.0 && towards_line.x == 0.0 {
+						// if the vector is zero, then the added vectors are perfectly perpendicular.
+						let vec_a = vec_a + Vec2 { x: 1e-5, y: 0.0 };
+						towards_line = (vec_a + vec_b).normalize();
+					}
+
+					if let Some(previous_vec) = state.previous_vec {
+						if did_cross_line(towards_line, previous_vec) {
+							state.line_flipped = !state.line_flipped;
+						}
+					}
+					let koiged_vec = if state.line_flipped {
+						towards_line * -1.0
+					} else {
+						towards_line
+					};
+
+					state.line_vector = Some(koiged_vec);
+					state.previous_vec = Some(towards_line);
+				}
+			}
+			(false, _) => {
+				state.line_flipped = false;
+				state.previous_vec = None;
+				state.line_vector = None;
+			}
 		}
 
-		self.previous_vec = Some(vec);
 		Ok(())
 	}
 
@@ -140,7 +164,7 @@ impl Module for Line {
 	}
 }
 
-// did_cross_line determines if two vectors indicate a line crossing.
+/// did_cross_line determines if two vectors indicate a line crossing.
 pub fn did_cross_line(current_vec: Vec2, previous_vec: Vec2) -> bool {
 	dot(current_vec, previous_vec) < 0.0
 }
@@ -183,7 +207,7 @@ pub fn should_run(triggers: &[bool], pointing_out: bool) -> (bool, usize) {
 /// +------+
 ///
 /// It should return (0, 3), because it forms a perfect angle of 180 degrees, which is the most perpendicular.  
-pub fn get_farthest_detections(detections: &[bool]) -> (usize, usize) {
+pub fn get_farthest_detections(detections: &[bool]) -> Option<(usize, usize)> {
 	let mut first_detection = 0;
 	let mut second_detection = 0;
 	let mut closest_angle = 2.0 * PI;
@@ -193,6 +217,10 @@ pub fn get_farthest_detections(detections: &[bool]) -> (usize, usize) {
 		.enumerate()
 		.filter(|(_, &x)| x)
 		.map(|(i, _)| i); // iterator of only triggered sensors
+
+	if triggered_only.size_hint().1 == Some(0) {
+		return None;
+	}
 
 	for i in triggered_only.clone() {
 		for j in triggered_only.clone() {
@@ -206,5 +234,16 @@ pub fn get_farthest_detections(detections: &[bool]) -> (usize, usize) {
 			}
 		}
 	}
-	(first_detection, second_detection)
+	Some((
+		if first_detection == 0 {
+			second_detection
+		} else {
+			first_detection
+		},
+		if second_detection == 0 {
+			first_detection
+		} else {
+			second_detection
+		},
+	))
 }

@@ -47,17 +47,21 @@ function rerender() {
   if (!props.data) return;
   const line_detections = props.data.line_detections;
   const line_vector = props.data.line_vector;
+  const previous_vec = props.data.previous_vec;
 
-  {
-    const x = line_vector.x * RADIUS * LINE_SIZE;
-    const y = line_vector.y * RADIUS * LINE_SIZE;
-
+  const draw_vector = (ctx: CanvasRenderingContext2D, x: number, y: number, color: string, length: number) => {
+    x = x * RADIUS * LINE_SIZE * length;
+    y = y * RADIUS * LINE_SIZE * length;
     ctx.beginPath();
-    ctx.strokeStyle = '#eb4034';
+    ctx.strokeStyle = color;
     ctx.moveTo(cX, cY);
-    ctx.lineTo(cX + x, cY + y);
+    ctx.lineTo(cX + x, cY - y);
     ctx.stroke();
   }
+
+  if (line_vector) draw_vector(ctx, line_vector.x, line_vector.y, '#eb4034', 1);
+
+  if (previous_vec) draw_vector(ctx, previous_vec.x, previous_vec.y, "#eb6090", 0.5);
 
   for (let i = 0; i < line_detections.length; i++) {
     const offset = (i / line_detections.length) * 2 * Math.PI;

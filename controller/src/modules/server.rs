@@ -4,10 +4,15 @@ use super::{state::State, Module};
 use crate::config::{self, Config};
 use anyhow::Result;
 use async_trait::async_trait;
-use axum::extract::ws::{Message, WebSocket};
-use axum::extract::{ws::WebSocketUpgrade, Extension};
-use axum::Json;
-use axum::{response::IntoResponse, routing::get, Router};
+use axum::{
+	extract::{
+		ws::{Message, WebSocket, WebSocketUpgrade},
+		Extension,
+	},
+	response::IntoResponse,
+	routing::get,
+	Json, Router,
+};
 use futures::{SinkExt, StreamExt};
 use serde::Deserialize;
 use tokio::sync::{broadcast, mpsc, oneshot};

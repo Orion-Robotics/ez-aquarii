@@ -21,7 +21,8 @@ pub struct State {
 	pub line_detections: Vec<bool>,
 	pub line_flipped: bool,
 	pub picked_up: bool,
-	pub line_vector: Vec2,
+	pub line_vector: Option<Vec2>,
+	pub previous_vec: Option<Vec2>,
 
 	pub orbit_offset: f64,
 	pub dampen_amount: f64,
@@ -29,7 +30,7 @@ pub struct State {
 	pub ball_follow_vector: Vec2,
 
 	pub rotation: f64,
-	pub move_vector: Vec2,
+	pub move_vector: Option<Vec2>,
 	pub motor_powers: Vec<f32>,
 }
 

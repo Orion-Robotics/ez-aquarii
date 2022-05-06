@@ -51,40 +51,39 @@ impl Module for Motors {
 		// 			/ dot(state.line_vector, state.line_vector))
 		// };
 
-		// state.move_vector = state.line_vector * -1.0;
+		state.move_vector = state.line_vector.map(|x| x * -1.0);
 
-		state.move_vector = Vec2 { x: 0.0, y: -1.0 };
+		let motor_commands = match state.move_vector {
+			Some(vec) => {
+				// tracing::debug!("move_vector: {:?}, koig: {:?}", vec, state.line_vector);
 
-		let move_angle = state.move_vector.angle_rad();
-		let left_offset = move_angle - self.motor_offset;
-		let right_offset = move_angle + self.motor_offset;
+				let move_angle = vec.angle_rad();
+				let left_offset = move_angle - self.motor_offset;
+				let right_offset = move_angle + self.motor_offset;
 
-		let motor_commands = {
-			let front_right = right_offset.sin();
-			let back_right = -right_offset.sin();
-			let back_left = -left_offset.sin();
-			let front_left = left_offset.sin();
+				let front_right = right_offset.sin();
+				let back_right = -right_offset.sin();
+				let back_left = -left_offset.sin();
+				let front_left = left_offset.sin();
 
-			// motor power optimization
-			let max_power = front_right
-				.abs()
-				.max(back_left.abs())
-				.max(front_left.abs())
-				.max(back_right.abs());
+				// motor power optimization
+				let max_power = front_right
+					.abs()
+					.max(back_left.abs())
+					.max(front_left.abs())
+					.max(back_right.abs());
 
-			[
-				-front_left / max_power,
-				front_right / max_power,
-				back_right / max_power,
-				-back_left / max_power,
-			]
-			.map(|x| x * self.speed)
-			.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
+				[
+					-front_left / max_power,
+					front_right / max_power,
+					back_right / max_power,
+					-back_left / max_power,
+				]
+				.map(|x| x * self.speed)
+				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
+			}
+			None => [0, 0, 0, 0].map(|x| x.map_range((-1, 1), (0, 253)) as u8),
 		};
-
-		// let motor_commands = [127, 127, 127, 253];
-
-		tracing::debug!("motor_commands: {:?}", motor_commands);
 
 		self.serial.write_all(&motor_commands).await?;
 

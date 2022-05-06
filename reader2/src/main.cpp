@@ -61,6 +61,9 @@ void setup() {
     analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
                                        // TO ACHIEVE INNER HARMONY
                                        // WITH THE UNIVERSE
+                                       // anything between
+                                       // 20000 and 19000 seems to work
+                                       // well
   }
 }
 

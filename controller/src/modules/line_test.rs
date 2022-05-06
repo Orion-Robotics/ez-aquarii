@@ -1,6 +1,11 @@
-use crate::math::vec2::Vec2;
-use crate::modules::line::{self};
-use crate::modules::{line::Line, state::State, Module};
+use crate::{
+	math::vec2::Vec2,
+	modules::{
+		line::{self, Line},
+		state::State,
+		Module,
+	},
+};
 use test_case::test_case;
 
 #[test_case(
