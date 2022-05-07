@@ -1,7 +1,9 @@
-import numpy as np
+from math import atan2, pi, pow, sqrt
+
 import cv2
+import numpy as np
+
 from .constants import *
-from math import pi, atan2, sqrt, pow
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -40,19 +42,20 @@ def find_blob(image, target):
     return blob
 
 
+# angle, distance, x, y
 def loc(blob, center=(mw, mh)):
-    if blob is not None:
-        m = cv2.moments(blob)
-        if m["m00"] != 0:
-            cx = int(m["m10"] / m["m00"])
-            cy = int(m["m01"] / m["m00"])
-            return (
-                atan2(cy - center[1], cx - center[0]) / pi * -180,
-                sqrt(pow(cy - center[1], 2) + pow(cx - center[0], 2)),
-                cx,
-                cy,
-            )  # angle, distance, w, h
-    return None
+    m = cv2.moments(blob)
+    if m["m00"] != 0:
+        cx = int(m["m10"] / m["m00"])
+        cy = int(m["m01"] / m["m00"])
+        return (
+            atan2(cy - center[1], cx - center[0]) / pi * -180,
+            sqrt(pow(cy - center[1], 2) + pow(cx - center[0], 2)),
+            cx,
+            cy,
+        )
+    else:
+        return None
 
 
 def draw(image, blob, color=(0, 0, 255), center=(mw, mh)):
