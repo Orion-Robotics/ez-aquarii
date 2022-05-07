@@ -42,6 +42,10 @@ def find_blob(image, target):
     return blob
 
 
+def exists(blob):
+    return blob is not None and cv2.moments(blob)["m00"] != 0
+
+
 # angle, distance, x, y
 def loc(blob, center=(mw, mh)):
     m = cv2.moments(blob)
@@ -59,18 +63,15 @@ def loc(blob, center=(mw, mh)):
 
 
 def draw(image, blob, color=(0, 0, 255), center=(mw, mh)):
-    try:
-        if blob is not None:
-            angle, distance, bx, by = loc(blob)
-            cv2.line(
-                image,
-                center,
-                (int(bx), int(by)),
-                color,
-            )
-            cv2.drawContours(image, [blob], 0, (255, 255, 255), 1)
-    except:
-        print("blanks somehow")
+    if exists(blob):
+        _, _, bx, by = loc(blob)
+        cv2.line(
+            image,
+            center,
+            (int(bx), int(by)),
+            color,
+        )
+        cv2.drawContours(image, [blob], 0, (255, 255, 255), 1)
 
 
 def preprocess(image):
