@@ -1,4 +1,5 @@
 from time import time, sleep
+from copy import copy
 import traceback
 import cv2
 import numpy as np
@@ -58,7 +59,7 @@ def refresh():
     m = mask(hsv, thresholds[current])
     b = find_blob(hsv, thresholds[current])
     draw(m, b, center=(300, 300))
-    hsvshow("mask", m)
+    hsvshow("mask", label(m, b))
     print(loc(b, center=(300, 300)))
 
 
@@ -69,6 +70,26 @@ def refreshslider():
 
 def hsvshow(name, im):
     cv2.imshow(name, cv2.cvtColor(im, cv2.COLOR_HSV2BGR))
+
+
+def remap(a):
+    return a
+
+
+def label(im, *blobs):
+    out = copy(im)
+    for blob in blobs:
+        ang, dist, x, y = loc(blob)
+        cv2.putText(
+            out,
+            f"{remap(int(ang))} deg {int(dist)} px",
+            org=(x - 100, y),
+            fontFace=cv2.FONT_HERSHEY_PLAIN,
+            color=(150, 255, 255),
+            fontScale=2,
+            thickness=2,
+        )
+    return out
 
 
 def CE(val):

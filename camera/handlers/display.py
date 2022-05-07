@@ -20,9 +20,8 @@ class DisplayHandler(BaseFrameHandler):
         cr = cv2.bitwise_and(im, im, mask=bl)
         # blob = find_blob(im, rgbhsv(70, 30, 40))
         blob = find_blob(cr, self.thresholds)
-        if blob is not None:
-            draw(cr, blob)
+        draw(cr, blob)
         rgb = cv2.cvtColor(cr, cv2.COLOR_HSV2RGB)
-        cv2.imshow("trolling",  mask(rgb, self.thresholds))
+        cv2.imshow("trolling", mask(rgb, self.thresholds))
         cv2.waitKey(1)
-        return rgb 
+        return rgb
