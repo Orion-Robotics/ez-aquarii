@@ -1,15 +1,7 @@
 <template>
   <label class="label gap-4">
     {{ label }}
-    <input
-      type="range"
-      :min="min"
-      :max="max"
-      :step="step"
-      class="range range-xs"
-      v-bind="$attrs"
-      v-model="value"
-    />
+    <input type="range" :min="min" :max="max" :step="step" class="range range-xs" v-bind="$attrs" v-model.number="value" />
   </label>
 </template>
 

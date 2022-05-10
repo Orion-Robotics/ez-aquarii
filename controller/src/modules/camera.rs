@@ -1,4 +1,7 @@
-use crate::{config, modules};
+use crate::{
+	config::{self, Config},
+	modules,
+};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use num::traits::Pow;
@@ -10,8 +13,6 @@ use super::{state::State, Module};
 
 pub struct Camera {
 	pub socket_file: Option<File>,
-	pub orbit: config::OrbitConfig,
-	pub dampen: config::DampenConfig,
 }
 
 impl Camera {
@@ -19,10 +20,9 @@ impl Camera {
 		config::Camera {
 			enable_reading,
 			path,
-			orbit,
-			dampen,
+			..
 		}: config::Camera,
-	) -> Result<Camera> {
+	) -> Result<Self> {
 		let f = if enable_reading {
 			Some(
 				OpenOptions::new()
@@ -37,17 +37,19 @@ impl Camera {
 		} else {
 			None
 		};
-		Ok(Camera {
-			socket_file: f,
-			dampen,
-			orbit,
-		})
+		Ok(Camera { socket_file: f })
 	}
 }
 
 #[async_trait]
 impl Module for Camera {
+	fn name(&self) -> &'static str {
+		"camera"
+	}
+
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
+		let camera_config = state.config.camera.as_ref().unwrap();
+
 		if let Some(ref mut file) = self.socket_file {
 			let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(file)
 				.await
@@ -61,7 +63,7 @@ impl Module for Camera {
 				curve_steepness,
 				shift_x,
 				shift_y,
-			} = self.orbit;
+			} = camera_config.orbit;
 			orbit(data.angle, curve_steepness, shift_x, shift_y)
 		};
 
@@ -70,7 +72,7 @@ impl Module for Camera {
 				curve_steepness,
 				shift_x,
 				shift_y,
-			} = self.dampen;
+			} = camera_config.dampen;
 			dampen(data.angle, curve_steepness, shift_x, shift_y)
 		};
 
@@ -81,10 +83,6 @@ impl Module for Camera {
 		state.orbit_angle = orbit_angle;
 
 		Ok(())
-	}
-
-	fn name(&self) -> &'static str {
-		"camera"
 	}
 
 	async fn start(&mut self) -> Result<()> {

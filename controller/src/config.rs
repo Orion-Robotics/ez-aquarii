@@ -55,51 +55,45 @@ pub struct Motors {
 	pub speed: f64,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum Module {
-	Camera(Camera),
-	Line(Line),
-	StateRandomizer,
-	Server(Server),
-	Motors(Motors),
-}
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
-	pub modules: Vec<Module>,
+	pub camera: Option<Camera>,
+	pub line: Option<Line>,
+	pub server: Option<Server>,
+	pub motors: Option<Motors>,
+	pub state_randomizer: bool,
 }
 
 impl Default for Config {
 	fn default() -> Self {
 		Self {
-			modules: Vec::from([
-				Module::Camera(Camera {
-					enable_reading: true,
-					path: PathBuf::from("./socket"),
-					orbit: OrbitConfig {
-						curve_steepness: E,
-						shift_x: 0.3,
-						shift_y: 1.0,
-					},
-					dampen: DampenConfig {
-						curve_steepness: 305.0,
-						shift_x: -1.0,
-						shift_y: 0.0,
-					},
-				}),
-				Module::Line(Line {
-					sensor_count: 46,
-					pickup_threshold: 24,
-					pickup_sensor_count: 30,
-					trigger_threshold: 400,
-					uart_path: "/dev/ttyUSB0".to_string(),
-					baud_rate: 500000,
-				}),
-				Module::Server(Server {
-					addr: "0.0.0.0:7272".to_string(),
-				}),
-			]),
+			camera: Some(Camera {
+				enable_reading: true,
+				path: PathBuf::from("./socket"),
+				orbit: OrbitConfig {
+					curve_steepness: E,
+					shift_x: 0.3,
+					shift_y: 1.0,
+				},
+				dampen: DampenConfig {
+					curve_steepness: 305.0,
+					shift_x: -1.0,
+					shift_y: 0.0,
+				},
+			}),
+			line: Some(Line {
+				sensor_count: 46,
+				pickup_threshold: 24,
+				pickup_sensor_count: 30,
+				trigger_threshold: 400,
+				uart_path: "/dev/ttyACM0".to_string(),
+				baud_rate: 500000,
+			}),
+			server: Some(Server {
+				addr: "0.0.0.0:7272".to_string(),
+			}),
+			motors: None,
+			state_randomizer: false,
 		}
 	}
 }

@@ -16,22 +16,12 @@ use crate::{
 use super::{state::State, Module};
 
 pub struct Line {
-	pub sensor_count: usize,
-	pub pickup_threshold: usize,
-	pub pickup_sensor_count: usize,
-	pub trigger_threshold: usize,
 	pub serial: Option<SerialStream>,
 }
 
 impl Default for Line {
 	fn default() -> Self {
-		Self {
-			sensor_count: 46,
-			trigger_threshold: 400,
-			pickup_threshold: 24,
-			pickup_sensor_count: 10,
-			serial: None,
-		}
+		Self { serial: None }
 	}
 }
 
@@ -49,20 +39,13 @@ impl Line {
 	pub fn new(
 		config::Line {
 			baud_rate,
-			pickup_sensor_count,
-			pickup_threshold,
-			sensor_count,
-			trigger_threshold,
 			uart_path,
+			..
 		}: config::Line,
 	) -> Result<Self> {
 		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
 
 		Ok(Line {
-			pickup_threshold,
-			pickup_sensor_count,
-			trigger_threshold,
-			sensor_count,
 			serial: Some(serial),
 		})
 	}
@@ -71,9 +54,16 @@ impl Line {
 #[async_trait]
 impl Module for Line {
 	async fn tick(&mut self, state: &mut State) -> Result<()> {
+		let config::Line {
+			sensor_count,
+			pickup_threshold,
+			pickup_sensor_count,
+			trigger_threshold,
+			..
+		} = state.config.line.as_ref().unwrap();
 		if let Some(ref mut serial) = self.serial {
 			while serial.read_u8().await? != 255 {}
-			let mut raw_data: Vec<u8> = vec![0; self.sensor_count];
+			let mut raw_data: Vec<u8> = vec![0; *sensor_count];
 			serial.read_exact(&mut raw_data).await?;
 			raw_data.reverse();
 			state.data.sensor_data = raw_data;
@@ -81,14 +71,14 @@ impl Module for Line {
 				.data
 				.sensor_data
 				.iter()
-				.map(|&x| x > self.trigger_threshold as u8)
+				.map(|&x| x > *trigger_threshold as u8)
 				.collect();
 		}
 
 		state.picked_up = did_pick_up(
 			&state.data.sensor_data,
-			self.pickup_threshold,
-			self.pickup_sensor_count,
+			*pickup_threshold,
+			*pickup_sensor_count,
 		);
 
 		if state.picked_up {

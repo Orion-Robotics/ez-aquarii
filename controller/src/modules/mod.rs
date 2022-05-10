@@ -1,6 +1,8 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+use crate::config::Config;
+
 use self::state::State;
 
 pub mod camera;

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use rand::Rng;
 
-use crate::math::vec2::Vec2;
+use crate::{config::Config, math::vec2::Vec2};
 
 use super::Module;
 
@@ -10,6 +10,12 @@ pub struct StateRandomizer {}
 impl StateRandomizer {
 	pub fn new() -> Self {
 		Self {}
+	}
+}
+
+impl Default for StateRandomizer {
+	fn default() -> Self {
+		Self::new()
 	}
 }
 

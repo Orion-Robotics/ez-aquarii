@@ -41,6 +41,19 @@ export interface Config {
   modules: Module[];
 }
 
+export type JSONValue =
+  | string
+  | number
+  | boolean
+  | { [x: string]: JSONValue }
+  | Array<JSONValue>;
+
+export interface JSONObject {
+  [x: string]: JSONValue;
+}
+
+export interface JSONArray extends Array<JSONValue> {}
+
 export interface DataSource {
   stop(): void;
   next(): DataObject;
@@ -52,6 +65,7 @@ export interface DataSource {
   currentFrame(): number;
   numFrames(): number;
   onFrame(handler: (frame: DataObject) => void): void;
+  sendConfig(config: Config): void;
 }
 
 type FrameCallback = (frame: DataObject) => void;
@@ -69,6 +83,8 @@ class BasicDataSource implements DataSource {
   }
 
   stop() {}
+
+  sendConfig(config: Config) {}
 
   goTo(frame: number): DataObject {
     this.frame = frame;
@@ -123,6 +139,10 @@ export class ServerSource extends BasicDataSource {
       this.handler?.(this.next());
     });
     ws.addEventListener("close", (ev) => console.log(ev));
+  }
+
+  sendConfig(config: Config) {
+    this.ws.send(JSON.stringify(config));
   }
 
   async currentConfig() {
