@@ -1,4 +1,4 @@
-lockfileVersion: 5.3
+lockfileVersion: 5.4
 
 specifiers:
   '@iconify/json': ^2.1.23
@@ -30,7 +30,7 @@ devDependencies:
   '@vitejs/plugin-vue': 2.2.0_vite@2.8.2+vue@3.2.31
   '@vue/compiler-sfc': 3.2.31
   typescript: 4.5.5
-  unplugin-icons: 0.14.1_225319ba269c7341e620f4355a031650
+  unplugin-icons: 0.14.1_ejjrtorgtrzudzra6q2vuaywka
   unplugin-vue-components: 0.18.5_vite@2.8.2+vue@3.2.31
   vite: 2.8.2
   vite-plugin-fonts: 0.2.2_vite@2.8.2
@@ -1638,7 +1638,7 @@ packages:
     hasBin: true
     dev: true
 
-  /unplugin-icons/0.14.1_225319ba269c7341e620f4355a031650:
+  /unplugin-icons/0.14.1_ejjrtorgtrzudzra6q2vuaywka:
     resolution: {integrity: sha512-drZFbMctvT3ZJPfdCgBv5+LKO8hGbZApRCoBRAUhQFRJQVNGUhGThrOKs+CvWq3XDBPptGNBmst8WyObbr4xiQ==}
     peerDependencies:
       '@svgr/core': '>=5.5.0'
