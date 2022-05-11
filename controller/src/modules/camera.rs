@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-	config::{self, Config},
+	config::{self},
 	modules,
 };
 use anyhow::{Context, Result};

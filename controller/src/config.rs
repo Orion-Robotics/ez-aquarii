@@ -1,5 +1,5 @@
 use anyhow::Result;
-use arrayvec::ArrayVec;
+
 use async_recursion::async_recursion;
 use notify::{Event, INotifyWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
