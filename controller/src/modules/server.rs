@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use super::{state::State, Module};
 use crate::config::{self, Config};
@@ -14,6 +14,7 @@ use axum::{
 	Json, Router,
 };
 use futures::{SinkExt, StreamExt};
+use parking_lot::Mutex;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tower_http::cors::{Any, CorsLayer};
 
@@ -142,12 +143,12 @@ impl Module for StateRecorder {
 		Ok(())
 	}
 
-	async fn tick(&mut self, state: &mut State) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
+		let mut state = state.lock();
 		if let Err(err) = self.state_sender.send(state.clone()) {
 			tracing::trace!("Error broadcasting new state: {:?}", err);
 		}
 		if let Ok(msg) = self.client_message_receiver.try_recv() {
-			println!("{:?}", msg);
 			state.config = msg;
 		}
 		Ok(())

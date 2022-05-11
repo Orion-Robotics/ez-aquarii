@@ -92,6 +92,7 @@
           v-if="current_frame && active_tab === 'Line'"
           :data="current_frame"
         />
+        <BallView v-if="current_frame && active_tab === 'Ball'" :data="current_frame" />
         <JSONEditor
           root
           label="config"
@@ -154,6 +155,7 @@
 import { onKeyStroke, useLocalStorage } from "@vueuse/core";
 import debounce from "lodash.debounce";
 import { ref, watch } from "vue";
+import BallView from "./BallView.vue";
 import BaseButton from "./components/BaseButton.vue";
 import BaseRadioButton from "./components/BaseRadioButton.vue";
 import BaseTabs from "./components/BaseTabs.vue";
@@ -161,18 +163,18 @@ import BaseTextField from "./components/BaseTextField.vue";
 import JSONEditor from "./components/JSONEditor.vue";
 import LineView from "./LineView.vue";
 import {
-  Config,
-  DataObject,
-  DataSource,
-  ServerSource,
-  TextSource,
+Config,
+DataObject,
+DataSource,
+ServerSource,
+TextSource
 } from "./logic/dataSources";
 
 const host = useLocalStorage("host", "127.0.0.1");
 const camera_port = useLocalStorage("camera_port", ref(":8000"));
 const controller_port = useLocalStorage("controller_port", ref(":7272"));
 const source_type = ref<"server" | "text">("server");
-const tabs = ["Line", "Camera", "Config"];
+const tabs = ["Line", "Ball", "Camera", "Config"];
 const active_tab = ref(tabs[0]);
 
 let source = ref<DataSource | undefined>(undefined);

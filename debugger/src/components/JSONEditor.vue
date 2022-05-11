@@ -21,7 +21,12 @@
           :label="name.toString()"
         />
       </template>
-      <div class="flex gap-3 items-center w-full" v-else>
+      <div class="flex gap-3 items-center w-full mt-2" v-else>
+        <input
+          v-model.boolean="modelValue[name]"
+          v-if="typeof entry === 'boolean'"
+          type="checkbox"
+        />
         <span>{{ name }}</span>
         <template v-if="typeof entry === 'number'">
           <BaseSlider
@@ -42,11 +47,6 @@
         <BaseTextField
           v-else-if="typeof entry === 'string'"
           v-model="modelValue[name]"
-        />
-        <input
-          v-model.boolean="modelValue[name]"
-          v-else-if="typeof entry === 'boolean'"
-          type="checkbox"
         />
       </div>
     </template>

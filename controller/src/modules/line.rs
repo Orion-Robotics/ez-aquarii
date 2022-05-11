@@ -1,7 +1,8 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, sync::Arc};
 
 use anyhow::Result;
 use async_trait::async_trait;
+use parking_lot::Mutex;
 use tokio::io::AsyncReadExt;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
@@ -15,14 +16,9 @@ use crate::{
 
 use super::{state::State, Module};
 
+#[derive(Default)]
 pub struct Line {
 	pub serial: Option<SerialStream>,
-}
-
-impl Default for Line {
-	fn default() -> Self {
-		Self { serial: None }
-	}
 }
 
 pub fn angle_for_sensor(i: usize, length: usize) -> f32 {
@@ -53,32 +49,37 @@ impl Line {
 
 #[async_trait]
 impl Module for Line {
-	async fn tick(&mut self, state: &mut State) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
 		let config::Line {
 			sensor_count,
 			pickup_threshold,
 			pickup_sensor_count,
 			trigger_threshold,
 			..
-		} = state.config.line.as_ref().unwrap();
+		} = state.lock().config.line.as_ref().unwrap().to_owned();
 		if let Some(ref mut serial) = self.serial {
 			while serial.read_u8().await? != 255 {}
-			let mut raw_data: Vec<u8> = vec![0; *sensor_count];
+			let mut raw_data: Vec<u8> = vec![0; sensor_count];
 			serial.read_exact(&mut raw_data).await?;
 			raw_data.reverse();
-			state.data.sensor_data = raw_data;
-			state.line_detections = state
-				.data
-				.sensor_data
-				.iter()
-				.map(|&x| x > *trigger_threshold as u8)
-				.collect();
+			{
+				let mut state = state.lock();
+				state.data.sensor_data = raw_data;
+				state.line_detections = state
+					.data
+					.sensor_data
+					.iter()
+					.map(|&x| x > trigger_threshold as u8)
+					.collect();
+			}
 		}
+
+		let mut state = state.lock();
 
 		state.picked_up = did_pick_up(
 			&state.data.sensor_data,
-			*pickup_threshold,
-			*pickup_sensor_count,
+			pickup_threshold,
+			pickup_sensor_count,
 		);
 
 		if state.picked_up {
@@ -192,8 +193,8 @@ pub fn should_run(triggers: &[bool], pointing_out: bool) -> (bool, usize) {
 ///
 /// Specifically, this means that in the following ring configuration:
 /// +-1-2--+
-/// 0			 3
-/// |			 |
+/// 0      3
+/// |      |
 /// +------+
 ///
 /// It should return (0, 3), because it forms a perfect angle of 180 degrees, which is the most perpendicular.  

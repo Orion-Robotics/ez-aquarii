@@ -13,6 +13,11 @@ export interface DataObject {
   line_flipped: boolean;
   line_vector?: Vec2;
   previous_vec?: Vec2;
+
+  orbit_offset: number;
+  dampen_amount: number;
+  orbit_angle: number;
+  ball_follow_vector: Vec2;
   move_vector: Vec2;
 }
 

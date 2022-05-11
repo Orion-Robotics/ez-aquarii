@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
 	config::{self, Config},
 	modules,
@@ -5,6 +7,7 @@ use crate::{
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use num::traits::Pow;
+use parking_lot::Mutex;
 use tokio::fs::{File, OpenOptions};
 
 use crate::ipc;
@@ -47,17 +50,20 @@ impl Module for Camera {
 		"camera"
 	}
 
-	async fn tick(&mut self, state: &mut State) -> Result<()> {
-		let camera_config = state.config.camera.as_ref().unwrap();
-
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
 		if let Some(ref mut file) = self.socket_file {
 			let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(file)
 				.await
 				.with_context(|| "failed to read packet")?;
-			state.data.camera_data = data;
+			state.lock().data.camera_data = data;
 		}
-		let data = state.data.camera_data;
-
+		let (camera_config, data) = {
+			let state = state.lock();
+			(
+				state.config.camera.as_ref().unwrap().to_owned(),
+				state.data.camera_data,
+			)
+		};
 		let orbit_offset = {
 			let config::OrbitConfig {
 				curve_steepness,
@@ -78,9 +84,12 @@ impl Module for Camera {
 
 		let orbit_angle = data.angle + (orbit_offset * dampen_amount);
 
-		state.orbit_offset = orbit_offset;
-		state.dampen_amount = dampen_amount;
-		state.orbit_angle = orbit_angle;
+		{
+			let mut state = state.lock();
+			state.orbit_offset = orbit_offset;
+			state.dampen_amount = dampen_amount;
+			state.orbit_angle = orbit_angle;
+		}
 
 		Ok(())
 	}

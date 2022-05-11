@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use async_trait::async_trait;
+use parking_lot::Mutex;
 
-use super::Module;
+use super::{state::State, Module};
 
 pub struct Strategy {}
 
@@ -11,7 +14,7 @@ impl Module for Strategy {
 		"strategy"
 	}
 
-	async fn tick(&mut self, state: &mut super::state::State) -> Result<()> {
+	async fn tick(&mut self, _: &mut Arc<Mutex<State>>) -> Result<()> {
 		todo!()
 	}
 

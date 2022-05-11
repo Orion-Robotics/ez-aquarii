@@ -1,18 +1,17 @@
 use anyhow::{Context, Result};
 use controller::{
-	config,
-	config::{read_and_watch_config, Config, Server},
+	config::{read_and_watch_config, Config},
 	modules::{
-		camera, line, motors::Motors, server::StateRecorder, state, state::State, state_randomizer,
-		AnyModule, Module,
+		camera, line, motors::Motors, server::StateRecorder, state, state_randomizer, AnyModule,
+		Module,
 	},
 };
+use futures::future::join_all;
 use parking_lot::Mutex;
 use std::{
 	sync::Arc,
 	time::{Duration, Instant},
 };
-use tokio::time::{interval, interval_at, Interval};
 use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
@@ -34,7 +33,6 @@ async fn main() -> Result<()> {
 
 	let robot_state = Arc::new(Mutex::new(state::State::default()));
 	let mut modules: Vec<AnyModule> = Vec::new();
-
 	let (mut last_print, mut num_prints) = (Instant::now(), 0);
 
 	loop {
@@ -62,8 +60,8 @@ async fn main() -> Result<()> {
 			}
 		}
 		let tick_futures = modules.iter_mut().map(|m| async {
+			let mut robot_state = Arc::clone(&robot_state);
 			tracing::trace!("{} tick", m.name());
-			let mut robot_state = robot_state.lock();
 			let tick_future =
 				tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
 			match tick_future.await {
@@ -75,10 +73,7 @@ async fn main() -> Result<()> {
 				Err(e) => tracing::warn!("{} took too long to process: {}", m.name(), e),
 			}
 		});
-		// TODO: get this working with join_all for concurrent processing.
-		for future in tick_futures {
-			future.await;
-		}
+		join_all(tick_futures).await;
 		num_prints += 1;
 	}
 }
