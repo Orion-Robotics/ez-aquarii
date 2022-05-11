@@ -71,14 +71,16 @@ def CE(val):
 
 
 class DisplayHandler(BaseFrameHandler):
-    def __init__(self, ipc: IPC | None) -> None:
+    def __init__(self, ipc: IPC | None, enable_window: bool) -> None:
         super().__init__()
         # self.thresholds = json.loads(path)["thresholds"]
         self.ipc = ipc
-        cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
-        for i in range(6):
-            cv2.createTrackbar(names[i], "meow", 0, 255, fns[i])
-        cv2.createTrackbar("current", "meow", 0, 2, CE)
+        self.enable_window = enable_window
+        if enable_window:
+            cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
+            for i in range(6):
+                cv2.createTrackbar(names[i], "meow", 0, 255, fns[i])
+            cv2.createTrackbar("current", "meow", 0, 2, CE)
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = preprocess(frame)
@@ -103,6 +105,7 @@ class DisplayHandler(BaseFrameHandler):
                 )
             )
 
-        cv2.imshow("meow", mask(frame, thresholds[current]))
-        cv2.waitKey(1)
+        if self.enable_window:
+            cv2.imshow("meow", mask(frame, thresholds[current]))
+            cv2.waitKey(1)
         return im
