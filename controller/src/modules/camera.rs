@@ -1,7 +1,13 @@
-use crate::{config, modules};
+use std::sync::Arc;
+
+use crate::{
+	config::{self},
+	modules,
+};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use num::traits::Pow;
+use parking_lot::Mutex;
 use tokio::fs::{File, OpenOptions};
 
 use crate::ipc;
@@ -10,8 +16,6 @@ use super::{state::State, Module};
 
 pub struct Camera {
 	pub socket_file: Option<File>,
-	pub orbit: config::OrbitConfig,
-	pub dampen: config::DampenConfig,
 }
 
 impl Camera {
@@ -19,10 +23,9 @@ impl Camera {
 		config::Camera {
 			enable_reading,
 			path,
-			orbit,
-			dampen,
+			..
 		}: config::Camera,
-	) -> Result<Camera> {
+	) -> Result<Self> {
 		let f = if enable_reading {
 			Some(
 				OpenOptions::new()
@@ -37,31 +40,36 @@ impl Camera {
 		} else {
 			None
 		};
-		Ok(Camera {
-			socket_file: f,
-			dampen,
-			orbit,
-		})
+		Ok(Camera { socket_file: f })
 	}
 }
 
 #[async_trait]
 impl Module for Camera {
-	async fn tick(&mut self, state: &mut State) -> Result<()> {
+	fn name(&self) -> &'static str {
+		"camera"
+	}
+
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
 		if let Some(ref mut file) = self.socket_file {
 			let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(file)
 				.await
 				.with_context(|| "failed to read packet")?;
-			state.data.camera_data = data;
+			state.lock().data.camera_data = data;
 		}
-		let data = state.data.camera_data;
-
+		let (camera_config, data) = {
+			let state = state.lock();
+			(
+				state.config.camera.as_ref().unwrap().to_owned(),
+				state.data.camera_data,
+			)
+		};
 		let orbit_offset = {
 			let config::OrbitConfig {
 				curve_steepness,
 				shift_x,
 				shift_y,
-			} = self.orbit;
+			} = camera_config.orbit;
 			orbit(data.angle, curve_steepness, shift_x, shift_y)
 		};
 
@@ -70,21 +78,20 @@ impl Module for Camera {
 				curve_steepness,
 				shift_x,
 				shift_y,
-			} = self.dampen;
+			} = camera_config.dampen;
 			dampen(data.angle, curve_steepness, shift_x, shift_y)
 		};
 
 		let orbit_angle = data.angle + (orbit_offset * dampen_amount);
 
-		state.orbit_offset = orbit_offset;
-		state.dampen_amount = dampen_amount;
-		state.orbit_angle = orbit_angle;
+		{
+			let mut state = state.lock();
+			state.orbit_offset = orbit_offset;
+			state.dampen_amount = dampen_amount;
+			state.orbit_angle = orbit_angle;
+		}
 
 		Ok(())
-	}
-
-	fn name(&self) -> &'static str {
-		"camera"
 	}
 
 	async fn start(&mut self) -> Result<()> {

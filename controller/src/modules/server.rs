@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use super::{state::State, Module};
 use crate::config::{self, Config};
@@ -14,19 +14,13 @@ use axum::{
 	Json, Router,
 };
 use futures::{SinkExt, StreamExt};
-use serde::Deserialize;
+use parking_lot::Mutex;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tower_http::cors::{Any, CorsLayer};
 
-#[derive(Deserialize, Debug, Clone)]
-struct ClientMessage {
-	ball_x: f32,
-	ball_y: f32,
-}
-
 async fn websocket_handler(
 	ws: WebSocketUpgrade,
-	Extension(state): Extension<(broadcast::Sender<State>, mpsc::Sender<ClientMessage>)>,
+	Extension(state): Extension<(broadcast::Sender<State>, mpsc::Sender<Config>)>,
 ) -> impl IntoResponse {
 	tracing::warn!("woozy");
 	ws.on_upgrade(|socket| async move {
@@ -39,7 +33,7 @@ async fn websocket_handler(
 async fn websocket(
 	stream: WebSocket,
 	state: broadcast::Sender<State>,
-	mut sender: mpsc::Sender<ClientMessage>,
+	sender: mpsc::Sender<Config>,
 ) -> Result<()> {
 	let mut subscriber = state.subscribe();
 	let (mut tx, mut rx) = stream.split();
@@ -56,7 +50,7 @@ async fn websocket(
 
 	loop {
 		if let Some(Ok(message)) = rx.next().await {
-			let res = serde_json::from_slice::<ClientMessage>(&message.into_data())?;
+			let res = serde_json::from_slice(&message.into_data())?;
 			sender.send(res).await?;
 		}
 	}
@@ -67,8 +61,8 @@ async fn get_config(Extension(config): Extension<Config>) -> impl IntoResponse {
 }
 pub struct StateRecorder {
 	state_sender: broadcast::Sender<State>,
-	client_message_receiver: mpsc::Receiver<ClientMessage>,
-	client_message_sender: mpsc::Sender<ClientMessage>,
+	client_message_receiver: mpsc::Receiver<Config>,
+	client_message_sender: mpsc::Sender<Config>,
 	kill_sender: Option<oneshot::Sender<()>>,
 	kill_receiver: Option<oneshot::Receiver<()>>,
 	kill_complete_sender: Option<oneshot::Sender<()>>,
@@ -149,11 +143,14 @@ impl Module for StateRecorder {
 		Ok(())
 	}
 
-	async fn tick(&mut self, state: &mut State) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
+		let mut state = state.lock();
 		if let Err(err) = self.state_sender.send(state.clone()) {
 			tracing::trace!("Error broadcasting new state: {:?}", err);
 		}
-		if let Ok(msg) = self.client_message_receiver.try_recv() {}
+		if let Ok(msg) = self.client_message_receiver.try_recv() {
+			state.config = msg;
+		}
 		Ok(())
 	}
 }

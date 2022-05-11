@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
 	math::vec2::Vec2,
 	modules::{
@@ -6,6 +8,7 @@ use crate::{
 		Module,
 	},
 };
+use parking_lot::Mutex;
 use test_case::test_case;
 
 #[test_case(
@@ -34,14 +37,14 @@ use test_case::test_case;
 )]
 #[tokio::test]
 pub async fn test_flips(first: &[bool], second: &[bool], flip: bool) {
-	let mut state = State::default();
+	let mutex = Arc::new(Mutex::new(State::default()));
 	let mut line = Line::default();
-
+	let mut state = mutex.lock();
 	state.line_detections = Vec::from(first);
-	line.tick(&mut state).await.unwrap();
+	line.tick(&mut Arc::clone(&mutex)).await.unwrap();
 	state.print_state();
 	state.line_detections = Vec::from(second);
-	line.tick(&mut state).await.unwrap();
+	line.tick(&mut Arc::clone(&mutex)).await.unwrap();
 	state.print_state();
 
 	assert_eq!(state.line_flipped, flip);
@@ -72,7 +75,7 @@ pub fn test_line_should_run(
 #[test_case(&[true, false, false, true, false, false, true], (0, 3); "7 sensors, 3 activated")]
 #[test_case(&[true, true, true, true, true, true, true], (0, 3); "7 sensors, 7 activated")]
 pub fn test_line_get_farthest_detections(sensors: &[bool], expected: (usize, usize)) {
-	assert_eq!(line::get_farthest_detections(sensors), expected);
+	assert_eq!(line::get_farthest_detections(sensors), Some(expected));
 }
 
 #[test_case(&[5, 5, 10, 25], 15, 3, true; "3 under threshold, 3 required")]

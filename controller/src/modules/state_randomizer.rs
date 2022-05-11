@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
+use parking_lot::Mutex;
 use rand::Rng;
 
 use crate::math::vec2::Vec2;
 
-use super::Module;
+use super::{state::State, Module};
 
 pub struct StateRandomizer {}
 
@@ -13,14 +16,21 @@ impl StateRandomizer {
 	}
 }
 
+impl Default for StateRandomizer {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 #[async_trait]
 impl Module for StateRandomizer {
 	fn name(&self) -> &'static str {
 		"state_randomizer"
 	}
 
-	async fn tick(&mut self, state: &mut super::state::State) -> anyhow::Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> anyhow::Result<()> {
 		let mut rng = rand::thread_rng();
+		let mut state = state.lock();
 
 		state.data.sensor_data = vec![0; 46].iter().map(|_| rng.gen::<u8>()).collect();
 

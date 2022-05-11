@@ -1,14 +1,15 @@
-from time import time, sleep
-from copy import copy
 import traceback
+from copy import copy
+from time import sleep, time
+
 import cv2
 import numpy as np
 
 from handlers import BaseFrameHandler, constants
 from handlers.constants import *
-from handlers.utils import *
 from handlers.display import DisplayHandler
 from handlers.noop import NoopHandler
+from handlers.utils import *
 from lib.streaming import StreamingFrameHandler
 
 thresholds = [
