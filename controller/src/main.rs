@@ -1,14 +1,17 @@
 use anyhow::{Context, Result};
 use controller::{
-	config,
 	config::{read_and_watch_config, Config},
 	modules::{
-		camera, line, motors::Motors, server::StateRecorder, state, state::State, state_randomizer,
-		AnyModule, Module,
+		camera, line, motors::Motors, server::StateRecorder, state, state_randomizer, AnyModule,
+		Module,
 	},
 };
+use futures::future::join_all;
 use parking_lot::Mutex;
-use std::{sync::Arc, time::Duration};
+use std::{
+	sync::Arc,
+	time::{Duration, Instant},
+};
 use tracing::Instrument;
 use tracing_subscriber::EnvFilter;
 
@@ -28,10 +31,16 @@ async fn main() -> Result<()> {
 		.await
 		.with_context(|| format!("Failed to read config file {CONFIG_FILE}"))?;
 
-	let mut robot_state = Arc::new(Mutex::new(state::State::default()));
+	let robot_state = Arc::new(Mutex::new(state::State::default()));
 	let mut modules: Vec<AnyModule> = Vec::new();
+	let (mut last_print, mut num_prints) = (Instant::now(), 0);
 
 	loop {
+		if last_print.elapsed() >= Duration::from_secs(1) {
+			tracing::info!("{} TPS", num_prints);
+			last_print = Instant::now();
+			num_prints = 0;
+		}
 		if let Ok(new_config) = cfg_chan.try_recv() {
 			match handle_config_change(new_config).await {
 				Ok(mut new_modules) => {
@@ -40,57 +49,73 @@ async fn main() -> Result<()> {
 					tracing::info!("disabling: {:?}", disabled);
 					tracing::info!("enabling: {:?}", enabled);
 					for module in modules.iter_mut() {
-						module.stop().await?;
+						module.stop().await.context(module.name())?;
 					}
 					for module in new_modules.iter_mut() {
-						module.start().await?;
+						module.start().await.context(module.name())?;
 					}
 					modules = new_modules;
 				}
-				Err(e) => tracing::error!("Failed to handle config change: {}", e),
+				Err(e) => tracing::error!("Failed to handle config change: {:#}", e),
 			}
 		}
-		tick_modules(&mut modules, &mut robot_state).await;
-	}
-}
-
-async fn tick_modules(modules: &mut [AnyModule], robot_state: &mut Arc<Mutex<State>>) {
-	let tick_futures = modules.iter_mut().map(|m| async {
-		tracing::trace!("{} tick", m.name());
-		let mut robot_state = robot_state.lock();
-		let tick_future =
-			tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
-		match tick_future.await {
-			Ok(res) => {
-				if let Err(e) = res {
-					tracing::error!("{} encountered an error while ticking: {:?}", m.name(), e);
+		let tick_futures = modules.iter_mut().map(|m| async {
+			let mut robot_state = Arc::clone(&robot_state);
+			tracing::trace!("{} tick", m.name());
+			let tick_future =
+				tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
+			match tick_future.await {
+				Ok(res) => {
+					if let Err(e) = res {
+						tracing::error!("{} encountered an error while ticking: {:?}", m.name(), e);
+					}
 				}
+				Err(e) => tracing::warn!("{} took too long to process: {}", m.name(), e),
 			}
-			Err(e) => tracing::warn!("{} took too long to process: {}", m.name(), e),
-		}
-	});
-	// TODO: get this working with join_all for concurrent processing.
-	for future in tick_futures {
-		future.await;
+		});
+		join_all(tick_futures).await;
+		num_prints += 1;
 	}
 }
 
-async fn handle_config_change(new_config: Config) -> Result<Vec<AnyModule>> {
-	tracing::info!("config changed, reloading...");
-	let module_configs = &new_config.modules;
+async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
+	let Config {
+		ref camera,
+		ref line,
+		ref motors,
+		ref server,
+		ref state_randomizer,
+	} = cfg;
 
+	tracing::info!("config changed, reloading...");
 	let mut new_modules: Vec<Box<dyn Module>> = Vec::new();
-	for m in module_configs {
-		let module_instance: AnyModule = match m {
-			config::Module::StateRandomizer => Box::new(state_randomizer::StateRandomizer {}),
-			config::Module::Camera(cfg) => Box::new(camera::Camera::new(cfg.clone()).await?),
-			config::Module::Line(cfg) => Box::new(line::Line::new(cfg.clone())?),
-			config::Module::Server(cfg) => {
-				Box::new(StateRecorder::new(new_config.clone(), cfg.clone()).await?)
-			}
-			config::Module::Motors(cfg) => Box::new(Motors::new(cfg.clone()).await?),
-		};
-		new_modules.push(module_instance);
+
+	if let Some(camera) = camera {
+		new_modules.push(Box::new(
+			camera::Camera::new(camera.clone())
+				.await
+				.context("camera creation")?,
+		));
+	}
+	if let Some(line) = line {
+		new_modules.push(Box::new(
+			line::Line::new(line.clone()).context("line creation")?,
+		));
+	}
+	if let Some(motors) = motors {
+		new_modules.push(Box::new(
+			Motors::new(motors.clone()).context("motors creation")?,
+		));
+	}
+	if let Some(server) = server {
+		new_modules.push(Box::new(
+			StateRecorder::new(cfg.clone(), server.clone())
+				.await
+				.context("server creation")?,
+		));
+	}
+	if *state_randomizer {
+		new_modules.push(Box::new(state_randomizer::StateRandomizer::new()));
 	}
 
 	Ok(new_modules)

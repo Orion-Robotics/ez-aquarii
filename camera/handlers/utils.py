@@ -1,7 +1,9 @@
-import numpy as np
+from math import atan2, pi, pow, sqrt
+
 import cv2
+import numpy as np
+
 from .constants import *
-from math import pi, atan2, sqrt, pow
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -40,34 +42,37 @@ def find_blob(image, target):
     return blob
 
 
-def loc(blob):
-    if blob is not None:
-        m = cv2.moments(blob)
-        if m["m00"] != 0:
-            cx = int(m["m10"] / m["m00"])
-            cy = int(m["m01"] / m["m00"])
-            return (
-                atan2(cy - h, cx - w) / pi * 180,
-                sqrt(pow(cy - h, 2) + pow(cx - w, 2)),
-                cx,
-                cy,
-            )  # angle, distance, w, h
-    return None
+def exists(blob):
+    return blob is not None and cv2.moments(blob)["m00"] != 0
 
 
-def draw(image, blob, color=(0, 0, 255)):
-    try:
-        if blob is not None:
-            angle, distance, bx, by = loc(blob)
-            cv2.line(
-                image,
-                (mw, mh),
-                (int(bx), int(by)),
-                color,
-            )
-            cv2.drawContours(image, [blob], 0, (0, 255, 0), 1)
-    except:
-        print("blanks somehow")
+# angle, distance, x, y
+def loc(blob, center=(mw, mh)):
+    m = cv2.moments(blob)
+    if m["m00"] != 0:
+        cx = int(m["m10"] / m["m00"])
+        cy = int(m["m01"] / m["m00"])
+        return (
+            atan2(cy - center[1], cx - center[0]) / pi * -180,
+            sqrt(pow(cy - center[1], 2) + pow(cx - center[0], 2)),
+            cx,
+            cy,
+        )
+    else:
+        return None
+
+
+def draw(image, blob, color=(0, 0, 255), center=(mw, mh)):
+    if exists(blob):
+        _, _, bx, by = loc(blob)
+        cv2.line(
+            image,
+            center,
+            (int(bx), int(by)),
+            color,
+        )
+        cv2.drawContours(image, [blob], 0, (255, 255, 255), 1)
+
 
 def preprocess(image):
     # frame = adjust_gamma(image, 0.4)

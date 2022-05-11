@@ -1,9 +1,9 @@
 #pragma once
 
+#define TIMEOUT 500
 #define LINE_SCK 13
 #define LINE_MOSI 11
 #define LINE_MISO 12
-#define SPEED 128
 #define CONTROLLER_PORT Serial1
 #define CONTROLLER_BAUD 500000
 #define WRITE_TIMEOUT 500
