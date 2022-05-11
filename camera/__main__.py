@@ -9,18 +9,18 @@ from handlers import BaseFrameHandler, constants
 from handlers.display import DisplayHandler
 from handlers.noop import NoopHandler
 from handlers.test import TestHandler
-
 from lib.camera import Camera
+from lib.ipc import IPC, new_fifo_ipc
 from lib.streaming import StreamingFrameHandler
 
 if __name__ == "__main__":
     try:
-        ipc = IPC()
-        handler = DisplayHandler(None, False)
+        ipc = new_fifo_ipc("socket")
+        handler = DisplayHandler(ipc, False)
         handler = StreamingFrameHandler(handler, constants.SERVER_ADDRESS)
-        #joe = cv2.imread("cha.jpg")
-        #joe = cv2.resize(joe, (600, 600))
-        #while True:
+        # joe = cv2.imread("cha.jpg")
+        # joe = cv2.resize(joe, (600, 600))
+        # while True:
         #    handler.handle_frame(joe)
         cam = Camera(handler)
         cam.run()

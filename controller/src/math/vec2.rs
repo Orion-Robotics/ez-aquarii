@@ -14,8 +14,7 @@ pub struct Vec2 {
 pub fn angle_between(first: Vec2, second: Vec2) -> f64 {
 	let first_rad = first.angle_rad();
 	let second_rad = second.angle_rad();
-	let diff = second_rad - first_rad;
-	return diff;
+	second_rad - first_rad
 }
 
 pub fn dot(first: Vec2, second: Vec2) -> f64 {
@@ -69,10 +68,10 @@ impl Mul<f64> for Vec2 {
 	type Output = Self;
 
 	fn mul(self, rhs: f64) -> Self::Output {
-		return Vec2 {
+		Vec2 {
 			x: self.x * rhs,
 			y: self.y * rhs,
-		};
+		}
 	}
 }
 

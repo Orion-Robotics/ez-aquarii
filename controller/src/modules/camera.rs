@@ -55,6 +55,7 @@ impl Module for Camera {
 			let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(file)
 				.await
 				.with_context(|| "failed to read packet")?;
+			tracing::debug!("received camera packet: {:?}", data);
 			state.lock().data.camera_data = data;
 		}
 		let (camera_config, data) = {

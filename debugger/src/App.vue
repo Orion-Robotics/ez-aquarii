@@ -83,16 +83,21 @@
             {{ frame_count }}
           </div>
         </div>
-        <img
-          class="h-full"
-          v-if="active_tab === 'Camera'"
-          :src="`http://${host}${camera_port}/stream.mjpg`"
-        />
+        <div class="h-full flex justify-center items-center">
+          <img
+            class="max-w-full max-h-full"
+            v-if="active_tab === 'Camera'"
+            :src="`http://${host}${camera_port}/stream.mjpg`"
+          />
+        </div>
         <LineView
           v-if="current_frame && active_tab === 'Line'"
           :data="current_frame"
         />
-        <BallView v-if="current_frame && active_tab === 'Ball'" :data="current_frame" />
+        <BallView
+          v-if="current_frame && active_tab === 'Ball'"
+          :data="current_frame"
+        />
         <JSONEditor
           root
           label="config"
@@ -163,11 +168,11 @@ import BaseTextField from "./components/BaseTextField.vue";
 import JSONEditor from "./components/JSONEditor.vue";
 import LineView from "./LineView.vue";
 import {
-Config,
-DataObject,
-DataSource,
-ServerSource,
-TextSource
+  Config,
+  DataObject,
+  DataSource,
+  ServerSource,
+  TextSource,
 } from "./logic/dataSources";
 
 const host = useLocalStorage("host", "127.0.0.1");
