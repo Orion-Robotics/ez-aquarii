@@ -42,6 +42,8 @@ async fn main() -> Result<()> {
 			num_prints = 0;
 		}
 		if let Ok(new_config) = cfg_chan.try_recv() {
+			tracing::debug!("Received new config");
+			robot_state.lock().config = new_config.clone();
 			match handle_config_change(new_config).await {
 				Ok(mut new_modules) => {
 					let disabled = modules.iter().map(|x| x.name()).collect::<Vec<_>>();

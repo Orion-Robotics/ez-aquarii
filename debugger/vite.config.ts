@@ -1,26 +1,23 @@
-import vue from "@vitejs/plugin-vue";
-import IconsResolver from "unplugin-icons/resolver";
+import transformerDirective from "@unocss/transformer-directives";
+import UnocssPlugin from "@unocss/vite";
 import Icons from "unplugin-icons/vite";
-import Components from "unplugin-vue-components/vite";
 import { defineConfig } from "vite";
-import ViteFonts from "vite-plugin-fonts";
-import WindiCSS from "vite-plugin-windicss";
+import inlineCssModules from "vite-plugin-inline-css-modules";
+import solidPlugin from "vite-plugin-solid";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    ViteFonts({
-      google: {
-        families: ["Roboto:400,500,700"],
-      },
-    }),
-    vue(),
-    WindiCSS(),
-    Components({
-      resolvers: [IconsResolver()],
+    solidPlugin({}),
+    UnocssPlugin({
+      transformers: [transformerDirective()],
     }),
     Icons({
-      compiler: "vue3",
+      compiler: "solid",
     }),
+    inlineCssModules(),
   ],
+  build: {
+    target: "esnext",
+    polyfillDynamicImport: false,
+  },
 });

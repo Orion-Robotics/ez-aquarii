@@ -11,14 +11,16 @@ export interface DataObject {
   data: Data;
   line_detections: boolean[];
   line_flipped: boolean;
+  picked_up: boolean;
   line_vector?: Vec2;
   previous_vec?: Vec2;
-
   orbit_offset: number;
   dampen_amount: number;
   orbit_angle: number;
-  ball_follow_vector: Vec2;
-  move_vector: Vec2;
+  ball_follow_vector?: Vec2;
+  rotation: number;
+  move_vector?: Vec2;
+  motor_powers: number[];
 }
 
 export type Module =
@@ -46,19 +48,6 @@ export interface Config {
   modules: Module[];
 }
 
-export type JSONValue =
-  | string
-  | number
-  | boolean
-  | { [x: string]: JSONValue }
-  | Array<JSONValue>;
-
-export interface JSONObject {
-  [x: string]: JSONValue;
-}
-
-export interface JSONArray extends Array<JSONValue> {}
-
 export interface DataSource {
   stop(): void;
   next(): DataObject;
@@ -70,7 +59,6 @@ export interface DataSource {
   currentFrame(): number;
   numFrames(): number;
   onFrame(handler: (frame: DataObject) => void): void;
-  sendConfig(config: Config): void;
 }
 
 type FrameCallback = (frame: DataObject) => void;
@@ -88,8 +76,6 @@ class BasicDataSource implements DataSource {
   }
 
   stop() {}
-
-  sendConfig(config: Config) {}
 
   goTo(frame: number): DataObject {
     this.frame = frame;
@@ -144,10 +130,6 @@ export class ServerSource extends BasicDataSource {
       this.handler?.(this.next());
     });
     ws.addEventListener("close", (ev) => console.log(ev));
-  }
-
-  sendConfig(config: Config) {
-    this.ws.send(JSON.stringify(config));
   }
 
   async currentConfig() {
