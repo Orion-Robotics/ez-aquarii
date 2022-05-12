@@ -1,9 +1,9 @@
 import * as d3 from "d3";
 import { D3ZoomEvent } from "d3";
 import { Component, For, JSX, onMount, Show } from "solid-js";
-import { BaseSlider } from "./Base/BaseSlider";
+import { BaseSlider } from "./components/Base/BaseSlider";
 import { DataObject } from "./data_sources";
-import { createStoredSignal } from "./Helpers/createStoredSignal";
+import { createStoredSignal } from "./helpers/createStoredSignal";
 
 const Line: Component<
   {
@@ -17,16 +17,6 @@ const Line: Component<
 > = (props) => {
   return (
     <>
-      <marker
-        id="triangle"
-        viewBox="0 0 10 10"
-        refX="1"
-        refY="5"
-        markerUnits="strokeWidth"
-        markerWidth="10"
-        markerHeight="10"
-        orient="auto"
-      ></marker>
       <text
         x={props.endX + props.offset}
         y={props.endY + props.offset}
@@ -202,7 +192,7 @@ export const RobotView: Component<{
           </g>
         </g>
       </svg>
-      <div class="absolute bottom-3 left-3">
+      <div class="absolute bottom-0 left-0 bg-black/90 p-3 rounded-tr-4">
         <BaseSlider
           type="range"
           label="Radius"

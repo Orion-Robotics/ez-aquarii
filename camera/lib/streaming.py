@@ -46,12 +46,22 @@ def generate_stream(
     output: StreamingOutput, request_handler: Callable[[str, bytes], None] | None
 ):
     class StreamingHandler(server.BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            return
+
         def do_POST(self):
             content_len = int(self.headers.get("content-length"))
             post_body = self.rfile.read(content_len)
             if request_handler is not None:
                 request_handler(self.path, post_body)
             self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "*")
+            self.send_header("Access-Control-Allow-Headers", "*")
+            self.end_headers()
+            self.wfile.write(b"OK")
 
         def do_GET(self):
             self.send_response(200)
@@ -79,6 +89,19 @@ def generate_stream(
                 logging.warning(
                     "Removed streaming client %s: %s", self.client_address, str(e)
                 )
+
+        """
+        For more information on CORS see:
+        * https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
+        * http://enable-cors.org/
+        """
+
+        def do_OPTIONS(self):
+            self.send_response(200, "ok")
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "*")
+            self.send_header("Access-Control-Allow-Headers", "*")
 
     return StreamingHandler
 

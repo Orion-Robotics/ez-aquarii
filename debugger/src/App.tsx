@@ -1,20 +1,20 @@
 import { Component, createSignal, Match, Show, Switch } from "solid-js";
 import ArrowLeft from "~icons/mdi/arrow-left";
 import ArrowRight from "~icons/mdi/arrow-right";
-import { ShimmerButton } from "./Base/BaseButton";
-import { BaseInput } from "./Base/BaseInput";
-import { BaseRadioButton } from "./Base/BaseRadioButton";
-import { BaseSlider } from "./Base/BaseSlider";
-import { Label } from "./Base/Label";
-import { Split } from "./Base/Split";
 import { CameraView } from "./CameraView";
+import { ShimmerButton } from "./components/Base/BaseButton";
+import { BaseInput } from "./components/Base/BaseInput";
+import { BaseRadioButton } from "./components/Base/BaseRadioButton";
+import { BaseSlider } from "./components/Base/BaseSlider";
+import { Label } from "./components/Base/Label";
+import { Split } from "./components/Base/Split";
 import {
   DataObject,
   DataSource,
   ServerSource,
   TextSource,
 } from "./data_sources";
-import { createStoredSignal } from "./Helpers/createStoredSignal";
+import { createStoredSignal } from "./helpers/createStoredSignal";
 import { RobotView } from "./RobotView";
 
 enum View {
@@ -155,7 +155,7 @@ const App: Component = () => {
                   <CameraView host={cameraAddress()} />
                 </Match>
               </Switch>
-              <div class="absolute top-3 right-3 flex flex-col gap-2">
+              <div class="absolute top-0 right-0 flex flex-col gap-2 bg-black/90 p-3 rounded-bl-4">
                 <BaseRadioButton
                   checked={view() === View.Robot}
                   onClick={() => setView(View.Robot)}
