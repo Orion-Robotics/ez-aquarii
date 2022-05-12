@@ -1,9 +1,11 @@
 import io
+import json
 import logging
 import socketserver
 import threading
 from http import server
 from threading import Condition
+from typing import Callable
 
 import cv2
 import numpy as np
@@ -40,8 +42,17 @@ class StreamingOutput(object):
         return self.buffer.write(buf)
 
 
-def generate_stream(output: StreamingOutput):
+def generate_stream(
+    output: StreamingOutput, request_handler: Callable[[str, bytes], None] | None
+):
     class StreamingHandler(server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            content_len = int(self.headers.get("content-length"))
+            post_body = self.rfile.read(content_len)
+            if request_handler is not None:
+                request_handler(self.path, post_body)
+            self.send_response(200)
+
         def do_GET(self):
             self.send_response(200)
             self.send_header("Age", str(0))
@@ -84,7 +95,9 @@ class StreamingFrameHandler(BaseFrameHandler):
 
         self.output = StreamingOutput()
 
-        self.server = StreamingServer(addr, generate_stream(self.output))
+        self.server = StreamingServer(
+            addr, generate_stream(self.output, self.inner.handle_request)
+        )
         threading.Thread(target=self.server.serve_forever).start()
 
     def stop(self):
