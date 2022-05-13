@@ -10,5 +10,6 @@ class BaseFrameHandler:
         sys.exit("dumbass")
         pass
 
-    def handle_request(self, path: str, body: bytes) -> None:
+    def handle_request(self, path: str, body: bytes) -> bytes:
+        sys.exit("dumbass")
         pass

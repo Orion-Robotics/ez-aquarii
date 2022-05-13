@@ -74,12 +74,6 @@ def draw(image, blob, color=(0, 0, 255), center=(mw, mh)):
         cv2.drawContours(image, [blob], 0, (255, 255, 255), 1)
 
 
-def preprocess(image):
-    # frame = adjust_gamma(image, 0.4)
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    return hsv
-
-
 def detectlines(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 

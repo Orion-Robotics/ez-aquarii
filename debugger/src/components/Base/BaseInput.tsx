@@ -1,6 +1,15 @@
-import classnames from "classnames";
+import classNames from "classnames";
 import { Component, JSX } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import { css } from "vite-plugin-inline-css-modules";
+
+const styles = css`
+  .input {
+    @apply outline-none p-3 rounded-md bg-dark-200
+      focus:outline-blue-400 focus:outline-2 focus:bg-dark-700
+      text-xs block transition duration-100;
+  }
+`;
 
 export const BaseInput: Component<
   {
@@ -10,24 +19,9 @@ export const BaseInput: Component<
   } & JSX.InputHTMLAttributes<HTMLInputElement>
 > = (props) => (
   <Dynamic
-    component={props.textarea ? "textarea" : "input"}
-    class={classnames(
-      `
-        outline-none
-        p-3
-        rounded-md
-        bg-dark-200
-        focus:outline-blue-400
-        focus:outline-2
-        focus:bg-dark-700
-        text-xs
-        block
-        transition
-        duration-100
-      `,
-      props.class
-    )}
-    placeholder={props.label}
     {...props}
+    component={props.textarea ? "textarea" : "input"}
+    class={classNames(styles.input, props.class)}
+    placeholder={props.label}
   />
 );

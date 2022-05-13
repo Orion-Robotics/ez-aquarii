@@ -75,7 +75,6 @@ impl Module for Line {
 		}
 
 		let mut state = state.lock();
-
 		state.picked_up = did_pick_up(
 			&state.data.sensor_data,
 			pickup_threshold,

@@ -43,25 +43,31 @@ class StreamingOutput(object):
 
 
 def generate_stream(
-    output: StreamingOutput, request_handler: Callable[[str, bytes], None] | None
+    output: StreamingOutput, request_handler: list[Callable[[str, bytes], bytes] | None]
 ):
     class StreamingHandler(server.BaseHTTPRequestHandler):
+        def cors(self):
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "*")
+            self.send_header("Access-Control-Allow-Headers", "*")
+
         def log_message(self, format, *args):
             return
 
         def do_POST(self):
             content_len = int(self.headers.get("content-length"))
             post_body = self.rfile.read(content_len)
-            if request_handler is not None:
-                request_handler(self.path, post_body)
             self.send_response(200)
+            self.cors()
             self.send_header("Content-Type", "text/plain")
-            self.send_header("Access-Control-Allow-Credentials", "true")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "*")
-            self.send_header("Access-Control-Allow-Headers", "*")
             self.end_headers()
-            self.wfile.write(b"OK")
+            for handler in request_handler:
+                if handler is not None:
+                    resp = handler(self.path, post_body)
+                    self.wfile.write(resp)
+            else:
+                self.wfile.write(b"OK")
 
         def do_GET(self):
             self.send_response(200)
@@ -90,18 +96,9 @@ def generate_stream(
                     "Removed streaming client %s: %s", self.client_address, str(e)
                 )
 
-        """
-        For more information on CORS see:
-        * https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
-        * http://enable-cors.org/
-        """
-
         def do_OPTIONS(self):
             self.send_response(200, "ok")
-            self.send_header("Access-Control-Allow-Credentials", "true")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "*")
-            self.send_header("Access-Control-Allow-Headers", "*")
+            self.cors()
 
     return StreamingHandler
 
@@ -112,16 +109,25 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 
 class StreamingFrameHandler(BaseFrameHandler):
-    def __init__(self, inner: BaseFrameHandler, addr: tuple[str, int]) -> None:
+    def __init__(
+        self,
+        inner: BaseFrameHandler,
+        addr: tuple[str, int],
+        handlers: list[Callable[[str, bytes], bytes]],
+    ) -> None:
         super().__init__()
         self.inner = inner
+        self.handlers = handlers
 
         self.output = StreamingOutput()
 
         self.server = StreamingServer(
-            addr, generate_stream(self.output, self.inner.handle_request)
+            addr, generate_stream(self.output, [*handlers, self.inner.handle_request])
         )
         threading.Thread(target=self.server.serve_forever).start()
+
+    def add_handler(self, handler: Callable[[str, bytes], bytes]):
+        self.handlers.append(handler)
 
     def stop(self):
         self.server.shutdown()

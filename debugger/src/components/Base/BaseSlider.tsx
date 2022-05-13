@@ -4,9 +4,12 @@ import { css } from "vite-plugin-inline-css-modules";
 
 const sliderStyles = css`
   .slider {
-    @apply appearance-none bg-dark-600 rounded-full h-2;
+    @apply appearance-none bg-dark-200 rounded-full h-2;
     &::-webkit-slider-thumb {
       @apply appearance-none h-4 w-4 bg-dark-100 rounded-full active:bg-dark-200 shadow-lg;
+    }
+    &.contrast {
+      @apply bg-dark-400;
     }
   }
 `;
@@ -17,6 +20,7 @@ export const BaseSlider = (
     rootClass?: string;
     label?: string;
     showValue?: boolean;
+    contrast?: boolean;
   } & JSX.InputHTMLAttributes<HTMLInputElement>
 ) => {
   return (
@@ -30,6 +34,7 @@ export const BaseSlider = (
       <input
         {...props}
         class={classNames(sliderStyles.slider, props.class)}
+        classList={{ [sliderStyles.contrast]: props.contrast }}
         step={props.step || "any"}
         type="range"
       />

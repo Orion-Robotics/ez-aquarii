@@ -1,11 +1,14 @@
 import { Component, createSignal, Match, Show, Switch } from "solid-js";
+import { css } from "vite-plugin-inline-css-modules";
 import ArrowLeft from "~icons/mdi/arrow-left";
 import ArrowRight from "~icons/mdi/arrow-right";
+import SettingsCog from "~icons/mdi/cog";
 import { CameraView } from "./CameraView";
 import { ShimmerButton } from "./components/Base/BaseButton";
 import { BaseInput } from "./components/Base/BaseInput";
 import { BaseRadioButton } from "./components/Base/BaseRadioButton";
 import { BaseSlider } from "./components/Base/BaseSlider";
+import { IconButton } from "./components/Base/IconButton";
 import { Label } from "./components/Base/Label";
 import { Split } from "./components/Base/Split";
 import {
@@ -16,6 +19,19 @@ import {
 } from "./data_sources";
 import { createStoredSignal } from "./helpers/createStoredSignal";
 import { RobotView } from "./RobotView";
+import { SettingsPanel } from "./SettingsPanel";
+
+const styles = css`
+  .gutter {
+    @apply bg-dark-800 active:bg-blue-500 transition duration-200;
+    &.vertical {
+      @apply cursor-ew-resize w-0.5;
+    }
+    &.horizontal {
+      @apply h-1 cursor-ns-resize;
+    }
+  }
+`;
 
 enum View {
   Robot,
@@ -44,8 +60,15 @@ const App: Component = () => {
   const [currentFrame, setCurrentFrame] = createSignal<DataObject | undefined>(
     undefined
   );
+  const [editingSettings, setEditingSettings] = createSignal(false);
 
   let source: DataSource | undefined = undefined;
+
+  const onConfigChange = (value: any) => {
+    if (source instanceof ServerSource) {
+      source.ws.send(JSON.stringify(value));
+    }
+  };
 
   const onClick = () => {
     setStarted(!started());
@@ -70,112 +93,138 @@ const App: Component = () => {
 
   return (
     <div class="flex h-full">
-      <div class="w-72 bg-dark-600 h-full overflow-auto">
-        <div class="px-4 py-4 flex flex-col gap-4">
-          <a class="hover:underline underline-offset-4">Nebula</a>
-          <BaseRadioButton
-            label="Server"
-            name="source"
-            checked={sourceType() === "server"}
-            onClick={() => setSourceType("server")}
-          />
-          <BaseRadioButton
-            label="Text Input"
-            name="source"
-            checked={sourceType() === "text"}
-            onClick={() => setSourceType("text")}
-          />
-          <Switch fallback={<p>Select a Data Source</p>}>
-            <Match when={sourceType() === "server"}>
-              <Label>Server Address</Label>
-              <BaseInput
-                label="0.0.0.0:7272"
-                onInput={(ev) => setServerAddress(ev.currentTarget.value)}
-                value={serverAddress()}
-              />
-              <Label>Camera Address</Label>
-              <BaseInput
-                label="0.0.0.0:7273"
-                onInput={(ev) => setCameraAddress(ev.currentTarget.value)}
-                value={cameraAddress()}
-              />
-            </Match>
-            <Match when={sourceType() === "text"}>
-              <Label>Text Input</Label>
-              <BaseInput
-                textarea
-                onInput={(ev) => setTextData(ev.currentTarget.value)}
-                value={textData()}
-              />
-            </Match>
-          </Switch>
-          <ShimmerButton onClick={onClick}>
-            {started() ? "Stop" : "Start"}
-          </ShimmerButton>
-        </div>
-      </div>
-      <Show
-        when={currentFrame()}
-        fallback={<div class="flex-1 p-3">Press start to begin monitoring</div>}
+      <Split
+        sizes={[30, 70]}
+        gutterSize={5}
+        direction="horizontal"
+        gutterClass={`${styles.gutter} ${styles.vertical}`}
       >
-        <div class="flex-1 flex-col flex">
-          <div class="bg-dark-300 p-2 flex gap-2">
-            <ShimmerButton onClick={() => source?.next()}>
-              <ArrowLeft />
-            </ShimmerButton>
-            <ShimmerButton onClick={() => source?.back()}>
-              <ArrowRight />
-            </ShimmerButton>
-            <BaseSlider
-              class="w-full"
-              showValue
-              label="Frame No."
-              min={0}
-              max={frameCount()}
-              step={1}
-              value={frameIndex()}
-              onInput={(ev) => {
-                source?.goTo(ev.currentTarget.valueAsNumber);
-                setFrameIndex(ev.currentTarget.valueAsNumber);
-              }}
-            />
-          </div>
-          <Split
-            direction="vertical"
-            gutterSize={5}
-            sizes={[70, 30]}
-            gutterClass="bg-dark-800 h-1 cursor-ns-resize active:bg-blue-500 transition duration-200"
-          >
-            <div class="relative">
-              <Switch>
-                <Match when={view() === View.Robot}>
-                  <RobotView frame={currentFrame()!} />
+        <div class="bg-dark-600 h-full overflow-auto">
+          <div class="px-4 py-4 flex flex-col gap-4">
+            <Show when={!editingSettings()}>
+              <div class="flex items-center">
+                <a class="hover:underline underline-offset-4 w-full select-none">
+                  Nebula
+                </a>
+                <IconButton onClick={() => setEditingSettings(true)}>
+                  <SettingsCog />
+                </IconButton>
+              </div>
+              <BaseRadioButton
+                label="Server"
+                name="source"
+                checked={sourceType() === "server"}
+                onClick={() => setSourceType("server")}
+              />
+              <BaseRadioButton
+                label="Text Input"
+                name="source"
+                checked={sourceType() === "text"}
+                onClick={() => setSourceType("text")}
+              />
+              <Switch fallback={<p>Select a Data Source</p>}>
+                <Match when={sourceType() === "server"}>
+                  <Label>Server Address</Label>
+                  <BaseInput
+                    label="0.0.0.0:7272"
+                    onInput={(ev) => setServerAddress(ev.currentTarget.value)}
+                    value={serverAddress()}
+                  />
+                  <Label>Camera Address</Label>
+                  <BaseInput
+                    label="0.0.0.0:7273"
+                    onInput={(ev) => setCameraAddress(ev.currentTarget.value)}
+                    value={cameraAddress()}
+                  />
                 </Match>
-                <Match when={view() === View.Camera}>
-                  <CameraView host={cameraAddress()} />
+                <Match when={sourceType() === "text"}>
+                  <Label>Text Input</Label>
+                  <BaseInput
+                    textarea
+                    onInput={(ev) => setTextData(ev.currentTarget.value)}
+                    value={textData()}
+                  />
                 </Match>
               </Switch>
-              <div class="absolute top-0 right-0 flex flex-col gap-2 bg-black/90 p-3 rounded-bl-4">
-                <BaseRadioButton
-                  checked={view() === View.Robot}
-                  onClick={() => setView(View.Robot)}
-                  label="Robot View"
-                  name="view"
-                />
-                <BaseRadioButton
-                  checked={view() === View.Camera}
-                  onClick={() => setView(View.Camera)}
-                  label="Camera View"
-                  name="view"
-                />
-              </div>
-            </div>
-            <div class="overflow-auto whitespace-pre-wrap break-all h-full w-full">
-              <p>{JSON.stringify(currentFrame())}</p>
-            </div>
-          </Split>
+              <ShimmerButton onClick={onClick}>
+                {started() ? "Stop" : "Start"}
+              </ShimmerButton>
+            </Show>
+            <Show when={editingSettings()}>
+              <SettingsPanel
+                onBack={() => setEditingSettings(false)}
+                onChange={onConfigChange}
+                host={serverAddress()}
+              />
+            </Show>
+          </div>
         </div>
-      </Show>
+        <Show
+          when={currentFrame()}
+          fallback={
+            <div class="flex-1 p-3">Press start to begin monitoring</div>
+          }
+        >
+          <div class="flex-1 flex-col flex">
+            <div class="bg-dark-300 p-2 flex gap-2">
+              <ShimmerButton onClick={() => source?.next()}>
+                <ArrowLeft />
+              </ShimmerButton>
+              <ShimmerButton onClick={() => source?.back()}>
+                <ArrowRight />
+              </ShimmerButton>
+              <BaseSlider
+                class="w-full"
+                contrast
+                showValue
+                label="Frame No."
+                min={0}
+                max={frameCount()}
+                step={1}
+                value={frameIndex()}
+                onInput={(ev) => {
+                  source?.goTo(ev.currentTarget.valueAsNumber);
+                  setFrameIndex(ev.currentTarget.valueAsNumber);
+                }}
+              />
+            </div>
+            <Split
+              direction="vertical"
+              gutterSize={5}
+              sizes={[70, 30]}
+              gutterClass={`${styles.gutter} ${styles.horizontal}`}
+            >
+              <div class="relative">
+                <Switch>
+                  <Match when={view() === View.Robot}>
+                    <RobotView frame={currentFrame()!} />
+                  </Match>
+                  <Match when={view() === View.Camera}>
+                    <CameraView host={cameraAddress()} />
+                  </Match>
+                </Switch>
+                <div class="absolute top-0 right-0 flex flex-col gap-2 bg-black/90 p-3 rounded-bl-4">
+                  <BaseRadioButton
+                    checked={view() === View.Robot}
+                    onClick={() => setView(View.Robot)}
+                    label="Robot View"
+                    name="view"
+                  />
+                  <BaseRadioButton
+                    checked={view() === View.Camera}
+                    onClick={() => setView(View.Camera)}
+                    label="Camera View"
+                    name="view"
+                  />
+                </div>
+              </div>
+              <div class="overflow-auto whitespace-pre-wrap break-all h-full w-full">
+                <p>{JSON.stringify(currentFrame())}</p>
+              </div>
+            </Split>
+          </div>
+        </Show>
+      </Split>
     </div>
   );
 };

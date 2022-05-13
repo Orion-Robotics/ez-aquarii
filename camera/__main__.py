@@ -1,3 +1,4 @@
+import json
 import os
 import traceback
 from time import sleep, time
@@ -13,17 +14,37 @@ from lib.camera import Camera
 from lib.ipc import IPC, new_fifo_ipc
 from lib.streaming import StreamingFrameHandler
 
+
+def handle_camera_control(path: str, body: bytes) -> bytes:
+    return b"OK"
+
+
 if __name__ == "__main__":
     try:
         ipc = new_fifo_ipc("socket")
         handler = DisplayHandler(ipc, False)
-        handler = StreamingFrameHandler(handler, constants.SERVER_ADDRESS)
+        handler = StreamingFrameHandler(
+            handler,
+            constants.SERVER_ADDRESS,
+            [handler.handle_request, handle_camera_control],
+        )
+        cam = Camera(handler)
+
+        def wb_adjust(path: str, body: bytes) -> bytes:
+            if path == "/wb":
+                data = json.loads(body)
+                cam.camera.awb_gains = (
+                    data["red"],
+                    data["blue"],
+                )
+            return b"OK"
+
+        handler.add_handler(wb_adjust)
+        cam.run()
         # joe = cv2.imread("cha.jpg")
         # joe = cv2.resize(joe, (600, 600))
         # while True:
         #    handler.handle_frame(joe)
-        cam = Camera(handler)
-        cam.run()
     except Exception as e:
         print(e)
         traceback.print_exc()

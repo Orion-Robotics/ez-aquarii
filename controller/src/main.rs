@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
 	// sets the debug level to show all traces
 	tracing_subscriber::fmt()
 		.with_env_filter(
-			EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug")),
+			EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
 		)
 		.init();
 
