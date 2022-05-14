@@ -92,13 +92,15 @@ export const JSONEditor: Component<{
               </Match>
               <Match when={typeof props.data === "number"}>
                 {() => {
-                  const structure = props.structure as SliderOptions;
+                  const structure = props.structure as
+                    | SliderOptions
+                    | undefined;
                   return (
                     <BaseSlider
                       class="w-full"
-                      min={structure.min}
-                      max={structure.max}
-                      step={structure.step}
+                      min={structure?.min}
+                      max={structure?.max}
+                      step={structure?.step}
                       value={props.data as number}
                       onInput={(ev) =>
                         props.onChange(

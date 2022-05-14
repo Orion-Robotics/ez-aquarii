@@ -21,6 +21,7 @@ export interface DataObject {
   rotation: number;
   move_vector?: Vec2;
   motor_powers: number[];
+  tick_rates: Record<string, number>;
 }
 
 export type Module =

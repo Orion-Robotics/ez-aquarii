@@ -192,7 +192,17 @@ export const RobotView: Component<{
           </g>
         </g>
       </svg>
-      <div class="absolute bottom-0 left-0 bg-black/90 p-3 rounded-tr-4">
+      <div class="text-xs absolute top-0 left-0 bg-black/80 p-3 rounded-br-4">
+        <For each={Object.keys(props.frame.tick_rates)}>
+          {(key) => (
+            <div class="flex">
+              <span class="w-24">{key}</span>
+              <span>{props.frame.tick_rates[key]}</span>
+            </div>
+          )}
+        </For>
+      </div>
+      <div class="absolute bottom-0 left-0 bg-black/80 p-3 rounded-tr-4">
         <BaseSlider
           type="range"
           label="Radius"
