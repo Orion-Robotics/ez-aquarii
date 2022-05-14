@@ -18,12 +18,12 @@ if __name__ == "__main__":
     try:
         ipc = new_fifo_ipc("socket")
         handler = DisplayHandler(ipc, False)
-        handler = StreamingFrameHandler(
+        stream_handler = StreamingFrameHandler(
             handler,
             constants.SERVER_ADDRESS,
             [],
         )
-        cam = Camera(handler)
+        cam = Camera(stream_handler)
 
         def wb_adjust(path: str, body: bytes) -> bytes | None:
             if path == "/wb":
@@ -36,8 +36,8 @@ if __name__ == "__main__":
                 cam.camera.iso = data["iso"]
             return None
 
-        handler.add_handler(wb_adjust)
-        handler.add_handler(handler.handle_request)
+        stream_handler.add_handler(wb_adjust)
+        stream_handler.add_handler(handler.handle_request)
         cam.run()
         # joe = cv2.imread("cha.jpg")
         # joe = cv2.resize(joe, (600, 600))

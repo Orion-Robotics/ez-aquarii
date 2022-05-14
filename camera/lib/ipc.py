@@ -3,6 +3,8 @@ import unittest
 from os import mkfifo
 from typing import BinaryIO
 
+from genericpath import exists
+
 
 class IPC:
     def __init__(self, io: BinaryIO):
@@ -20,9 +22,10 @@ class IPC:
 
 
 def new_fifo_ipc(path: str):
+    if exists(path):
+        os.remove(path)
     mkfifo(path, 0o660)
     writer = open(path, "rb+", 0)
-    print("c")
     return IPC(writer)
 
 

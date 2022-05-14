@@ -129,7 +129,7 @@ export const RobotView: Component<{
               return (
                 <circle
                   cx={radius() * Math.cos(angle())}
-                  cy={radius() * -Math.sin(angle())}
+                  cy={-radius() * -Math.sin(angle())}
                   r={circleSize()}
                   fill={fillColor()}
                 />

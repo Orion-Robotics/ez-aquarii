@@ -26,14 +26,14 @@ class DisplayHandler(BaseFrameHandler):
         if enable_window:
             cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
 
-    def handle_request(self, path: str, body: bytes) -> bytes:
-        print(path, body)
+    def handle_request(self, path: str, body: bytes) -> bytes | None:
         if path == "/get_thresholds":
             return json.dumps({"thresholds": self.thresholds}).encode("utf-8")
         if path == "/thresholds":
             self.thresholds = json.loads(body)["thresholds"]
             json.dump({"thresholds": self.thresholds}, open("./camera.json", "w"))
-        return b"OK"
+            return b"OK"
+        return None
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)

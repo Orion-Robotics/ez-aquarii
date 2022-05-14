@@ -154,7 +154,7 @@ impl Module for StateRecorder {
 		if let Ok(msg) = self.client_message_receiver.try_recv() {
 			state.lock().config = msg;
 		}
-		if self.last_state_change.elapsed() > Duration::from_millis(20) {
+		if self.last_state_change.elapsed() > Duration::from_millis(10) {
 			let state = state.lock();
 			if let Err(err) = self.state_sender.send(state.clone()) {
 				tracing::trace!("Error broadcasting new state: {:?}", err);

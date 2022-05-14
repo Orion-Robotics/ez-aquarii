@@ -61,13 +61,12 @@ def generate_stream(
             post_body = self.rfile.read(content_len)
             self.send_response(200)
             self.cors()
-            self.send_header("Content-Type", "text/plain")
             self.end_headers()
-            print(len(request_handlers))
             for handler in request_handlers:
                 if handler is not None:
                     resp = handler(self.path, post_body)
                     if resp is not None:
+                        self.send_header("Content-Length", str(len(resp)))
                         self.wfile.write(resp)
             else:
                 self.wfile.write(b"OK")
