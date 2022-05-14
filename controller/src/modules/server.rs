@@ -1,4 +1,8 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{
+	net::SocketAddr,
+	sync::Arc,
+	time::{Duration, Instant},
+};
 
 use super::{state::State, Module};
 use crate::config::{self, Config};
@@ -69,6 +73,7 @@ pub struct StateRecorder {
 	kill_complete_receiver: Option<oneshot::Receiver<()>>,
 	addr: SocketAddr,
 	config: Config,
+	last_state_change: Instant,
 }
 
 impl StateRecorder {
@@ -90,6 +95,7 @@ impl StateRecorder {
 			kill_complete_receiver: Some(kill_complete_receiver),
 			addr,
 			config,
+			last_state_change: Instant::now(),
 		})
 	}
 }
@@ -97,7 +103,7 @@ impl StateRecorder {
 #[async_trait]
 impl Module for StateRecorder {
 	fn name(&self) -> &'static str {
-		"StateRecorder"
+		"server"
 	}
 
 	async fn start(&mut self) -> Result<()> {
@@ -126,6 +132,7 @@ impl Module for StateRecorder {
 			tracing::debug!("server has shut down");
 			kill_complete_sender.send(()).ok();
 		});
+
 		Ok(())
 	}
 
@@ -144,12 +151,15 @@ impl Module for StateRecorder {
 	}
 
 	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
-		let mut state = state.lock();
-		if let Err(err) = self.state_sender.send(state.clone()) {
-			tracing::trace!("Error broadcasting new state: {:?}", err);
-		}
 		if let Ok(msg) = self.client_message_receiver.try_recv() {
-			state.config = msg;
+			state.lock().config = msg;
+		}
+		if self.last_state_change.elapsed() > Duration::from_millis(20) {
+			let state = state.lock();
+			if let Err(err) = self.state_sender.send(state.clone()) {
+				tracing::trace!("Error broadcasting new state: {:?}", err);
+			}
+			self.last_state_change = Instant::now();
 		}
 		Ok(())
 	}
