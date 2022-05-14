@@ -108,31 +108,3 @@ pub async fn read_config(path: &str) -> Result<Config> {
 		}
 	}
 }
-
-// read_and_watch_config reads the config file and watches it for changes.
-// If the config file changes, it will be read again and the new config will be sent over the channel.
-// If there is an error, the error will be sent over the other channel.
-// It is important to hold onto the INotifyWatcher so that it doesn't get dropped and die.
-pub async fn read_and_watch_config(
-	path: &'static str,
-) -> Result<(INotifyWatcher, mpsc::UnboundedReceiver<Config>)> {
-	let (s, r) = mpsc::unbounded_channel();
-	let _ = s.send(read_config(path).await?);
-	let mut watcher = RecommendedWatcher::new(move |res: notify::Result<Event>| match res {
-		Ok(event) => {
-			if !event.kind.is_modify() {
-				return;
-			}
-			if let Ok(new_config) = futures::executor::block_on(read_config(path)) {
-				if let Err(err) = s.send(new_config) {
-					tracing::error!("failed to send config: {}", err);
-				}
-			}
-		}
-		Err(err) => {
-			tracing::error!("failed to watch config {:?}", err);
-		}
-	})?;
-	watcher.watch(Path::new(path), RecursiveMode::NonRecursive)?;
-	Ok((watcher, r))
-}

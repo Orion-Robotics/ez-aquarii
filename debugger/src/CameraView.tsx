@@ -34,6 +34,7 @@ export const CameraView: Component<{
   });
   const [redGain, setRedGain] = createSignal(0);
   const [blueGain, setBlueGain] = createSignal(0);
+  const [ISO, setISO] = createSignal(0);
 
   onMount(async () => {
     const resp = (
@@ -50,11 +51,12 @@ export const CameraView: Component<{
 
   createEffect(
     on(
-      [redGain, blueGain],
+      [redGain, blueGain, ISO],
       async () =>
-        sendJSON(`http://${props.host}/thresholds`, {
+        sendJSON(`http://${props.host}/wb`, {
           red: redGain(),
           blue: blueGain(),
+          iso: ISO(),
         }),
       { defer: true }
     )
@@ -78,6 +80,14 @@ export const CameraView: Component<{
         src={`http://${props.host}/stream.mjpg`}
       />
       <div class="absolute left-0 bottom-0 p-3 bg-black/90 rounded-tr-4 flex flex-col gap-2">
+        <BaseSlider
+          label="ISO"
+          class={styles.slider}
+          min={0}
+          max={800}
+          step={1}
+          onInput={(ev) => setISO(ev.currentTarget.valueAsNumber)}
+        />
         <BaseSlider
           label="Red Balance"
           class={styles.slider}

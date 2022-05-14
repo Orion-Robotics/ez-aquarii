@@ -43,7 +43,8 @@ class StreamingOutput(object):
 
 
 def generate_stream(
-    output: StreamingOutput, request_handler: list[Callable[[str, bytes], bytes] | None]
+    output: StreamingOutput,
+    request_handlers: list[Callable[[str, bytes], bytes | None] | None],
 ):
     class StreamingHandler(server.BaseHTTPRequestHandler):
         def cors(self):
@@ -62,10 +63,12 @@ def generate_stream(
             self.cors()
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
-            for handler in request_handler:
+            print(len(request_handlers))
+            for handler in request_handlers:
                 if handler is not None:
                     resp = handler(self.path, post_body)
-                    self.wfile.write(resp)
+                    if resp is not None:
+                        self.wfile.write(resp)
             else:
                 self.wfile.write(b"OK")
 
@@ -113,7 +116,7 @@ class StreamingFrameHandler(BaseFrameHandler):
         self,
         inner: BaseFrameHandler,
         addr: tuple[str, int],
-        handlers: list[Callable[[str, bytes], bytes]],
+        handlers: list[Callable[[str, bytes], bytes | None] | None],
     ) -> None:
         super().__init__()
         self.inner = inner
@@ -121,12 +124,10 @@ class StreamingFrameHandler(BaseFrameHandler):
 
         self.output = StreamingOutput()
 
-        self.server = StreamingServer(
-            addr, generate_stream(self.output, [*handlers, self.inner.handle_request])
-        )
+        self.server = StreamingServer(addr, generate_stream(self.output, handlers))
         threading.Thread(target=self.server.serve_forever).start()
 
-    def add_handler(self, handler: Callable[[str, bytes], bytes]):
+    def add_handler(self, handler: Callable[[str, bytes], bytes | None]):
         self.handlers.append(handler)
 
     def stop(self):
@@ -135,6 +136,8 @@ class StreamingFrameHandler(BaseFrameHandler):
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         res = self.inner.handle_frame(frame)
-        _, encoded = cv2.imencode(".jpg", res)
+        scale = 0.2
+        downscaled = cv2.resize(res, None, fx=scale, fy=scale)
+        _, encoded = cv2.imencode(".jpg", downscaled)
         self.output.write(encoded.tobytes())
         return res

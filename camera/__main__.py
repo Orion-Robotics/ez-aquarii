@@ -14,11 +14,6 @@ from lib.camera import Camera
 from lib.ipc import IPC, new_fifo_ipc
 from lib.streaming import StreamingFrameHandler
 
-
-def handle_camera_control(path: str, body: bytes) -> bytes:
-    return b"OK"
-
-
 if __name__ == "__main__":
     try:
         ipc = new_fifo_ipc("socket")
@@ -26,20 +21,23 @@ if __name__ == "__main__":
         handler = StreamingFrameHandler(
             handler,
             constants.SERVER_ADDRESS,
-            [handler.handle_request, handle_camera_control],
+            [],
         )
         cam = Camera(handler)
 
-        def wb_adjust(path: str, body: bytes) -> bytes:
+        def wb_adjust(path: str, body: bytes) -> bytes | None:
             if path == "/wb":
                 data = json.loads(body)
+                print(data)
                 cam.camera.awb_gains = (
                     data["red"],
                     data["blue"],
                 )
-            return b"OK"
+                cam.camera.iso = data["iso"]
+            return None
 
         handler.add_handler(wb_adjust)
+        handler.add_handler(handler.handle_request)
         cam.run()
         # joe = cv2.imread("cha.jpg")
         # joe = cv2.resize(joe, (600, 600))

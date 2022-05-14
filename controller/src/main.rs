@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use controller::{
-	config::{read_and_watch_config, Config},
+	config::{read_config, Config},
 	modules::{
 		camera, line, motors::Motors, server::StateRecorder, state, state_randomizer, AnyModule,
 		Module,
@@ -12,7 +12,7 @@ use std::{
 	sync::Arc,
 	time::{Duration, Instant},
 };
-use tracing::Instrument;
+use tokio::time::interval;
 use tracing_subscriber::EnvFilter;
 
 const CONFIG_FILE: &str = "./config.yaml";
@@ -26,57 +26,42 @@ async fn main() -> Result<()> {
 		)
 		.init();
 
-	let (_watcher, mut cfg_chan) = read_and_watch_config(CONFIG_FILE)
-		.instrument(tracing::info_span!("Reading config file..."))
-		.await
-		.with_context(|| format!("Failed to read config file {CONFIG_FILE}"))?;
-
+	let config = read_config(CONFIG_FILE).await?;
+	let modules: Vec<AnyModule> = handle_config_change(config).await?;
 	let robot_state = Arc::new(Mutex::new(state::State::default()));
-	let mut modules: Vec<AnyModule> = Vec::new();
-	let (mut last_print, mut num_prints) = (Instant::now(), 0);
+	let futures = modules
+		.into_iter()
+		.enumerate()
+		.map(|(i, mut m)| {
+			let mut state = robot_state.clone();
+			tokio::spawn(async move {
+				loop {
+					tracing::debug!("Ticking module {:?}", m.name());
+					if let Err(e) = m.tick(&mut state).await {
+						tracing::error!("error ticking {}: {:?}", m.name(), e);
+					}
+					state
+						.lock()
+						.tick_rates
+						.entry(m.name().to_string())
+						.and_modify(|v| *v += 1)
+						.or_insert(0);
+				}
+			})
+		})
+		.collect::<Vec<_>>();
 
+	tokio::spawn(join_all(futures));
+
+	let mut interval = interval(Duration::from_millis(1000));
 	loop {
-		if last_print.elapsed() >= Duration::from_secs(1) {
-			tracing::info!("{} TPS", num_prints);
-			last_print = Instant::now();
-			num_prints = 0;
-		}
-		if let Ok(new_config) = cfg_chan.try_recv() {
-			tracing::debug!("Received new config");
-			robot_state.lock().config = new_config.clone();
-			match handle_config_change(new_config).await {
-				Ok(mut new_modules) => {
-					let disabled = modules.iter().map(|x| x.name()).collect::<Vec<_>>();
-					let enabled = new_modules.iter().map(|x| x.name()).collect::<Vec<_>>();
-					tracing::info!("disabling: {:?}", disabled);
-					tracing::info!("enabling: {:?}", enabled);
-					for module in modules.iter_mut() {
-						module.stop().await.context(module.name())?;
-					}
-					for module in new_modules.iter_mut() {
-						module.start().await.context(module.name())?;
-					}
-					modules = new_modules;
-				}
-				Err(e) => tracing::error!("Failed to handle config change: {:#}", e),
-			}
-		}
-		let tick_futures = modules.iter_mut().map(|m| async {
-			let mut robot_state = Arc::clone(&robot_state);
-			tracing::trace!("{} tick", m.name());
-			let tick_future =
-				tokio::time::timeout(Duration::from_millis(200), m.tick(&mut robot_state));
-			match tick_future.await {
-				Ok(res) => {
-					if let Err(e) = res {
-						tracing::error!("{} encountered an error while ticking: {:?}", m.name(), e);
-					}
-				}
-				Err(e) => tracing::warn!("{} took too long to process: {}", m.name(), e),
-			}
-		});
-		join_all(tick_futures).await;
-		num_prints += 1;
+		interval.tick().await;
+		let mut state = robot_state.lock();
+		let tick_rates = &mut state.tick_rates;
+		let mut formatted = tick_rates.iter().collect::<Vec<_>>();
+		formatted.sort_by(|(name, _), (name1, _)| name1.cmp(name));
+		tracing::info!("tick rates: {:?}", formatted);
+		tick_rates.clear();
 	}
 }
 
@@ -89,7 +74,6 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 		ref state_randomizer,
 	} = cfg;
 
-	tracing::info!("config changed, reloading...");
 	let mut new_modules: Vec<Box<dyn Module>> = Vec::new();
 
 	if let Some(camera) = camera {

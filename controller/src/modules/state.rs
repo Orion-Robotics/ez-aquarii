@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{config::Config, math::vec2::Vec2};
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +18,8 @@ pub struct RawData {
 // State contains all of the robot's data for each tick.
 #[derive(Serialize, Default, Clone, Debug)]
 pub struct State {
+	pub tick_rates: HashMap<String, u32>,
+
 	#[serde(skip_serializing)]
 	pub config: Config,
 	// raw sensor data, not to be used by actual program logic

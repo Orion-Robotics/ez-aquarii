@@ -27,6 +27,7 @@ class DisplayHandler(BaseFrameHandler):
             cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
 
     def handle_request(self, path: str, body: bytes) -> bytes:
+        print(path, body)
         if path == "/get_thresholds":
             return json.dumps({"thresholds": self.thresholds}).encode("utf-8")
         if path == "/thresholds":

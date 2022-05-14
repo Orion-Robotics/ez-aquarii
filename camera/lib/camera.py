@@ -26,13 +26,11 @@ class Camera:
         self.camera = PiCamera(
             sensor_mode=5, framerate=framerate, resolution=resolution
         )
-        # self.camera.awb_mode='off'
-        # self.camera.exposure_mode='off'
-        # self.camera.iso=1
-        # self.camera.shutter_speed=4000
-        self.camera.resolution = resolution
         self.camera.framerate = framerate
         self.raw_capture = PiRGBArray(self.camera, size=resolution)
+        self.camera.awb_mode = "off"
+        self.camera.exposure_mode = "off"
+        self.camera.resolution = resolution
         self.camera.start_recording(
             self,
             format="bgr",
@@ -41,8 +39,6 @@ class Camera:
         self.stopped = False
         if enable_ipc:
             self.ipc = new_fifo_ipc(ipc_path)
-        sleep(5)
-        self.camera.exposure_mode = "off"
 
     def run(self):
         while True:
