@@ -25,18 +25,14 @@ if __name__ == "__main__":
         )
         cam = Camera(stream_handler)
 
-        def wb_adjust(path: str, body: bytes) -> bytes | None:
-            if path == "/wb":
+        def camera_adjust(path: str, body: bytes) -> bytes | None:
+            if path == "/thresholds":
+                json.dump(json.loads(body), open(path, "w"))
                 data = json.loads(body)
-                print(data)
-                cam.camera.awb_gains = (
-                    data["red"],
-                    data["blue"],
-                )
-                cam.camera.iso = data["iso"]
+                cam.camera.saturation = data["saturation"]
             return None
 
-        stream_handler.add_handler(wb_adjust)
+        stream_handler.add_handler(camera_adjust)
         stream_handler.add_handler(handler.handle_request)
         cam.run()
         # joe = cv2.imread("cha.jpg")

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	config::{self},
+	math::vec2::Vec2,
 	modules,
 };
 use anyhow::{Context, Result};
@@ -90,6 +91,7 @@ impl Module for Camera {
 			state.orbit_offset = orbit_offset;
 			state.dampen_amount = dampen_amount;
 			state.orbit_angle = orbit_angle;
+			state.ball_follow_vector = Vec2::from_rad(data.angle);
 		}
 
 		Ok(())

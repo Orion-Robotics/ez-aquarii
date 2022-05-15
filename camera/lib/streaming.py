@@ -68,8 +68,6 @@ def generate_stream(
                     if resp is not None:
                         self.send_header("Content-Length", str(len(resp)))
                         self.wfile.write(resp)
-            else:
-                self.wfile.write(b"OK")
 
         def do_GET(self):
             self.send_response(200)
@@ -135,8 +133,9 @@ class StreamingFrameHandler(BaseFrameHandler):
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         res = self.inner.handle_frame(frame)
-        scale = 0.2
-        downscaled = cv2.resize(res, None, fx=scale, fy=scale)
-        _, encoded = cv2.imencode(".jpg", downscaled)
+        # scale = 0.2
+        # downscaled = cv2.resize(res, None, fx=scale, fy=scale)
+        res = cv2.flip(res, 0)
+        _, encoded = cv2.imencode(".jpg", res)
         self.output.write(encoded.tobytes())
         return res

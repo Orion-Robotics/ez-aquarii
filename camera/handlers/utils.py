@@ -17,6 +17,13 @@ def adjust_gamma(image, gamma=1.0):
     return cv2.LUT(image, table)
 
 
+def crop(im: np.ndarray):
+    bl = np.zeros(im.shape[:2], dtype="uint8")
+    bl = cv2.circle(bl, (mw, mh), mw, 255, -1)
+    cr = cv2.bitwise_and(im, im, mask=bl)
+    return cr
+
+
 def mask(image, target):
     upper = np.array([target[0], target[2], target[4]])
     lower = np.array([target[1], target[3], target[5]])
@@ -27,7 +34,7 @@ def mask(image, target):
     return cv2.bitwise_and(image, image, mask=mask)
 
 
-def find_blob(image, target):
+def find_blob(image: np.ndarray, target):
     upper = np.array([target[0], target[2], target[4]])
     lower = np.array([target[1], target[3], target[5]])
     # lower = np.absolute(np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF]))
@@ -62,7 +69,7 @@ def loc(blob, center=(mw, mh)):
         return None
 
 
-def draw(image, blob, color=(0, 0, 255), center=(mw, mh)):
+def draw(image, blob, color=(255, 255, 255), center=(mw, mh)):
     if exists(blob):
         _, _, bx, by = loc(blob)
         cv2.line(

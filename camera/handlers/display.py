@@ -31,18 +31,16 @@ class DisplayHandler(BaseFrameHandler):
             return json.dumps({"thresholds": self.thresholds}).encode("utf-8")
         if path == "/thresholds":
             self.thresholds = json.loads(body)["thresholds"]
-            json.dump({"thresholds": self.thresholds}, open("./camera.json", "w"))
             return b"OK"
         return None
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        bl = np.zeros(frame.shape[:2], dtype="uint8")
-        bl = cv2.circle(bl, (mw, mh), mw, 255, -1)
-        cr = cv2.bitwise_and(im, im, mask=bl)
-        blob = find_blob(cr, self.thresholds)
+        im = crop(im)
+        im = mask(im, self.thresholds)
+        blob = find_blob(im, self.thresholds)
         if blob is not None:
-            draw(cr, blob)
+            draw(im, blob)
 
         location = loc(blob, center=(mw, mh))
         if location is not None and self.ipc is not None:
@@ -55,8 +53,7 @@ class DisplayHandler(BaseFrameHandler):
                     }
                 )
             )
-        im = mask(frame, self.thresholds)
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        im = cv2.cvtColor(im, cv2.COLOR_HSV2RGB)
         if self.enable_window:
             cv2.imshow("meow", im)
             cv2.waitKey(1)

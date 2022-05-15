@@ -159,13 +159,8 @@ const App: Component = () => {
             </Show>
           </div>
         </div>
-        <Show
-          when={currentFrame()}
-          fallback={
-            <div class="flex-1 p-3">Press start to begin monitoring</div>
-          }
-        >
-          <div class="flex-1 flex-col flex">
+        <div class="flex-1 flex-col flex">
+          <Show when={started()}>
             <div class="bg-dark-300 p-2 flex gap-2">
               <ShimmerButton onClick={() => source?.next()}>
                 <ArrowLeft />
@@ -196,9 +191,14 @@ const App: Component = () => {
             >
               <div class="relative">
                 <Switch>
-                  <Match when={view() === View.Robot}>
-                    <RobotView frame={currentFrame()!} />
-                  </Match>
+                  <Show
+                    when={currentFrame()}
+                    fallback={<div class="flex-1 p-3">No frames</div>}
+                  >
+                    <Match when={view() === View.Robot}>
+                      <RobotView frame={currentFrame()!} />
+                    </Match>
+                  </Show>
                   <Match when={view() === View.Camera}>
                     <CameraView host={cameraAddress()} />
                   </Match>
@@ -222,8 +222,8 @@ const App: Component = () => {
                 <p>{JSON.stringify(currentFrame())}</p>
               </div>
             </Split>
-          </div>
-        </Show>
+          </Show>
+        </div>
       </Split>
     </div>
   );

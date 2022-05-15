@@ -28,9 +28,12 @@ class Camera:
         )
         self.camera.framerate = framerate
         self.raw_capture = PiRGBArray(self.camera, size=resolution)
-        self.camera.awb_mode = "off"
-        self.camera.exposure_mode = "off"
+        # self.camera.awb_mode = "off"
+        # self.camera.iso = 800
+        # self.camera.saturation = 0
         self.camera.resolution = resolution
+        sleep(2)
+        self.camera.exposure_mode = "off"
         self.camera.start_recording(
             self,
             format="bgr",

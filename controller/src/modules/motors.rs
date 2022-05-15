@@ -51,7 +51,7 @@ impl Module for Motors {
 				};
 			}
 
-			state.ball_follow_vector = Vec2 { x: 1.0, y: 0.0 };
+			// state.ball_follow_vector = Vec2 { x: 1.0, y: 0.0 };
 			match state.move_vector {
 				Some(vec) => {
 					let move_angle = vec.angle_rad();

@@ -1,3 +1,4 @@
+import debounce from "lodash.debounce";
 import {
   Component,
   createEffect,
@@ -25,16 +26,14 @@ export const CameraView: Component<{
   host: string;
 }> = (props) => {
   const [sliders, setSliders] = createSignal<Record<string, number>>({
-    HH: 0,
+    HH: 255,
     HL: 0,
-    VH: 0,
+    VH: 255,
     VL: 0,
-    SH: 0,
+    SH: 255,
     SL: 0,
   });
-  const [redGain, setRedGain] = createSignal(0);
-  const [blueGain, setBlueGain] = createSignal(0);
-  const [ISO, setISO] = createSignal(0);
+  const [saturation, setSaturation] = createSignal(0);
 
   onMount(async () => {
     const resp = (
@@ -51,24 +50,13 @@ export const CameraView: Component<{
 
   createEffect(
     on(
-      [redGain, blueGain, ISO],
-      async () =>
-        sendJSON(`http://${props.host}/wb`, {
-          red: redGain(),
-          blue: blueGain(),
-          iso: ISO(),
-        }),
-      { defer: true }
-    )
-  );
-
-  createEffect(
-    on(
-      sliders,
-      async () =>
+      [sliders, saturation],
+      debounce(async () =>
         sendJSON(`http://${props.host}/thresholds`, {
           thresholds: Object.values(sliders()),
-        }),
+          saturation: saturation(),
+        })
+      ),
       { defer: true }
     )
   );
@@ -81,27 +69,12 @@ export const CameraView: Component<{
       />
       <div class="absolute left-0 bottom-0 p-3 bg-black/90 rounded-tr-4 flex flex-col gap-2">
         <BaseSlider
-          label="ISO"
+          label="Saturation"
           class={styles.slider}
           min={0}
-          max={800}
+          max={100}
           step={1}
-          onInput={(ev) => setISO(ev.currentTarget.valueAsNumber)}
-        />
-        <BaseSlider
-          label="Red Balance"
-          class={styles.slider}
-          min={0}
-          max={8}
-          onInput={(ev) => setRedGain(ev.currentTarget.valueAsNumber)}
-        />
-        <BaseSlider
-          label="Blue Balance"
-          class={styles.slider}
-          value={blueGain()}
-          onInput={(ev) => setBlueGain(ev.currentTarget.valueAsNumber)}
-          min={0}
-          max={8}
+          onInput={(ev) => setSaturation(ev.currentTarget.valueAsNumber)}
         />
         <For each={Object.keys(sliders())}>
           {(name) => (
