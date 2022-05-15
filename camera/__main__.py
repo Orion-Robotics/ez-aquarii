@@ -6,7 +6,7 @@ from time import sleep, time
 import cv2
 import numpy as np
 
-from config_handler import Config
+from config import Config
 from handlers import BaseFrameHandler, constants
 from handlers.display import DisplayHandler
 from handlers.noop import NoopHandler
@@ -27,9 +27,15 @@ if __name__ == "__main__":
         )
         cam = Camera(stream_handler)
 
-        def camera_adjust(path: str, body: bytes) -> bytes | None:
+        def config_update_handler(path: str, body: bytes) -> bytes | None:
             if path == "/thresholds":
-                config.saturation = json.loads(body)["saturation"]
+                schema = json.loads(body)
+                if schema["reset"] == True:
+                    config.thresholds = [255, 0, 255, 0, 255, 0]
+                    config.saturation = 0
+                else:
+                    config.saturation = schema["saturation"]
+                    config.thresholds = schema["thresholds"]
                 config.update()
             if path == "/config":
                 return json.dumps(config.serialize()).encode("utf-8")
@@ -38,8 +44,7 @@ if __name__ == "__main__":
         def handle_config_update(config: Config) -> None:
             cam.camera.saturation = config.saturation
 
-        stream_handler.add_listener(camera_adjust)
-        stream_handler.add_listener(handler.handle_request(config))
+        stream_handler.add_listener(config_update_handler)
         config.add_listener(handle_config_update)
         config.add_listener(handler.handle_config_update)
         config.update()

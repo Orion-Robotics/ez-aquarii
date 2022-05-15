@@ -3,7 +3,7 @@ import json
 import cv2
 import msgpack
 import numpy as np
-from config_handler import Config
+from config import Config
 from lib.ipc import IPC
 
 from . import BaseFrameHandler
@@ -22,14 +22,6 @@ class DisplayHandler(BaseFrameHandler):
 
         if enable_window:
             cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
-
-    def handle_request(self, config: Config):
-        def handler(path: str, body: bytes):
-            if path == "/thresholds":
-                config.thresholds = json.loads(body)["thresholds"]
-                config.update()
-
-        return handler
 
     def handle_config_update(self, config: Config) -> None:
         self.thresholds = config.thresholds

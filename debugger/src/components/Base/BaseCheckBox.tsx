@@ -1,4 +1,4 @@
-import { Component, JSX } from "solid-js";
+import { Component, JSX, Show } from "solid-js";
 import { css } from "vite-plugin-inline-css-modules";
 import MdiCheck from "~icons/mdi/check";
 
@@ -21,9 +21,14 @@ const styles = css`
 `;
 
 export const BaseCheckBox: Component<
-  JSX.InputHTMLAttributes<HTMLInputElement>
+  {
+    label?: string;
+  } & JSX.InputHTMLAttributes<HTMLInputElement>
 > = (props) => (
   <label class={styles.container}>
+    <Show when={props.label}>
+      <span class="text-xs uppercase">{props.label}</span>
+    </Show>
     <input class={styles.checkbox} type="checkbox" {...props} />
     <div class={styles.checkmark}>
       <MdiCheck />

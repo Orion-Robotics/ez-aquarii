@@ -18,13 +18,16 @@ class Config:
     def serialize(self) -> dict:
         return {"thresholds": self.thresholds, "saturation": self.saturation}
 
+    def publish(self):
+        for listener in self.listeners:
+            listener(self)
+
     def update(self):
         json.dump(
             self.serialize(),
             open(self.path, "w+"),
         )
-        for listener in self.listeners:
-            listener(self)
+        self.publish()
 
     def add_listener(self, listener):
         self.listeners.append(listener)
