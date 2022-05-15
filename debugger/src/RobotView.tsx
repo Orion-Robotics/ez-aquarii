@@ -64,6 +64,10 @@ export const RobotView: Component<{
   frame: DataObject;
 }> = (props) => {
   const [radius, setRadius] = createStoredSignal(100, "radius");
+  const [distanceScale, setDistanceScale] = createStoredSignal(
+    1,
+    "distance_scale"
+  );
   let container: SVGSVGElement;
   let g: SVGGElement;
   let dots: SVGPatternElement;
@@ -160,14 +164,21 @@ export const RobotView: Component<{
             <Angle
               angle={props.frame.orbit_angle}
               color="#b56bff"
-              label="Orbit Angle"
+              label="After Dampen"
               radius={radius() * 1.5}
+              thickness={radius() * 0.03}
+            />
+            <Angle
+              angle={props.frame.before_dampen_angle}
+              color="#fcba03"
+              label="Before Dampen"
+              radius={radius() * 1.2}
               thickness={radius() * 0.03}
             />
             <Show when={props.frame.ball_follow_vector}>
               {(vector) => {
-                const endX = () => radius() * 2 * vector.x;
-                const endY = () => radius() * 2 * -vector.y;
+                const endX = () => vector.x * distanceScale();
+                const endY = () => -vector.y * distanceScale();
                 return (
                   <>
                     <Line
@@ -202,7 +213,7 @@ export const RobotView: Component<{
           )}
         </For>
       </div>
-      <div class="absolute bottom-0 left-0 bg-black/80 p-3 rounded-tr-4">
+      <div class="absolute bottom-0 left-0 bg-black/80 p-3 rounded-tr-4 flex flex-col gap-2">
         <BaseSlider
           type="range"
           label="Radius"
@@ -211,6 +222,15 @@ export const RobotView: Component<{
           max={1000}
           value={radius()}
           onInput={(ev) => setRadius(+ev.currentTarget.value)}
+        />
+        <BaseSlider
+          type="range"
+          label="Distance Scale"
+          showValue
+          max={2}
+          step={0.01}
+          value={distanceScale()}
+          onInput={(ev) => setDistanceScale(+ev.currentTarget.value)}
         />
       </div>
     </div>

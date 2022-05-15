@@ -1,5 +1,11 @@
-import { Component, createEffect, For, onMount } from "solid-js";
-import { createMutable } from "solid-js/store";
+import {
+  Component,
+  createEffect,
+  createSignal,
+  For,
+  on,
+  onMount,
+} from "solid-js";
 import { css } from "vite-plugin-inline-css-modules";
 import { BaseCheckBox } from "./components/Base/BaseCheckBox";
 import { BaseSlider } from "./components/Base/BaseSlider";
@@ -19,7 +25,7 @@ const sendJSON = (url: string, data: any) =>
 export const CameraView: Component<{
   host: string;
 }> = (props) => {
-  const config = createMutable({
+  const [config, setConfig] = createSignal({
     thresholds: {
       HH: 255,
       HL: 0,
@@ -38,24 +44,33 @@ export const CameraView: Component<{
     }).then((res) => res.json())) as {
       thresholds: number[];
       saturation: number;
+      reset: boolean;
     };
-    config.thresholds = Object.fromEntries(
-      Object.entries(config.thresholds).map(([key], i) => [
-        key,
-        resp.thresholds[i],
-      ])
-    );
-    config.saturation = resp.saturation;
-  });
-
-  createEffect(async () => {
-    config;
-    sendJSON(`http://${props.host}/thresholds`, {
-      thresholds: Object.values(config.thresholds),
-      saturation: config.saturation,
-      reset: config.reset,
+    setConfig({
+      thresholds: Object.fromEntries(
+        Object.entries(config().thresholds).map(([key], i) => [
+          key,
+          resp.thresholds[i],
+        ])
+      ),
+      saturation: resp.saturation,
+      reset: resp.reset,
     });
   });
+
+  createEffect(
+    on(
+      config,
+      async () => {
+        sendJSON(`http://${props.host}/thresholds`, {
+          thresholds: Object.values(config().thresholds),
+          saturation: config().saturation,
+          reset: config().reset,
+        });
+      },
+      { defer: true }
+    )
+  );
 
   return (
     <div class="h-full w-full flex justify-center">
@@ -66,8 +81,10 @@ export const CameraView: Component<{
       <div class="absolute left-0 bottom-0 p-3 bg-black/90 rounded-tr-4 flex flex-col gap-2">
         <BaseCheckBox
           label="Show Raw"
-          checked={config.reset}
-          onChange={(ev) => (config.reset = ev.currentTarget.checked)}
+          checked={config().reset}
+          onChange={(ev) =>
+            setConfig({ ...config(), reset: ev.currentTarget.checked })
+          }
         />
         <BaseSlider
           label="Saturation"
@@ -75,16 +92,28 @@ export const CameraView: Component<{
           min={0}
           max={100}
           step={1}
-          onInput={(ev) => (config.saturation = ev.currentTarget.valueAsNumber)}
+          onInput={(ev) =>
+            setConfig({
+              ...config(),
+              saturation: ev.currentTarget.valueAsNumber,
+            })
+          }
+          value={config().saturation}
         />
-        <For each={Object.keys(config.thresholds)}>
+        <For each={Object.keys(config().thresholds)}>
           {(name) => (
             <BaseSlider
               onInput={(ev) =>
-                (config.thresholds[name] = ev.currentTarget.valueAsNumber)
+                setConfig({
+                  ...config(),
+                  thresholds: {
+                    ...config().thresholds,
+                    [name]: ev.currentTarget.valueAsNumber,
+                  },
+                })
               }
               label={name}
-              value={config.thresholds[name]}
+              value={config().thresholds[name]}
               class={styles.slider}
               min={0}
               max={255}

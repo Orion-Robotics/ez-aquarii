@@ -14,8 +14,7 @@ export interface DataObject {
   picked_up: boolean;
   line_vector?: Vec2;
   previous_vec?: Vec2;
-  orbit_offset: number;
-  dampen_amount: number;
+  before_dampen_angle: number;
   orbit_angle: number;
   ball_follow_vector?: Vec2;
   rotation: number;

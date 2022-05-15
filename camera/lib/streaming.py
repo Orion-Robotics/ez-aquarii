@@ -133,8 +133,8 @@ class StreamingFrameHandler(BaseFrameHandler):
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         res = self.inner.handle_frame(frame)
-        # scale = 0.2
-        # downscaled = cv2.resize(res, None, fx=scale, fy=scale)
+        scale = 0.4
+        res = cv2.resize(res, None, fx=scale, fy=scale)
         res = cv2.flip(res, 0)
         _, encoded = cv2.imencode(".jpg", res)
         self.output.write(encoded.tobytes())

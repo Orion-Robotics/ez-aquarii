@@ -30,8 +30,7 @@ pub struct State {
 	pub line_vector: Option<Vec2>,
 	pub previous_vec: Option<Vec2>,
 
-	pub orbit_offset: f64,
-	pub dampen_amount: f64,
+	pub before_dampen_angle: f64,
 	pub orbit_angle: f64,
 	pub ball_follow_vector: Vec2,
 

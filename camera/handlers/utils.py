@@ -60,7 +60,7 @@ def loc(blob, center=(mw, mh)):
         cx = int(m["m10"] / m["m00"])
         cy = int(m["m01"] / m["m00"])
         return (
-            atan2(cy - center[1], cx - center[0]) / pi * -180,
+            atan2(cy - center[1], cx - center[0]),
             sqrt(pow(cy - center[1], 2) + pow(cx - center[0], 2)),
             cx,
             cy,

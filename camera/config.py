@@ -11,12 +11,18 @@ class Config:
                 schema = json.load(f)
                 self.thresholds = schema["thresholds"]
                 self.saturation = schema["saturation"]
+                self.reset = schema["reset"]
         except:
             self.thresholds = [255, 0, 255, 0, 255, 0]
             self.saturation = 0
+            self.reset = False
 
     def serialize(self) -> dict:
-        return {"thresholds": self.thresholds, "saturation": self.saturation}
+        return {
+            "thresholds": self.thresholds,
+            "saturation": self.saturation,
+            "reset": self.reset,
+        }
 
     def publish(self):
         for listener in self.listeners:
