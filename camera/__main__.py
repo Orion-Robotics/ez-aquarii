@@ -6,6 +6,7 @@ from time import sleep, time
 import cv2
 import numpy as np
 
+from config_handler import Config
 from handlers import BaseFrameHandler, constants
 from handlers.display import DisplayHandler
 from handlers.noop import NoopHandler
@@ -16,6 +17,7 @@ from lib.streaming import StreamingFrameHandler
 
 if __name__ == "__main__":
     try:
+        config = Config("camera.json")
         ipc = new_fifo_ipc("socket")
         handler = DisplayHandler(ipc, False)
         stream_handler = StreamingFrameHandler(
@@ -27,13 +29,20 @@ if __name__ == "__main__":
 
         def camera_adjust(path: str, body: bytes) -> bytes | None:
             if path == "/thresholds":
-                json.dump(json.loads(body), open(path, "w"))
-                data = json.loads(body)
-                cam.camera.saturation = data["saturation"]
+                config.saturation = json.loads(body)["saturation"]
+                config.update()
+            if path == "/config":
+                return json.dumps(config.serialize()).encode("utf-8")
             return None
 
-        stream_handler.add_handler(camera_adjust)
-        stream_handler.add_handler(handler.handle_request)
+        def handle_config_update(config: Config) -> None:
+            cam.camera.saturation = config.saturation
+
+        stream_handler.add_listener(camera_adjust)
+        stream_handler.add_listener(handler.handle_request(config))
+        config.add_listener(handle_config_update)
+        config.add_listener(handler.handle_config_update)
+        config.update()
         cam.run()
         # joe = cv2.imread("cha.jpg")
         # joe = cv2.resize(joe, (600, 600))

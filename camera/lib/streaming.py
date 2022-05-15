@@ -117,15 +117,15 @@ class StreamingFrameHandler(BaseFrameHandler):
     ) -> None:
         super().__init__()
         self.inner = inner
-        self.handlers = handlers
+        self.listeners = handlers
 
         self.output = StreamingOutput()
 
         self.server = StreamingServer(addr, generate_stream(self.output, handlers))
         threading.Thread(target=self.server.serve_forever).start()
 
-    def add_handler(self, handler: Callable[[str, bytes], bytes | None]):
-        self.handlers.append(handler)
+    def add_listener(self, handler: Callable[[str, bytes], bytes | None]):
+        self.listeners.append(handler)
 
     def stop(self):
         self.server.shutdown()

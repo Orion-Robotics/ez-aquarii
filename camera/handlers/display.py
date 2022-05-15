@@ -3,6 +3,7 @@ import json
 import cv2
 import msgpack
 import numpy as np
+from config_handler import Config
 from lib.ipc import IPC
 
 from . import BaseFrameHandler
@@ -13,26 +14,25 @@ from .utils import *
 class DisplayHandler(BaseFrameHandler):
     def __init__(self, ipc: IPC | None, enable_window: bool) -> None:
         super().__init__()
-        try:
-            with open("./camera.json", "r+") as f:
-                self.thresholds = json.load(f)["thresholds"]
-        except:
-            self.thresholds = [255, 0, 255, 0, 255, 0]
         self.ipc = ipc
         self.enable_window = enable_window
+        self.thresholds = [255, 0, 255, 0, 255, 0]
         # ball, goal1, goal2
         self.current = 0
 
         if enable_window:
             cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
 
-    def handle_request(self, path: str, body: bytes) -> bytes | None:
-        if path == "/get_thresholds":
-            return json.dumps({"thresholds": self.thresholds}).encode("utf-8")
-        if path == "/thresholds":
-            self.thresholds = json.loads(body)["thresholds"]
-            return b"OK"
-        return None
+    def handle_request(self, config: Config):
+        def handler(path: str, body: bytes):
+            if path == "/thresholds":
+                config.thresholds = json.loads(body)["thresholds"]
+                config.update()
+
+        return handler
+
+    def handle_config_update(self, config: Config) -> None:
+        self.thresholds = config.thresholds
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)

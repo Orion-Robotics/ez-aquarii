@@ -1,4 +1,3 @@
-import debounce from "lodash.debounce";
 import {
   Component,
   createEffect,
@@ -36,27 +35,28 @@ export const CameraView: Component<{
   const [saturation, setSaturation] = createSignal(0);
 
   onMount(async () => {
-    const resp = (
-      await fetch(`http://${props.host}/get_thresholds`, {
-        method: "POST",
-      }).then((res) => res.json())
-    ).thresholds as number[];
+    const resp = (await fetch(`http://${props.host}/config`, {
+      method: "POST",
+    }).then((res) => res.json())) as {
+      thresholds: number[];
+      saturation: number;
+    };
     setSliders(
       Object.fromEntries(
-        Object.entries(sliders()).map(([key], i) => [key, resp[i]])
+        Object.entries(sliders()).map(([key], i) => [key, resp.thresholds[i]])
       )
     );
+    setSaturation(resp.saturation);
   });
 
   createEffect(
     on(
       [sliders, saturation],
-      debounce(async () =>
+      async () =>
         sendJSON(`http://${props.host}/thresholds`, {
           thresholds: Object.values(sliders()),
           saturation: saturation(),
-        })
-      ),
+        }),
       { defer: true }
     )
   );
