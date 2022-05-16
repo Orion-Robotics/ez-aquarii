@@ -84,8 +84,6 @@ impl Module for Motors {
 			}
 		};
 
-		tracing::debug!("motor_commands: {:?}", motor_commands);
-
 		self.serial.write_all(&motor_commands).await?;
 
 		self.serial.write_u8(255).await?;

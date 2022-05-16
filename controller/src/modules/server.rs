@@ -132,7 +132,6 @@ impl Module for StateRecorder {
 				})
 				.await
 				.unwrap();
-			tracing::debug!("server has shut down");
 			kill_complete_sender.send(()).ok();
 		});
 

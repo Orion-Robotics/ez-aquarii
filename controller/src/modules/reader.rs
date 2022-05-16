@@ -2,9 +2,11 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use bytes::BytesMut;
+use futures::StreamExt;
 use parking_lot::Mutex;
-use tokio::io::AsyncReadExt;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
+use tokio_util::codec::{Decoder, Encoder, Framed};
 
 use crate::config;
 
@@ -14,7 +16,7 @@ use super::{
 };
 
 pub struct Reader {
-	pub serial: SerialStream,
+	codec: Framed<SerialStream, ReaderCodec>,
 }
 
 impl Reader {
@@ -26,8 +28,8 @@ impl Reader {
 		}: config::Reader,
 	) -> Result<Self> {
 		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
-
-		Ok(Reader { serial })
+		let codec = ReaderCodec.framed(serial);
+		Ok(Reader { codec })
 	}
 }
 
@@ -38,17 +40,13 @@ impl Module for Reader {
 	}
 
 	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
-		let config::Reader {
-			line_sensor_count, ..
-		} = state.lock().config.reader.as_ref().unwrap().to_owned();
-		while self.serial.read_u8().await? != 255 {}
-		let angle = self.serial.read_f32_le().await?;
-		let mut raw_data: Vec<u8> = vec![0; line_sensor_count];
-		self.serial.read_exact(&mut raw_data).await?;
-		raw_data.reverse();
-		let mut state = state.lock();
-		state.data.sensor_data = raw_data;
-		state.data.orientation = angle;
+		if let Some(res) = self.codec.next().await {
+			let (angle, sensors) = res?;
+			let mut state = state.lock();
+			state.data.sensor_data = sensors;
+			state.data.orientation = angle;
+		}
+
 		sync.reader_notify.notify_waiters();
 		Ok(())
 	}
@@ -59,5 +57,35 @@ impl Module for Reader {
 
 	async fn stop(&mut self) -> Result<()> {
 		Ok(())
+	}
+}
+
+struct ReaderCodec;
+
+impl Decoder for ReaderCodec {
+	type Item = (f32, Vec<u8>);
+	type Error = anyhow::Error;
+
+	fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+		let newline = src.as_ref().iter().position(|b| *b == b'\n');
+		if let Some(n) = newline {
+			let mut line = src.split_to(n + 1);
+			line.truncate(line.len() - 3);
+			return match std::str::from_utf8(line.as_ref()) {
+				Ok(s) => {
+					let mut parts = s.split(' ');
+					let angle: f32 = parts
+						.next()
+						.ok_or(anyhow::anyhow!("failed to parse angle"))?
+						.parse()?;
+					let line_sensors = parts
+						.map(|s| Ok(s.parse::<u8>()?))
+						.collect::<Result<Vec<u8>, anyhow::Error>>()?;
+					Ok(Some((angle, line_sensors)))
+				}
+				Err(_) => Err(anyhow::anyhow!("Invalid String")),
+			};
+		}
+		Ok(None)
 	}
 }

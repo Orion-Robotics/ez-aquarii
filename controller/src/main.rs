@@ -47,7 +47,6 @@ async fn main() -> Result<()> {
 			let mut module_sync = module_sync.clone();
 			tokio::spawn(async move {
 				loop {
-					tracing::debug!("Ticking module {:?}", m.name());
 					if let Err(e) = m.tick(&mut state, &mut module_sync).await {
 						tracing::error!("error ticking {}: {:?}", m.name(), e);
 					}

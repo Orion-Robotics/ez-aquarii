@@ -77,20 +77,20 @@ void setup() {
 int last_freq_update = millis();
 
 void loop() {
-  Serial.println("writing");
   applyCommands();
-  CONTROLLER_PORT.write(255);
   sensors_event_t ev;
   bno.getEvent(&ev);
   auto rotation = ev.orientation.roll * (M_PI / 180);
-  CONTROLLER_PORT.write((byte*)&rotation, sizeof(rotation));
-  for (int i = 0; i < adcs.size(); i++) {
-    for (int channel = 0; channel < 8; channel++) {
+  CONTROLLER_PORT.print(rotation, 2);
+  CONTROLLER_PORT.print(" ");
+  for (auto i = 0; i < adcs.size(); i++) {
+    for (auto channel = 0; channel < 8; channel++) {
       const auto channel_num = (i * 8) + channel;
       if (channel_num == 32 || channel_num == 33) continue;
       const auto value = adcs[i].readADC(7 - channel);
-      const auto magnitude = (uint8_t)((value / 2048.0) * 253);
-      CONTROLLER_PORT.write(magnitude);
+      const auto magnitude = (uint8_t)((value / 2048.0));
+      CONTROLLER_PORT.printf("%d ", magnitude);
     }
   }
+  CONTROLLER_PORT.println();
 }

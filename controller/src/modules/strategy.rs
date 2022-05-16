@@ -2,9 +2,9 @@ use std::{f64::consts::PI, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use async_trait::async_trait;
+use futures::{future::select_all, select, FutureExt};
 use num::traits::Pow;
 use parking_lot::Mutex;
-use tokio::time::sleep;
 
 use crate::{
 	config,
@@ -29,7 +29,11 @@ impl Module for Strategy {
 
 	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
 		// sync.reader_notify.notified().await;
-		sync.camera_notify.notified().await;
+		select_all(vec![
+			sync.camera_notify.notified().boxed(),
+			sync.reader_notify.notified().boxed(),
+		])
+		.await;
 		let mut state = state.lock();
 		let strategy_config = state.config.strategy.as_ref().unwrap().to_owned();
 		let CameraMessage { angle, distance } = state.data.camera_data;
@@ -66,7 +70,8 @@ impl Module for Strategy {
 				*before_dampen_angle = true_angle(before_dampen);
 				*orbit_angle = true_angle(after_dampen);
 				*ball_follow_vector = Vec2::from_rad(true_angle(angle)) * distance;
-				state.move_vector = Some(Vec2::from_rad(true_angle(after_dampen)));
+
+				state.move_vector = Some(*ball_follow_vector);
 			}
 		}
 		Ok(())
