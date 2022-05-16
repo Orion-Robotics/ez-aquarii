@@ -1,4 +1,5 @@
 from math import atan2, pi, pow, sqrt
+from typing import Any, Callable
 
 import cv2
 import numpy as np
@@ -17,7 +18,7 @@ def adjust_gamma(image, gamma=1.0):
     return cv2.LUT(image, table)
 
 
-def crop(im: np.ndarray):
+def crop_surroundings(im: np.ndarray):
     bl = np.zeros(im.shape[:2], dtype="uint8")
     bl = cv2.circle(bl, (mw, mh), mw, 255, -1)
     cr = cv2.bitwise_and(im, im, mask=bl)
@@ -34,7 +35,15 @@ def mask(image, target):
     return cv2.bitwise_and(image, image, mask=mask)
 
 
-def find_blob(image: np.ndarray, target):
+# function that returns a "ball" heuristic, how similar a contour is to a ball
+def ball_heuristic(contour):
+    perimeter = cv2.arcLength(contour, True)
+    area = cv2.contourArea(contour)
+    roundness = (4 * pi * area) / pow(perimeter, 2)
+    return area * roundness
+
+
+def find_optimal_blob(image: np.ndarray, target, heuristic: Callable[[Any], int]):
     upper = np.array([target[0], target[2], target[4]])
     lower = np.array([target[1], target[3], target[5]])
     # lower = np.absolute(np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF]))
@@ -43,14 +52,10 @@ def find_blob(image: np.ndarray, target):
     # mask = cv2.GaussianBlur(mask, (5, 5), 0)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     try:
-        blob = max(contours, key=lambda el: cv2.contourArea(el))
+        blob = max(contours, key=lambda el: heuristic(el))
     except:
         return None
     return blob
-
-
-def exists(blob):
-    return blob is not None and cv2.moments(blob)["m00"] != 0
 
 
 # angle, distance, x, y
@@ -70,15 +75,17 @@ def loc(blob, center=(mw, mh)):
 
 
 def draw(image, blob, color=(255, 255, 255), center=(mw, mh)):
-    if exists(blob):
-        _, _, bx, by = loc(blob)
-        cv2.line(
-            image,
-            center,
-            (int(bx), int(by)),
-            color,
-        )
-        cv2.drawContours(image, [blob], 0, (255, 255, 255), 1)
+    result = loc(blob)
+    if result is None:
+        return
+    _, _, bx, by = result
+    cv2.line(
+        image,
+        center,
+        (int(bx), int(by)),
+        color,
+    )
+    cv2.drawContours(image, [blob], 0, (255, 255, 255), 1)
 
 
 def detectlines(img):

@@ -17,20 +17,22 @@ class DisplayHandler(BaseFrameHandler):
         self.ipc = ipc
         self.enable_window = enable_window
         self.ball_thresholds = [255, 0, 255, 0, 255, 0]
-        # ball, goal1, goal2
-        self.current = 0
+        self.yellow_goal_thresholds = [255, 0, 255, 0, 255, 0]
+        self.blue_goal_thresholds = [255, 0, 255, 0, 255, 0]
 
         if enable_window:
             cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
 
     def handle_config_update(self, config: Config) -> None:
         self.ball_thresholds = config.schema["thresholds"][0]
+        self.yellow_goal_thresholds = config.schema["thresholds"][1]
+        self.blue_goal_thresholds = config.schema["thresholds"][2]
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        im = crop(im)
+        im = crop_surroundings(im)
         im = mask(im, self.ball_thresholds)
-        blob = find_blob(im, self.ball_thresholds)
+        blob = find_optimal_blob(im, self.ball_thresholds, ball_heuristic)
         if blob is not None:
             draw(im, blob)
 

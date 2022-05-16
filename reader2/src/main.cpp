@@ -88,9 +88,11 @@ void loop() {
       const auto channel_num = (i * 8) + channel;
       if (channel_num == 32 || channel_num == 33) continue;
       const auto value = adcs[i].readADC(7 - channel);
-      const auto magnitude = (uint8_t)((value / 2048.0));
+      const auto magnitude = (uint8_t)((value / 2048.0) * 255);
+      Serial.printf("%d ", magnitude);
       CONTROLLER_PORT.printf("%d ", magnitude);
     }
   }
+  Serial.println();
   CONTROLLER_PORT.println();
 }

@@ -58,7 +58,7 @@ fns = [HH, HL, VH, VL, SH, SL]
 
 def refresh():
     m = mask(hsv, thresholds[current])
-    b = find_blob(hsv, thresholds[current])
+    b = find_optimal_blob(hsv, thresholds[current])
     draw(m, b, center=(300, 300))
     hsvshow("mask", label(m, b))
     print(loc(b, center=(300, 300)))
