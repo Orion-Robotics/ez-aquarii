@@ -14,10 +14,14 @@ export interface DataObject {
   picked_up: boolean;
   line_vector?: Vec2;
   previous_vec?: Vec2;
-  before_dampen_angle: number;
-  orbit_angle: number;
-  ball_follow_vector?: Vec2;
   rotation: number;
+  strategy: {
+    type: "Orbit";
+    before_dampen_angle: number;
+    orbit_angle: number;
+    ball_follow_vector: Vec2;
+  };
+  before_line_vector?: Vec2;
   move_vector?: Vec2;
   motor_powers: number[];
   tick_rates: Record<string, number>;

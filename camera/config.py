@@ -4,24 +4,27 @@ from typing import Callable
 
 class Config:
     def __init__(self, path: str):
+        self.schema = self.default_schema()
         self.path = path
         self.listeners = []
         try:
             with open(path, "r+") as f:
                 schema = json.load(f)
-                self.thresholds = schema["thresholds"]
-                self.saturation = schema["saturation"]
-                self.reset = schema["reset"]
+                self.schema = schema
         except:
-            self.thresholds = [255, 0, 255, 0, 255, 0]
-            self.saturation = 0
-            self.reset = False
+            pass
 
-    def serialize(self) -> dict:
+    def default_schema(self):
         return {
-            "thresholds": self.thresholds,
-            "saturation": self.saturation,
-            "reset": self.reset,
+            "thresholds": [
+                [255, 0, 255, 0, 255, 0],
+                [255, 0, 255, 0, 255, 0],
+                [255, 0, 255, 0, 255, 0],
+            ],
+            "camera": {
+                "saturation": 0,
+            },
+            "bypass": False,
         }
 
     def publish(self):
@@ -30,7 +33,7 @@ class Config:
 
     def update(self):
         json.dump(
-            self.serialize(),
+            self.schema,
             open(self.path, "w+"),
         )
         self.publish()

@@ -4,7 +4,10 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use super::{state::State, Module};
+use super::{
+	state::{ModuleSync, State},
+	Module,
+};
 use crate::config::{self, Config};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -150,7 +153,7 @@ impl Module for StateRecorder {
 		Ok(())
 	}
 
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
 		if let Ok(msg) = self.client_message_receiver.try_recv() {
 			state.lock().config = msg;
 		}

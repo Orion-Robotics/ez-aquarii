@@ -151,6 +151,16 @@ export const RobotView: Component<{
                 label="Line Vector"
               />
             </Show>
+            <Show when={props.frame.move_vector}>
+              <Line
+                endX={radius() * 0.9 * props.frame.move_vector!.x}
+                endY={radius() * 0.9 * -props.frame.move_vector!.y}
+                offset={10}
+                color="#5cff88"
+                thickness={radius() * 0.03}
+                label="Move Vector"
+              />
+            </Show>
             <Show when={props.frame.previous_vec}>
               <Line
                 endX={radius() * 0.4 * props.frame.previous_vec!.x}
@@ -161,44 +171,46 @@ export const RobotView: Component<{
                 label="Previous Line Vector"
               />
             </Show>
-            <Angle
-              angle={props.frame.orbit_angle}
-              color="#b56bff"
-              label="After Dampen"
-              radius={radius() * 1.5}
-              thickness={radius() * 0.03}
-            />
-            <Angle
-              angle={props.frame.before_dampen_angle}
-              color="#fcba03"
-              label="Before Dampen"
-              radius={radius() * 1.2}
-              thickness={radius() * 0.03}
-            />
-            <Show when={props.frame.ball_follow_vector}>
-              {(vector) => {
-                const endX = () => vector.x * distanceScale();
-                const endY = () => -vector.y * distanceScale();
-                return (
-                  <>
-                    <Line
-                      endX={endX()}
-                      endY={endY()}
-                      color="#34ebe8"
-                      label="Ball Follow Vector"
-                      offset={10}
-                      thickness={radius() * 0.02}
-                      stroke-dasharray="1 6"
-                    />
-                    <circle
-                      cx={endX()}
-                      cy={endY()}
-                      r={radius() * 0.08}
-                      fill="#34ebe8"
-                    />
-                  </>
-                );
-              }}
+            <Show when={props.frame.strategy.type === "Orbit"}>
+              <Angle
+                angle={props.frame.strategy.orbit_angle}
+                color="#b56bff"
+                label="After Dampen"
+                radius={radius() * 1.5}
+                thickness={radius() * 0.03}
+              />
+              <Angle
+                angle={props.frame.strategy.before_dampen_angle}
+                color="#fcba03"
+                label="Before Dampen"
+                radius={radius() * 1.2}
+                thickness={radius() * 0.03}
+              />
+              <Show when={props.frame.strategy.ball_follow_vector}>
+                {(vector) => {
+                  const endX = () => vector.x * distanceScale();
+                  const endY = () => -vector.y * distanceScale();
+                  return (
+                    <>
+                      <Line
+                        endX={endX()}
+                        endY={endY()}
+                        color="#34ebe8"
+                        label="Ball Follow Vector"
+                        offset={10}
+                        thickness={radius() * 0.02}
+                        stroke-dasharray="1 6"
+                      />
+                      <circle
+                        cx={endX()}
+                        cy={endY()}
+                        r={radius() * 0.08}
+                        fill="#34ebe8"
+                      />
+                    </>
+                  );
+                }}
+              </Show>
             </Show>
           </g>
         </g>

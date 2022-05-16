@@ -6,7 +6,10 @@ use rand::Rng;
 
 use crate::math::vec2::Vec2;
 
-use super::{state::State, Module};
+use super::{
+	state::{ModuleSync, State},
+	Module,
+};
 
 pub struct StateRandomizer {}
 
@@ -28,7 +31,11 @@ impl Module for StateRandomizer {
 		"state_randomizer"
 	}
 
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> anyhow::Result<()> {
+	async fn tick(
+		&mut self,
+		state: &mut Arc<Mutex<State>>,
+		sync: &mut ModuleSync,
+	) -> anyhow::Result<()> {
 		let mut rng = rand::thread_rng();
 		let mut state = state.lock();
 

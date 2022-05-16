@@ -28,21 +28,19 @@ if __name__ == "__main__":
         cam = Camera(stream_handler)
 
         def config_update_handler(path: str, body: bytes) -> bytes | None:
-            if path == "/thresholds":
-                schema = json.loads(body)
-                if schema["reset"] == True:
-                    config.thresholds = [255, 0, 255, 0, 255, 0]
-                    config.saturation = 0
-                else:
-                    config.saturation = schema["saturation"]
-                    config.thresholds = schema["thresholds"]
-                config.update()
             if path == "/config":
-                return json.dumps(config.serialize()).encode("utf-8")
+                schema = json.loads(body)
+                if schema["bypass"] == True:
+                    config.schema = config.default_schema()
+                else:
+                    config.schema = schema
+                config.update()
+            if path == "/get_config":
+                return json.dumps(config.schema).encode("utf-8")
             return None
 
         def handle_config_update(config: Config) -> None:
-            cam.camera.saturation = config.saturation
+            cam.camera.saturation = config.schema["camera"]["saturation"]
 
         stream_handler.add_listener(config_update_handler)
         config.add_listener(handle_config_update)

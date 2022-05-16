@@ -3,9 +3,9 @@ use std::{
 	ops::{Add, Mul},
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, Copy, Serialize, PartialEq, Debug)]
+#[derive(Default, Clone, Copy, Serialize, Deserialize, PartialEq, Debug)]
 pub struct Vec2 {
 	pub x: f64,
 	pub y: f64,

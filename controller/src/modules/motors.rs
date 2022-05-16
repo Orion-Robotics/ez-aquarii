@@ -8,7 +8,10 @@ use crate::{
 	},
 };
 
-use super::{state::State, Module};
+use super::{
+	state::{ModuleSync, State},
+	Module,
+};
 use anyhow::Result;
 use async_trait::async_trait;
 use parking_lot::Mutex;
@@ -34,7 +37,7 @@ impl Motors {
 
 #[async_trait]
 impl Module for Motors {
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
 		let motor_commands = {
 			let mut state = state.lock();
 			let config::Motors {
@@ -43,15 +46,13 @@ impl Module for Motors {
 				..
 			} = state.config.motors.as_ref().unwrap().to_owned();
 
-			if let Some(vec) = state.line_vector {
-				state.move_vector = {
-					let before_projection = state.ball_follow_vector;
+			// if let Some(vec) = state.line_vector {
+			// 	state.move_vector = state
+			// 		.before_line_vector
+			// 		.map(|before_projection| vec * (dot(before_projection, vec) / dot(vec, vec)))
+			// }
+			state.move_vector = Some(Vec2 { x: 1.0, y: 0.0 });
 
-					Some(vec * (dot(before_projection, vec) / dot(vec, vec)))
-				};
-			}
-
-			// state.ball_follow_vector = Vec2 { x: 1.0, y: 0.0 };
 			match state.move_vector {
 				Some(vec) => {
 					let move_angle = vec.angle_rad();
