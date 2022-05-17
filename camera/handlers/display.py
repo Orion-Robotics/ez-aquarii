@@ -29,6 +29,7 @@ class DisplayHandler(BaseFrameHandler):
             ball_heuristic(area_influence=0.4),
             ball_heuristic(area_influence=0.4),
         ]
+        self.page: int | None = None
 
         if enable_window:
             cv2.namedWindow("meow", cv2.WINDOW_NORMAL)
@@ -38,6 +39,7 @@ class DisplayHandler(BaseFrameHandler):
         # 1 = yellow
         # 2 = blue
         self.thresholds = config.schema["thresholds"]
+        self.page = config.page
 
     def process(
         self, im: np.ndarray, thresholds: Threshold, heuristic: HeuristicFunc
@@ -49,10 +51,17 @@ class DisplayHandler(BaseFrameHandler):
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = crop_surroundings(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV))
 
-        process_results = [
-            self.process(im, self.thresholds[i], self.heuristics[i])
-            for i in range(len(self.thresholds))
-        ]
+        if self.page is None:
+            process_results = [
+                self.process(im, self.thresholds[i], self.heuristics[i])
+                for i in range(len(self.thresholds))
+            ]
+        else:
+            print(self.page)
+            process_results = [
+                self.process(im, self.thresholds[self.page], self.heuristics[self.page])
+            ]
+
         im = process_results[0][0]
         for (masked, _) in process_results:
             im = cv2.bitwise_or(im, masked)

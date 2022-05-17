@@ -30,7 +30,11 @@ if __name__ == "__main__":
         def config_update_handler(path: str, body: bytes) -> bytes | None:
             if path == "/page":
                 schema = json.loads(body)
-                config.page = schema["page"]
+                if schema["page"] == 0:
+                    config.page = None
+                else:
+                    config.page = schema["page"] - 1
+                config.publish()
             if path == "/config":
                 schema = json.loads(body)
                 if schema["bypass"] == True:

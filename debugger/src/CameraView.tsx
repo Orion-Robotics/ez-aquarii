@@ -126,8 +126,18 @@ export const CameraView: Component<{
 
   createEffect(
     on(
-      config,
+      page,
       async () => {
+        sendJSON(`http://${props.host}/page`, { page: page() });
+      },
+      { defer: true }
+    )
+  );
+
+  createEffect(
+    on(
+      config,
+      () => {
         sendJSON(`http://${props.host}/config`, serialize(config()));
       },
       { defer: true }

@@ -7,6 +7,7 @@ class Config:
         self.schema = self.default_schema()
         self.path = path
         self.listeners = []
+        self.page: int | None = None
         try:
             with open(path, "r+") as f:
                 schema = json.load(f)
