@@ -4,12 +4,13 @@ use crate::{
 	math::vec2::Vec2,
 	modules::{
 		line::{self, Line},
-		state::State,
+		state::{ModuleSync, State},
 		Module,
 	},
 };
 use parking_lot::Mutex;
 use test_case::test_case;
+use tokio::sync::Notify;
 
 #[test_case(
   &[true, false, false, false, false, false, true, false, false, false],
@@ -38,12 +39,13 @@ use test_case::test_case;
 #[tokio::test]
 pub async fn test_flips(first: &[bool], second: &[bool], flip: bool) {
 	let mutex = Arc::new(Mutex::new(State::default()));
+	let mut sync = ModuleSync::default();
 	let mut line = Line::default();
 	mutex.lock().line_detections = Vec::from(first);
-	line.tick(&mut Arc::clone(&mutex)).await.unwrap();
+	line.tick(&mut Arc::clone(&mutex), &mut sync).await.unwrap();
 	mutex.lock().print_state();
 	mutex.lock().line_detections = Vec::from(second);
-	line.tick(&mut Arc::clone(&mutex)).await.unwrap();
+	line.tick(&mut Arc::clone(&mutex), &mut sync).await.unwrap();
 	mutex.lock().print_state();
 
 	assert_eq!(mutex.lock().line_flipped, flip);

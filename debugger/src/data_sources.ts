@@ -1,5 +1,6 @@
 export interface Data {
   sensor_data: number[];
+  orientation: number;
 }
 
 export interface Vec2 {
@@ -14,11 +15,15 @@ export interface DataObject {
   picked_up: boolean;
   line_vector?: Vec2;
   previous_vec?: Vec2;
-  orbit_offset: number;
-  dampen_amount: number;
-  orbit_angle: number;
-  ball_follow_vector?: Vec2;
+  initial_orientation?: number;
   rotation: number;
+  strategy: {
+    type: "Orbit";
+    before_dampen_angle: number;
+    orbit_angle: number;
+    ball_follow_vector: Vec2;
+  };
+  before_line_vector?: Vec2;
   move_vector?: Vec2;
   motor_powers: number[];
   tick_rates: Record<string, number>;

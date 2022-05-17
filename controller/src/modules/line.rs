@@ -3,8 +3,6 @@ use std::{f32::consts::PI, sync::Arc};
 use anyhow::Result;
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use tokio::io::AsyncReadExt;
-use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 use crate::{
 	config,
@@ -14,12 +12,13 @@ use crate::{
 	},
 };
 
-use super::{state::State, Module};
+use super::{
+	state::{ModuleSync, State},
+	Module,
+};
 
 #[derive(Default)]
-pub struct Line {
-	pub serial: Option<SerialStream>,
-}
+pub struct Line {}
 
 pub fn angle_for_sensor(i: usize, length: usize) -> f32 {
 	let percent = i as f32 / length as f32;
@@ -32,49 +31,31 @@ pub fn vec_for_sensor(i: usize, length: usize) -> Vec2 {
 }
 
 impl Line {
-	pub fn new(
-		config::Line {
-			baud_rate,
-			uart_path,
-			..
-		}: config::Line,
-	) -> Result<Self> {
-		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
-
-		Ok(Line {
-			serial: Some(serial),
-		})
+	pub fn new(config::Line { .. }: config::Line) -> Result<Self> {
+		Ok(Line {})
 	}
 }
 
 #[async_trait]
 impl Module for Line {
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
+		sync.reader_notify.notified().await;
 		let config::Line {
-			sensor_count,
 			pickup_threshold,
 			pickup_sensor_count,
 			trigger_threshold,
 			..
 		} = state.lock().config.line.as_ref().unwrap().to_owned();
-		if let Some(ref mut serial) = self.serial {
-			while serial.read_u8().await? != 255 {}
-			let mut raw_data: Vec<u8> = vec![0; sensor_count];
-			serial.read_exact(&mut raw_data).await?;
-			raw_data.reverse();
-			{
-				let mut state = state.lock();
-				state.data.sensor_data = raw_data;
-				state.line_detections = state
-					.data
-					.sensor_data
-					.iter()
-					.map(|&x| x > trigger_threshold as u8)
-					.collect();
-			}
-		}
 
 		let mut state = state.lock();
+
+		state.line_detections = state
+			.data
+			.sensor_data
+			.iter()
+			.map(|&x| x > trigger_threshold as u8)
+			.collect();
+
 		state.picked_up = did_pick_up(
 			&state.data.sensor_data,
 			pickup_threshold,

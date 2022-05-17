@@ -117,15 +117,15 @@ class StreamingFrameHandler(BaseFrameHandler):
     ) -> None:
         super().__init__()
         self.inner = inner
-        self.handlers = handlers
+        self.listeners = handlers
 
         self.output = StreamingOutput()
 
         self.server = StreamingServer(addr, generate_stream(self.output, handlers))
         threading.Thread(target=self.server.serve_forever).start()
 
-    def add_handler(self, handler: Callable[[str, bytes], bytes | None]):
-        self.handlers.append(handler)
+    def add_listener(self, handler: Callable[[str, bytes], bytes | None]):
+        self.listeners.append(handler)
 
     def stop(self):
         self.server.shutdown()
@@ -133,8 +133,8 @@ class StreamingFrameHandler(BaseFrameHandler):
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         res = self.inner.handle_frame(frame)
-        # scale = 0.2
-        # downscaled = cv2.resize(res, None, fx=scale, fy=scale)
+        scale = 0.4
+        res = cv2.resize(res, None, fx=scale, fy=scale)
         res = cv2.flip(res, 0)
         _, encoded = cv2.imencode(".jpg", res)
         self.output.write(encoded.tobytes())

@@ -2,14 +2,20 @@ use anyhow::{Context, Result};
 use controller::{
 	config::{read_config, Config},
 	modules::{
-		camera, line, motors::Motors, server::StateRecorder, state, state_randomizer, AnyModule,
-		Module,
+		camera, line,
+		motors::Motors,
+		reader::Reader,
+		server::StateRecorder,
+		state::{self, ModuleSync},
+		state_randomizer,
+		strategy::Strategy,
+		AnyModule, Module,
 	},
 };
 use futures::future::join_all;
 use parking_lot::Mutex;
 use std::{collections::HashMap, sync::Arc, time::Duration};
-use tokio::time::interval;
+use tokio::{sync::Notify, time::interval};
 use tracing_subscriber::EnvFilter;
 
 const CONFIG_FILE: &str = "./config.yaml";
@@ -29,6 +35,7 @@ async fn main() -> Result<()> {
 		module.start().await?;
 	}
 	let robot_state = Arc::new(Mutex::new(state::State::default()));
+	let module_sync = ModuleSync::default();
 	robot_state.lock().config = config.clone();
 	let pre_tick_rates: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
 	let futures = modules
@@ -37,10 +44,10 @@ async fn main() -> Result<()> {
 		.map(|(_, mut m)| {
 			let mut state = robot_state.clone();
 			let pre_tick_rates = pre_tick_rates.clone();
+			let mut module_sync = module_sync.clone();
 			tokio::spawn(async move {
 				loop {
-					tracing::debug!("Ticking module {:?}", m.name());
-					if let Err(e) = m.tick(&mut state).await {
+					if let Err(e) = m.tick(&mut state, &mut module_sync).await {
 						tracing::error!("error ticking {}: {:?}", m.name(), e);
 					}
 					pre_tick_rates
@@ -74,6 +81,8 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 		ref motors,
 		ref server,
 		ref state_randomizer,
+		ref reader,
+		ref strategy,
 	} = cfg;
 
 	let mut new_modules: Vec<Box<dyn Module>> = Vec::new();
@@ -101,6 +110,16 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 				.await
 				.context("server creation")?,
 		));
+	}
+	if let Some(reader) = reader {
+		new_modules.push(Box::new(
+			Reader::new(reader.clone())
+				.await
+				.context("reader creation")?,
+		));
+	}
+	if strategy.is_some() {
+		new_modules.push(Box::new(Strategy {}));
 	}
 	if *state_randomizer {
 		new_modules.push(Box::new(state_randomizer::StateRandomizer::new()));

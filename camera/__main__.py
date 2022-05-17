@@ -6,6 +6,7 @@ from time import sleep, time
 import cv2
 import numpy as np
 
+from config import Config
 from handlers import BaseFrameHandler, constants
 from handlers.display import DisplayHandler
 from handlers.noop import NoopHandler
@@ -16,6 +17,7 @@ from lib.streaming import StreamingFrameHandler
 
 if __name__ == "__main__":
     try:
+        config = Config("camera.json")
         ipc = new_fifo_ipc("socket")
         handler = DisplayHandler(ipc, False)
         stream_handler = StreamingFrameHandler(
@@ -25,15 +27,32 @@ if __name__ == "__main__":
         )
         cam = Camera(stream_handler)
 
-        def camera_adjust(path: str, body: bytes) -> bytes | None:
-            if path == "/thresholds":
-                json.dump(json.loads(body), open(path, "w"))
-                data = json.loads(body)
-                cam.camera.saturation = data["saturation"]
+        def config_update_handler(path: str, body: bytes) -> bytes | None:
+            if path == "/page":
+                schema = json.loads(body)
+                if schema["page"] == 0:
+                    config.page = None
+                else:
+                    config.page = schema["page"] - 1
+                config.publish()
+            if path == "/config":
+                schema = json.loads(body)
+                if schema["bypass"] == True:
+                    config.schema = config.default_schema()
+                else:
+                    config.schema = schema
+                config.update()
+            if path == "/get_config":
+                return json.dumps(config.schema).encode("utf-8")
             return None
 
-        stream_handler.add_handler(camera_adjust)
-        stream_handler.add_handler(handler.handle_request)
+        def handle_config_update(config: Config) -> None:
+            cam.camera.saturation = config.schema["camera"]["saturation"]
+
+        stream_handler.add_listener(config_update_handler)
+        config.add_listener(handle_config_update)
+        config.add_listener(handler.handle_config_update)
+        config.update()
         cam.run()
         # joe = cv2.imread("cha.jpg")
         # joe = cv2.resize(joe, (600, 600))

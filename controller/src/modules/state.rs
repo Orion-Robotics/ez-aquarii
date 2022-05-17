@@ -1,7 +1,34 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{config::Config, math::vec2::Vec2};
 use serde::{Deserialize, Serialize};
+use tokio::sync::Notify;
+
+#[derive(Debug, Clone, Default)]
+pub struct ModuleSync {
+	pub reader_notify: Arc<Notify>,
+	pub camera_notify: Arc<Notify>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum Strategy {
+	Orbit {
+		before_dampen_angle: f64,
+		orbit_angle: f64,
+		ball_follow_vector: Vec2,
+	},
+}
+
+impl Default for Strategy {
+	fn default() -> Self {
+		Strategy::Orbit {
+			before_dampen_angle: 0.0,
+			orbit_angle: 0.0,
+			ball_follow_vector: Vec2::new(0.0, 0.0),
+		}
+	}
+}
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, Copy)]
 pub struct CameraMessage {
@@ -13,6 +40,7 @@ pub struct CameraMessage {
 pub struct RawData {
 	pub sensor_data: Vec<u8>,
 	pub camera_data: CameraMessage,
+	pub orientation: f32,
 }
 
 // State contains all of the robot's data for each tick.
@@ -30,12 +58,12 @@ pub struct State {
 	pub line_vector: Option<Vec2>,
 	pub previous_vec: Option<Vec2>,
 
-	pub orbit_offset: f64,
-	pub dampen_amount: f64,
-	pub orbit_angle: f64,
-	pub ball_follow_vector: Vec2,
+	pub strategy: Strategy,
 
+	pub initial_orientation: Option<f64>,
 	pub rotation: f64,
+	pub before_line_vector: Option<Vec2>,
+
 	pub move_vector: Option<Vec2>,
 	pub motor_powers: Vec<f32>,
 }

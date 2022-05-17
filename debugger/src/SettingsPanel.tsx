@@ -55,7 +55,7 @@ export const SettingsPanel: Component<{
             orbit: {
               curve_steepness: {
                 min: 0,
-                max: 1,
+                max: 5,
                 step: 0.01,
               },
               shift_x: {
@@ -73,12 +73,12 @@ export const SettingsPanel: Component<{
               curve_steepness: {
                 min: 0,
                 max: 1,
-                step: 0.01,
+                step: 0.001,
               },
               shift_x: {
-                min: 0,
-                max: 10,
-                step: 0.01,
+                min: -100,
+                max: 100,
+                step: 0.1,
               },
               shift_y: {
                 min: 0,

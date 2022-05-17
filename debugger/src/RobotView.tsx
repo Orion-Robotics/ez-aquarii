@@ -64,6 +64,10 @@ export const RobotView: Component<{
   frame: DataObject;
 }> = (props) => {
   const [radius, setRadius] = createStoredSignal(100, "radius");
+  const [distanceScale, setDistanceScale] = createStoredSignal(
+    1,
+    "distance_scale"
+  );
   let container: SVGSVGElement;
   let g: SVGGElement;
   let dots: SVGPatternElement;
@@ -137,6 +141,22 @@ export const RobotView: Component<{
             }}
           </For>
           <g>
+            <Show when={typeof props.frame.initial_orientation === "number"}>
+              <Angle
+                angle={props.frame.initial_orientation!}
+                color="#03bafc"
+                label="Initial Orientation"
+                radius={radius() * 0.5}
+                thickness={radius() * 0.03}
+              />
+              <Angle
+                angle={props.frame.data.orientation!}
+                color="#7aa2ff"
+                label="Rotation"
+                radius={radius() * 0.7}
+                thickness={radius() * 0.03}
+              />
+            </Show>
             <Show when={props.frame.line_vector}>
               <Line
                 endX={radius() * 0.7 * props.frame.line_vector!.x}
@@ -145,6 +165,16 @@ export const RobotView: Component<{
                 color="#ffaf75"
                 thickness={radius() * 0.03}
                 label="Line Vector"
+              />
+            </Show>
+            <Show when={props.frame.move_vector}>
+              <Line
+                endX={radius() * 0.9 * props.frame.move_vector!.x}
+                endY={radius() * 0.9 * -props.frame.move_vector!.y}
+                offset={10}
+                color="#5cff88"
+                thickness={radius() * 0.03}
+                label="Move Vector"
               />
             </Show>
             <Show when={props.frame.previous_vec}>
@@ -157,37 +187,46 @@ export const RobotView: Component<{
                 label="Previous Line Vector"
               />
             </Show>
-            <Angle
-              angle={props.frame.orbit_angle}
-              color="#b56bff"
-              label="Orbit Angle"
-              radius={radius() * 1.5}
-              thickness={radius() * 0.03}
-            />
-            <Show when={props.frame.ball_follow_vector}>
-              {(vector) => {
-                const endX = () => radius() * 2 * vector.x;
-                const endY = () => radius() * 2 * -vector.y;
-                return (
-                  <>
-                    <Line
-                      endX={endX()}
-                      endY={endY()}
-                      color="#34ebe8"
-                      label="Ball Follow Vector"
-                      offset={10}
-                      thickness={radius() * 0.02}
-                      stroke-dasharray="1 6"
-                    />
-                    <circle
-                      cx={endX()}
-                      cy={endY()}
-                      r={radius() * 0.08}
-                      fill="#34ebe8"
-                    />
-                  </>
-                );
-              }}
+            <Show when={props.frame.strategy.type === "Orbit"}>
+              <Angle
+                angle={props.frame.strategy.orbit_angle}
+                color="#b56bff"
+                label="After Dampen"
+                radius={radius() * 1.5}
+                thickness={radius() * 0.03}
+              />
+              <Angle
+                angle={props.frame.strategy.before_dampen_angle}
+                color="#fcba03"
+                label="Before Dampen"
+                radius={radius() * 1.2}
+                thickness={radius() * 0.03}
+              />
+              <Show when={props.frame.strategy.ball_follow_vector}>
+                {(vector) => {
+                  const endX = () => vector.x * distanceScale();
+                  const endY = () => -vector.y * distanceScale();
+                  return (
+                    <>
+                      <Line
+                        endX={endX()}
+                        endY={endY()}
+                        color="#34ebe8"
+                        label="Ball Follow Vector"
+                        offset={10}
+                        thickness={radius() * 0.02}
+                        stroke-dasharray="1 6"
+                      />
+                      <circle
+                        cx={endX()}
+                        cy={endY()}
+                        r={radius() * 0.08}
+                        fill="#34ebe8"
+                      />
+                    </>
+                  );
+                }}
+              </Show>
             </Show>
           </g>
         </g>
@@ -202,7 +241,7 @@ export const RobotView: Component<{
           )}
         </For>
       </div>
-      <div class="absolute bottom-0 left-0 bg-black/80 p-3 rounded-tr-4">
+      <div class="absolute bottom-0 left-0 bg-black/80 p-3 rounded-tr-4 flex flex-col gap-2">
         <BaseSlider
           type="range"
           label="Radius"
@@ -211,6 +250,15 @@ export const RobotView: Component<{
           max={1000}
           value={radius()}
           onInput={(ev) => setRadius(+ev.currentTarget.value)}
+        />
+        <BaseSlider
+          type="range"
+          label="Distance Scale"
+          showValue
+          max={2}
+          step={0.01}
+          value={distanceScale()}
+          onInput={(ev) => setDistanceScale(+ev.currentTarget.value)}
         />
       </div>
     </div>
