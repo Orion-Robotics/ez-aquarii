@@ -39,6 +39,8 @@ def mask(image, target):
 def ball_heuristic(contour):
     perimeter = cv2.arcLength(contour, True)
     area = cv2.contourArea(contour)
+    if perimeter == 0:  # perimeter is 0, this cant be a ball
+        return 0
     roundness = (4 * pi * area) / pow(perimeter, 2)
     return area * roundness
 
@@ -51,11 +53,9 @@ def find_optimal_blob(image: np.ndarray, target, heuristic: Callable[[Any], int]
     mask = cv2.inRange(image, lower, upper)
     # mask = cv2.GaussianBlur(mask, (5, 5), 0)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    try:
-        blob = max(contours, key=lambda el: heuristic(el))
-    except:
+    if len(contours) == 0:
         return None
-    return blob
+    return max(contours, key=lambda el: heuristic(el))
 
 
 # angle, distance, x, y

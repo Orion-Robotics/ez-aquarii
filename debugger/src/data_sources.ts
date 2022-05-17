@@ -1,5 +1,6 @@
 export interface Data {
   sensor_data: number[];
+  orientation: number;
 }
 
 export interface Vec2 {
@@ -14,6 +15,7 @@ export interface DataObject {
   picked_up: boolean;
   line_vector?: Vec2;
   previous_vec?: Vec2;
+  initial_orientation?: number;
   rotation: number;
   strategy: {
     type: "Orbit";

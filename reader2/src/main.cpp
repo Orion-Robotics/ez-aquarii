@@ -22,12 +22,16 @@ void applyCommands() {
       analogWrite(pin, 0);
     }
   }
+  // for (auto i = 0; i < input.data().size(); i++) {
+  //   Serial.printf("%d ", input.data()[i]);
+  // }
+  // Serial.println();
   if (!input.complete()) {
     return;
   }
   last_received = millis();
   const auto data = input.data();
-
+  Serial.printf("Received: %d %d %d %d\r\n", data[0], data[1], data[2], data[3]);
   for (int i = 0; i < data.size(); i++) {
     if (i > 3) {
       Serial.printf("<!> extra motor value, %d\r\n", data[i]);
@@ -61,7 +65,6 @@ void setup() {
   for (int i = 0; i < LINE_ADC_PINS.size(); i++) {
     // (sck, mosi, miso, cs);
     const auto cs = LINE_ADC_PINS[i];
-    Serial.println(i);
     adcs[i].begin(LINE_SCK, LINE_MOSI, LINE_MISO, cs);
   }
 
@@ -89,8 +92,8 @@ void loop() {
       if (channel_num == 32 || channel_num == 33) continue;
       const auto value = adcs[i].readADC(7 - channel);
       const auto magnitude = (uint8_t)((value / 2048.0) * 255);
-      Serial.printf("%d ", magnitude);
       CONTROLLER_PORT.printf("%d ", magnitude);
+      Serial.printf("%d ", value);
     }
   }
   Serial.println();

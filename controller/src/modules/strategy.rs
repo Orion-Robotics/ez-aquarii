@@ -70,8 +70,13 @@ impl Module for Strategy {
 				*before_dampen_angle = true_angle(before_dampen);
 				*orbit_angle = true_angle(after_dampen);
 				*ball_follow_vector = Vec2::from_rad(true_angle(angle)) * distance;
-
-				state.move_vector = Some(*ball_follow_vector);
+				state.move_vector = Some(Vec2::from_rad(true_angle(after_dampen)));
+				// state.move_vector = Some(Vec2 { x: 1.0, y: 1.0 });
+				if let Some(initial_orientation) = state.initial_orientation {
+					state.rotation = -make_bipolar(
+						((state.data.orientation as f64) - initial_orientation) % (2.0 * PI),
+					);
+				}
 			}
 		}
 		Ok(())

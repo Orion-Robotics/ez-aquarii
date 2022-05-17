@@ -52,6 +52,7 @@ pub struct Motors {
 	pub baud_rate: u32,
 	pub motor_offset: f64,
 	pub speed: f64,
+	pub rotation_scalar: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]

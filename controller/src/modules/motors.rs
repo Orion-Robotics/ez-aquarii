@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{f64::consts::PI, sync::Arc};
 
 use crate::{
 	config::{self},
@@ -39,51 +39,55 @@ impl Motors {
 impl Module for Motors {
 	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
 		let motor_commands = {
-			let mut state = state.lock();
+			let state = state.lock();
 			let config::Motors {
 				motor_offset,
 				speed,
+				rotation_scalar,
 				..
 			} = state.config.motors.as_ref().unwrap().to_owned();
 
-			// if let Some(vec) = state.line_vector {
-			// 	state.move_vector = state
-			// 		.before_line_vector
-			// 		.map(|before_projection| vec * (dot(before_projection, vec) / dot(vec, vec)))
-			// }
-			state.move_vector = Some(Vec2 { x: 1.0, y: 0.0 });
+			// the rotation is in range -180 to 180
+			// this will scale it to -1 to 1
+			let scaled_rotation = state.rotation / PI * rotation_scalar;
 
-			match state.move_vector {
+			if speed > 1.0 {
+				tracing::error!("speeds are from 0 to 1!");
+			}
+
+			let powers = match state.move_vector {
 				Some(vec) => {
 					let move_angle = vec.angle_rad();
 					let left_offset = move_angle - motor_offset;
 					let right_offset = move_angle + motor_offset;
 
-					let front_right = right_offset.sin();
-					let back_right = -right_offset.sin();
-					let back_left = -left_offset.sin();
-					let front_left = left_offset.sin();
-
-					// motor power optimization
-					let max_power = front_right
-						.abs()
-						.max(back_left.abs())
-						.max(front_left.abs())
-						.max(back_right.abs());
-
 					[
-						-front_left / max_power,
-						front_right / max_power,
-						back_right / max_power,
-						-back_left / max_power,
+						-right_offset.sin(),
+						right_offset.sin(),
+						left_offset.sin(),
+						-left_offset.sin(),
 					]
-					.map(|x| x * speed)
-					.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 				}
-				None => [0, 0, 0, 0].map(|x| x.map_range((-1, 1), (0, 253)) as u8),
+				None => [0.0, 0.0, 0.0, 0.0],
 			}
-		};
+			.map(|power| power + scaled_rotation);
+			// .map(|power| power.max(-1.0).min(1.0));
 
+			// motor power optimization
+			let max_power = *powers
+				.map(|power| power.abs())
+				.iter()
+				.min_by(|a, b| a.partial_cmp(b).unwrap())
+				.unwrap();
+
+			// let percentages = powers.map(|power| power / max_power);
+
+			powers
+				.map(|x| x * speed)
+				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
+		};
+		// self.serial.write_all(&[127, 127, 253, 127]).await?;
+		tracing::debug!("motor commands: {:?}", motor_commands);
 		self.serial.write_all(&motor_commands).await?;
 
 		self.serial.write_u8(255).await?;

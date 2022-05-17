@@ -30,23 +30,21 @@ class DisplayHandler(BaseFrameHandler):
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        im = crop_surroundings(im)
-        im = mask(im, self.ball_thresholds)
+        im = mask(crop_surroundings(im), self.ball_thresholds)
         blob = find_optimal_blob(im, self.ball_thresholds, ball_heuristic)
         if blob is not None:
             draw(im, blob)
-
-        location = loc(blob, center=(mw, mh))
-        if location is not None and self.ipc is not None:
-            (angle, distance, x, y) = location
-            self.ipc.send_data(
-                msgpack.packb(
-                    {
-                        "angle": angle,
-                        "distance": distance,
-                    }
+            location = loc(blob, center=(mw, mh))
+            if location is not None and self.ipc is not None:
+                (angle, distance, _, _) = location
+                self.ipc.send_data(
+                    msgpack.packb(
+                        {
+                            "angle": angle,
+                            "distance": distance,
+                        }
+                    )
                 )
-            )
         im = cv2.cvtColor(im, cv2.COLOR_HSV2RGB)
         if self.enable_window:
             cv2.imshow("meow", im)

@@ -1,12 +1,14 @@
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
+use byteorder::ReadBytesExt;
 use bytes::BytesMut;
 use futures::StreamExt;
 use parking_lot::Mutex;
+use tokio::io::AsyncReadExt;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
-use tokio_util::codec::{Decoder, Encoder, Framed};
+use tokio_util::codec::{Decoder, Framed};
 
 use crate::config;
 
@@ -20,14 +22,19 @@ pub struct Reader {
 }
 
 impl Reader {
-	pub fn new(
+	pub async fn new(
 		config::Reader {
 			baud_rate,
 			uart_path,
 			..
 		}: config::Reader,
 	) -> Result<Self> {
-		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		let mut serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		while tokio::io::AsyncReadExt::read_u8(&mut serial)
+			.await
+			.context("failed to find start of next message")?
+			!= b'\n'
+		{}
 		let codec = ReaderCodec.framed(serial);
 		Ok(Reader { codec })
 	}
@@ -45,6 +52,10 @@ impl Module for Reader {
 			let mut state = state.lock();
 			state.data.sensor_data = sensors;
 			state.data.orientation = angle;
+			if state.initial_orientation.is_none() {
+				tracing::info!("initial orientation set to {}", angle);
+				state.initial_orientation = Some(angle.into());
+			}
 		}
 
 		sync.reader_notify.notify_waiters();

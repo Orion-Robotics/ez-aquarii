@@ -113,7 +113,9 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 	}
 	if let Some(reader) = reader {
 		new_modules.push(Box::new(
-			Reader::new(reader.clone()).context("reader creation")?,
+			Reader::new(reader.clone())
+				.await
+				.context("reader creation")?,
 		));
 	}
 	if strategy.is_some() {

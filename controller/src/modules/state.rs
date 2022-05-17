@@ -2,23 +2,12 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{config::Config, math::vec2::Vec2};
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, Notify};
+use tokio::sync::Notify;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ModuleSync {
 	pub reader_notify: Arc<Notify>,
 	pub camera_notify: Arc<Notify>,
-	pub move_notify: Arc<(mpsc::Sender<Option<Vec2>>, mpsc::Receiver<Option<Vec2>>)>,
-}
-
-impl Default for ModuleSync {
-	fn default() -> Self {
-		Self {
-			reader_notify: Default::default(),
-			camera_notify: Default::default(),
-			move_notify: Arc::new(mpsc::channel(1)),
-		}
-	}
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,6 +60,7 @@ pub struct State {
 
 	pub strategy: Strategy,
 
+	pub initial_orientation: Option<f64>,
 	pub rotation: f64,
 	pub before_line_vector: Option<Vec2>,
 

@@ -141,6 +141,22 @@ export const RobotView: Component<{
             }}
           </For>
           <g>
+            <Show when={typeof props.frame.initial_orientation === "number"}>
+              <Angle
+                angle={props.frame.initial_orientation!}
+                color="#03bafc"
+                label="Initial Orientation"
+                radius={radius() * 0.5}
+                thickness={radius() * 0.03}
+              />
+              <Angle
+                angle={props.frame.data.orientation!}
+                color="#7aa2ff"
+                label="Rotation"
+                radius={radius() * 0.7}
+                thickness={radius() * 0.03}
+              />
+            </Show>
             <Show when={props.frame.line_vector}>
               <Line
                 endX={radius() * 0.7 * props.frame.line_vector!.x}
