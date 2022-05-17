@@ -7,10 +7,7 @@ import numpy as np
 
 from handlers import BaseFrameHandler, constants
 from handlers.constants import *
-from handlers.display import DisplayHandler
-from handlers.noop import NoopHandler
 from handlers.utils import *
-from lib.streaming import StreamingFrameHandler
 
 thresholds = [
     [255, 0, 255, 0, 255, 0],
@@ -57,7 +54,7 @@ fns = [HH, HL, VH, VL, SH, SL]
 
 
 def refresh():
-    m = mask(hsv, thresholds[current])
+    m = mask(hsv, thresholds[current], blur=True, erode=True)
     b = find_optimal_blob(hsv, thresholds[current])
     draw(m, b, center=(300, 300))
     hsvshow("mask", label(m, b))
@@ -99,9 +96,10 @@ def CE(val):
     refreshslider()
 
 
-joe = cv2.imread("cha.jpg")
+joe = cv2.imread("fshot.png")
 joe = cv2.resize(joe, (600, 600))
 hsv = cv2.cvtColor(joe, cv2.COLOR_BGR2HSV)
+hsv = cv2.GaussianBlur(hsv, (5, 5), 0)
 hsvshow("joe", hsv)
 for i in range(6):
     cv2.createTrackbar(names[i], "joe", 0, 255, fns[i])
