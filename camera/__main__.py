@@ -28,6 +28,9 @@ if __name__ == "__main__":
         cam = Camera(stream_handler)
 
         def config_update_handler(path: str, body: bytes) -> bytes | None:
+            if path == "/page":
+                schema = json.loads(body)
+                config.page = schema["page"]
             if path == "/config":
                 schema = json.loads(body)
                 if schema["bypass"] == True:

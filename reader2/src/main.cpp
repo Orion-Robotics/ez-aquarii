@@ -93,7 +93,7 @@ void loop() {
       const auto value = adcs[i].readADC(7 - channel);
       const auto magnitude = (uint8_t)((value / 2048.0) * 255);
       CONTROLLER_PORT.printf("%d ", magnitude);
-      Serial.printf("%d ", value);
+      Serial.printf("%4d ", value);
     }
   }
   Serial.println();
