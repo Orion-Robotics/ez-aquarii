@@ -46,18 +46,15 @@ HeuristicFunc = Callable[[Any], float]
 
 # function that returns a "ball" heuristic, how similar a contour is to a ball
 def ball_heuristic(
-    roundness_influence=1.0, area_influence=1.0, squareness_influence=1.0
+    contour, roundness_influence=1.0, area_influence=1.0, squareness_influence=1.0
 ):
-    def heuristic(contour):
-        perimeter: float = cv2.arcLength(contour, True)
-        area: float = area_influence * cv2.contourArea(contour)
-        if perimeter == 0:  # perimeter is 0, this cant be a ball
-            return 0
-        roundness = roundness_influence * ((4 * pi * area) / pow(perimeter, 2))
-        squareness = squareness_influence * contour_squareness(contour)
-        return area * roundness * squareness
-
-    return heuristic
+    perimeter: float = cv2.arcLength(contour, True)
+    area: float = area_influence * cv2.contourArea(contour)
+    if perimeter == 0:  # perimeter is 0, this cant be a ball
+        return 0
+    roundness = roundness_influence * ((4 * pi * area) / pow(perimeter, 2))
+    squareness = squareness_influence * contour_squareness(contour)
+    return area * roundness * squareness
 
 
 def find_optimal_blob(image: np.ndarray, target, heuristic: HeuristicFunc):

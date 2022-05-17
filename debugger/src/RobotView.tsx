@@ -60,6 +60,28 @@ const Angle: Component<{
 const gridSize = 60;
 const gridDotSize = 5;
 
+const angles: {
+  color: string;
+  label: string;
+  distance: number;
+}[] = [
+  {
+    label: "Ball",
+    color: "#ff8800",
+    distance: 1.2,
+  },
+  {
+    label: "Yellow Goal",
+    color: "#fbff00",
+    distance: 1.5,
+  },
+  {
+    label: "Blue Goal",
+    color: "#330ec7",
+    distance: 1.5,
+  },
+];
+
 export const RobotView: Component<{
   frame: DataObject;
 }> = (props) => {
@@ -124,6 +146,25 @@ export const RobotView: Component<{
             stroke-width={radius() * 0.03}
             fill={"transparent"}
           />
+          <For each={props.frame.data.camera_data.locations}>
+            {(blob, i) => (
+              <Show when={blob}>
+                {() => {
+                  const { angle, distance } = blob;
+                  const data = angles[i()];
+                  return (
+                    <Angle
+                      angle={angle}
+                      color={data.color}
+                      label={data.label}
+                      radius={distance * distanceScale() * data.distance}
+                      thickness={3}
+                    />
+                  );
+                }}
+              </Show>
+            )}
+          </For>
           <For each={props.frame.line_detections}>
             {(line_detection, i) => {
               const circleSize = () => radius() * 0.05;
@@ -202,31 +243,6 @@ export const RobotView: Component<{
                 radius={radius() * 1.2}
                 thickness={radius() * 0.03}
               />
-              <Show when={props.frame.strategy.ball_follow_vector}>
-                {(vector) => {
-                  const endX = () => vector.x * distanceScale();
-                  const endY = () => -vector.y * distanceScale();
-                  return (
-                    <>
-                      <Line
-                        endX={endX()}
-                        endY={endY()}
-                        color="#34ebe8"
-                        label="Ball Follow Vector"
-                        offset={10}
-                        thickness={radius() * 0.02}
-                        stroke-dasharray="1 6"
-                      />
-                      <circle
-                        cx={endX()}
-                        cy={endY()}
-                        r={radius() * 0.08}
-                        fill="#34ebe8"
-                      />
-                    </>
-                  );
-                }}
-              </Show>
             </Show>
           </g>
         </g>

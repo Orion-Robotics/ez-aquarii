@@ -10,13 +10,17 @@ pub struct ModuleSync {
 	pub camera_notify: Arc<Notify>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Copy)]
 #[serde(tag = "type")]
 pub enum Strategy {
 	Orbit {
 		before_dampen_angle: f64,
 		orbit_angle: f64,
 		ball_follow_vector: Vec2,
+	},
+	Test {
+		rotation: f64,
+		vector: Vec2,
 	},
 }
 
@@ -30,10 +34,15 @@ impl Default for Strategy {
 	}
 }
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug, Copy)]
-pub struct CameraMessage {
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+pub struct Blob {
 	pub angle: f64,
 	pub distance: f64,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+pub struct CameraMessage {
+	pub locations: Vec<Option<Blob>>,
 }
 
 #[derive(Serialize, Default, Clone, Debug)]

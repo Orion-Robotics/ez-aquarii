@@ -7,7 +7,7 @@ use num::traits::Pow;
 use parking_lot::Mutex;
 
 use crate::{
-	config,
+	config::{self, DampenConfig, OrbitConfig},
 	math::{
 		angles::{make_bipolar, true_angle},
 		vec2::Vec2,
@@ -15,7 +15,7 @@ use crate::{
 };
 
 use super::{
-	state::{self, CameraMessage, ModuleSync, State},
+	state::{self, Blob, CameraMessage, ModuleSync, State},
 	Module,
 };
 
@@ -36,47 +36,32 @@ impl Module for Strategy {
 		.await;
 		let mut state = state.lock();
 		let strategy_config = state.config.strategy.as_ref().unwrap().to_owned();
-		let CameraMessage { angle, distance } = state.data.camera_data;
 		match state.strategy {
-			state::Strategy::Orbit {
-				ref mut ball_follow_vector,
-				ref mut before_dampen_angle,
-				ref mut orbit_angle,
-			} => {
-				// true angle is needed for the orbit function to work
-				let angle = make_bipolar(true_angle(angle));
-				let orbit_offset = {
-					let config::OrbitConfig {
-						curve_steepness,
-						shift_x,
-						shift_y,
-					} = strategy_config.orbit;
-					orbit(angle.abs(), curve_steepness, shift_x, shift_y)
-				};
-
-				let dampen_amount = {
-					let config::DampenConfig {
-						curve_steepness,
-						shift_x,
-						shift_y,
-					} = strategy_config.dampen;
-					dampen(distance, curve_steepness, shift_x, shift_y)
-				};
-
-				let before_dampen = angle + (orbit_offset * angle.signum());
-				let after_dampen = angle + (orbit_offset * dampen_amount * angle.signum());
-
-				// true_angle all of the angles because the orbit function uses the true angle plane
-				*before_dampen_angle = true_angle(before_dampen);
-				*orbit_angle = true_angle(after_dampen);
-				*ball_follow_vector = Vec2::from_rad(true_angle(angle)) * distance;
-				state.move_vector = Some(Vec2::from_rad(true_angle(after_dampen)));
+			state::Strategy::Orbit { .. } => {
+				if let Some(Blob { angle, distance }) = state.data.camera_data.locations[0] {
+					let (before_dampen, after_dampen, ball_location) = eval_orbit(
+						angle,
+						distance,
+						strategy_config.orbit,
+						strategy_config.dampen,
+					);
+					state.strategy = state::Strategy::Orbit {
+						before_dampen_angle: before_dampen,
+						orbit_angle: after_dampen,
+						ball_follow_vector: ball_location,
+					};
+					state.move_vector = Some(Vec2::from_rad(true_angle(after_dampen)));
+				}
 				// state.move_vector = Some(Vec2 { x: 1.0, y: 1.0 });
 				if let Some(initial_orientation) = state.initial_orientation {
 					state.rotation = -make_bipolar(
 						((state.data.orientation as f64) - initial_orientation) % (2.0 * PI),
 					);
 				}
+			}
+			state::Strategy::Test { rotation, vector } => {
+				state.move_vector = Some(vector);
+				state.rotation = rotation;
 			}
 		}
 		Ok(())
@@ -89,6 +74,45 @@ impl Module for Strategy {
 	async fn stop(&mut self) -> Result<()> {
 		Ok(())
 	}
+}
+
+/// eval_orbit
+/// Evaluates the orbit motions, taking a angle in radians and trig plane, and the distance to the ball.
+pub fn eval_orbit(
+	angle: f64,
+	distance: f64,
+	orbit_config: OrbitConfig,
+	dampen_config: DampenConfig,
+) -> (f64, f64, Vec2) {
+	// true angle is needed for the orbit function to work
+	let angle = make_bipolar(true_angle(angle));
+	let orbit_offset = {
+		let config::OrbitConfig {
+			curve_steepness,
+			shift_x,
+			shift_y,
+		} = orbit_config;
+		orbit(angle.abs(), curve_steepness, shift_x, shift_y)
+	};
+
+	let dampen_amount = {
+		let config::DampenConfig {
+			curve_steepness,
+			shift_x,
+			shift_y,
+		} = dampen_config;
+		dampen(distance, curve_steepness, shift_x, shift_y)
+	};
+
+	let before_dampen = angle + (orbit_offset * angle.signum());
+	let after_dampen = angle + (orbit_offset * dampen_amount * angle.signum());
+
+	// true_angle all of the angles because the orbit function uses the true angle plane
+	return (
+		true_angle(before_dampen),
+		true_angle(after_dampen),
+		Vec2::from_rad(true_angle(angle)) * distance,
+	);
 }
 
 /// Orbit contains the function that offsets the robot's angle by an amount depending on distance to an object.

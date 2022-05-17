@@ -3,6 +3,7 @@ import json
 import logging
 import socketserver
 import threading
+import traceback
 from http import server
 from threading import Condition
 from typing import Callable
@@ -95,6 +96,8 @@ def generate_stream(
                 logging.warning(
                     "Removed streaming client %s: %s", self.client_address, str(e)
                 )
+            except:
+                traceback.print_stack()
 
         def do_OPTIONS(self):
             self.send_response(200, "ok")
