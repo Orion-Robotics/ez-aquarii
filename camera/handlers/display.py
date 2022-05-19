@@ -1,4 +1,7 @@
+import functools
 import json
+from multiprocessing import Pool
+from time import process_time
 from typing import Tuple
 
 import cv2
@@ -14,10 +17,23 @@ from .utils import *
 Threshold = Tuple[int, int, int, int, int, int]
 
 
+def process(
+    im: np.ndarray, thresholds: Threshold, heuristic: HeuristicFunc
+) -> Tuple[np.ndarray, Any | None]:
+    im = mask(im, thresholds)
+    blob = find_optimal_blob(im, thresholds, heuristic)
+    return (im, blob)
+
+
+def wrapped_process(tuple):
+    return process(*tuple)
+
+
 class DisplayHandler(BaseFrameHandler):
     def __init__(self, ipc: IPC | None, enable_window: bool) -> None:
         super().__init__()
         self.ipc = ipc
+        self.pool = Pool(processes=16)
         self.enable_window = enable_window
         self.thresholds = [
             (255, 0, 255, 0, 255, 0),
@@ -25,9 +41,9 @@ class DisplayHandler(BaseFrameHandler):
             (255, 0, 255, 0, 255, 0),
         ]
         self.heuristics = [
-            ball_heuristic(area_influence=0.4),
-            ball_heuristic(area_influence=0.4),
-            ball_heuristic(area_influence=0.4),
+            functools.partial(ball_heuristic, area_influence=0.4),
+            functools.partial(ball_heuristic, area_influence=0.4),
+            functools.partial(ball_heuristic, area_influence=0.4),
         ]
         self.page: int | None = None
 
@@ -41,25 +57,24 @@ class DisplayHandler(BaseFrameHandler):
         self.thresholds = config.schema["thresholds"]
         self.page = config.page
 
-    def process(
-        self, im: np.ndarray, thresholds: Threshold, heuristic: HeuristicFunc
-    ) -> Tuple[np.ndarray, Any | None]:
-        im = mask(im, thresholds)
-        blob = find_optimal_blob(im, thresholds, heuristic)
-        return (im, blob)
-
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         im = crop_surroundings(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV))
 
         if self.page is None:
+            # process_results = self.pool.map(
+            #     wrapped_process,
+            #     [
+            #         (im, self.thresholds[i], self.heuristics[i])
+            #         for i in range(len(self.thresholds))
+            #     ],
+            # )
             process_results = [
-                self.process(im, self.thresholds[i], self.heuristics[i])
+                process(im, self.thresholds[i], self.heuristics[i])
                 for i in range(len(self.thresholds))
             ]
         else:
-            print(self.page)
             process_results = [
-                self.process(im, self.thresholds[self.page], self.heuristics[self.page])
+                process(im, self.thresholds[self.page], self.heuristics[self.page])
             ]
 
         im = process_results[0][0]
@@ -82,7 +97,7 @@ class DisplayHandler(BaseFrameHandler):
             )
         ]
         if self.ipc is not None:
-            self.ipc.send_data(msgpack.packb(locations))
+            self.ipc.send_data(msgpack.packb({"locations": locations}))
         im = cv2.cvtColor(im, cv2.COLOR_HSV2RGB)
         if self.enable_window:
             cv2.imshow("meow", im)

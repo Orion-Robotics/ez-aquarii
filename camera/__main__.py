@@ -7,12 +7,10 @@ import cv2
 import numpy as np
 
 from config import Config
-from handlers import BaseFrameHandler, constants
+from handlers import constants
 from handlers.display import DisplayHandler
-from handlers.noop import NoopHandler
-from handlers.test import TestHandler
 from lib.camera import Camera
-from lib.ipc import IPC, new_fifo_ipc
+from lib.ipc import new_fifo_ipc
 from lib.streaming import StreamingFrameHandler
 
 if __name__ == "__main__":
@@ -58,7 +56,6 @@ if __name__ == "__main__":
         # joe = cv2.resize(joe, (600, 600))
         # while True:
         #    handler.handle_frame(joe)
-    except Exception as e:
-        print(e)
+    except:
         traceback.print_exc()
         os._exit(0)

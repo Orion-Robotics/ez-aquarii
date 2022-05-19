@@ -44,9 +44,18 @@ class Camera:
             self.ipc = new_fifo_ipc(ipc_path)
 
     def run(self):
+        last_process_time = time()
+        processed_frame_count = 0
         while True:
+            if time() - last_process_time > 1:
+                print(f"FPS for processing: {processed_frame_count}")
+                processed_frame_count = 0
+                last_process_time = time()
             if self.frame is not None:
                 self.handler.handle_frame(self.frame)
+                processed_frame_count += 1
+            else:
+                print("No frame")
 
     def stop(self):
         self.stopped = True
@@ -55,7 +64,7 @@ class Camera:
     def write(self, buf: bytes):
         self.frames += 1
         if time() - self.last_time > 1:
-            print(f"FPS: {self.frames}")
+            # print(f"FPS: {self.frames}")
             # print(self.camera.exposure_speed) #+ " " + self.camera.shutter_speed)
             self.frames = 0
             self.last_time = time()

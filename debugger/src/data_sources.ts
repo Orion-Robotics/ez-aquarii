@@ -1,5 +1,13 @@
+export interface Blob {
+  angle: number;
+  distance: number;
+}
+
 export interface Data {
   sensor_data: number[];
+  camera_data: {
+    locations: Blob[];
+  };
   orientation: number;
 }
 
