@@ -102,4 +102,5 @@ class DisplayHandler(BaseFrameHandler):
         if self.enable_window:
             cv2.imshow("meow", im)
             cv2.waitKey(1)
+
         return im

@@ -56,9 +56,23 @@ pub struct Motors {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct ScoreConditions {
+	pub max_distance: f64,
+	pub angle_range: f64,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Strategy {
 	pub orbit: OrbitConfig,
 	pub dampen: DampenConfig,
+	pub score_conditions: ScoreConditions,
+}
+
+#[derive(Debug, Clone, Default, Copy, Serialize, Deserialize)]
+pub enum Team {
+	#[default]
+	Yellow,
+	Blue,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -70,11 +84,13 @@ pub struct Config {
 	pub reader: Option<Reader>,
 	pub strategy: Option<Strategy>,
 	pub state_randomizer: bool,
+	pub team: Team,
 }
 
 impl Default for Config {
 	fn default() -> Self {
 		Self {
+			team: Team::Yellow,
 			camera: Some(Camera {
 				path: PathBuf::from("./socket"),
 			}),
@@ -96,6 +112,10 @@ impl Default for Config {
 					curve_steepness: 305.0,
 					shift_x: -1.0,
 					shift_y: 0.0,
+				},
+				score_conditions: ScoreConditions {
+					max_distance: 0.5,
+					angle_range: 0.5,
 				},
 			}),
 			motors: None,

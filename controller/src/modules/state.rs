@@ -10,31 +10,38 @@ pub struct ModuleSync {
 	pub camera_notify: Arc<Notify>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Copy, Default)]
+pub struct OrbitState {
+	pub before_dampen_angle: f64,
+	pub orbit_angle: f64,
+	pub ball_follow_vector: Vec2,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Copy)]
+pub struct TestState {
+	pub rotation: f64,
+	pub vector: Vec2,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Copy)]
 #[serde(tag = "type")]
 pub enum Strategy {
-	Orbit {
-		before_dampen_angle: f64,
-		orbit_angle: f64,
-		ball_follow_vector: Vec2,
-	},
-	Test {
-		rotation: f64,
-		vector: Vec2,
-	},
+	Orbit(OrbitState),
+	Score,
+	Test(TestState),
 }
 
 impl Default for Strategy {
 	fn default() -> Self {
-		Strategy::Orbit {
+		Strategy::Orbit(OrbitState {
 			before_dampen_angle: 0.0,
 			orbit_angle: 0.0,
 			ball_follow_vector: Vec2::new(0.0, 0.0),
-		}
+		})
 	}
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, Copy)]
 pub struct Blob {
 	pub angle: f64,
 	pub distance: f64,
@@ -49,7 +56,14 @@ pub struct CameraMessage {
 pub struct RawData {
 	pub sensor_data: Vec<u8>,
 	pub camera_data: CameraMessage,
-	pub orientation: f32,
+	pub orientation: f64,
+}
+
+#[derive(Serialize, Default, Clone, Debug)]
+pub struct CameraData {
+	pub yellow_goal: Option<Blob>,
+	pub blue_goal: Option<Blob>,
+	pub ball: Option<Blob>,
 }
 
 // State contains all of the robot's data for each tick.
@@ -61,6 +75,7 @@ pub struct State {
 	pub config: Config,
 	// raw sensor data, not to be used by actual program logic
 	pub data: RawData,
+	pub camera_data: CameraData,
 	pub line_detections: Vec<bool>,
 	pub line_flipped: bool,
 	pub picked_up: bool,

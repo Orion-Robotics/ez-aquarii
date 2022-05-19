@@ -51,7 +51,7 @@ impl Module for Reader {
 			let (angle, sensors) = res?;
 			let mut state = state.lock();
 			state.data.sensor_data = sensors;
-			state.data.orientation = angle;
+			state.data.orientation = angle as f64;
 			if state.initial_orientation.is_none() {
 				tracing::info!("initial orientation set to {}", angle);
 				state.initial_orientation = Some(angle.into());
