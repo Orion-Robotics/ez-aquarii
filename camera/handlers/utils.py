@@ -82,6 +82,21 @@ def crop_surroundings(im: np.ndarray):
     return cr
 
 
+def draws(im: np.ndarray, target):
+    bl = np.zeros(im.shape[:2], dtype="uint8")
+    upper = np.array([target[0], target[2], target[4]])
+    lower = np.array([target[1], target[3], target[5]])
+    mask = cv2.inRange(im, lower, upper)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    cv2.drawContours(
+        im,
+        [contour for contour in contours if cv2.contourArea(contour) > 1000],
+        -1,
+        (255, 255, 255),
+        3,
+    )
+
+
 def fill(im: np.ndarray, target):
     bl = np.zeros(im.shape[:2], dtype="uint8")
     upper = np.array([target[0], target[2], target[4]])
@@ -144,6 +159,7 @@ def find_optimal_blob(image: np.ndarray, target, heuristic: HeuristicFunc):
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     try:
         blob = max(contours, key=lambda el: cv2.contourArea(el))
+        print(cv2.contourArea(blob))
         # for cont in contours:
         #     if cv2.contourArea(cont) > 200:
         #         print(cv2.contourArea(cont))
