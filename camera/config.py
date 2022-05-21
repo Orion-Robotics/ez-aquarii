@@ -24,6 +24,8 @@ class Config:
             ],
             "camera": {
                 "saturation": 0,
+                "offset_x": 0,
+                "offset_y": 0,
             },
             "bypass": False,
         }

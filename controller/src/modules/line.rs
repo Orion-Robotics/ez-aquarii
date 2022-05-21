@@ -86,10 +86,11 @@ impl Module for Line {
 					// the line sensors start on the left (or right maybe who knows)
 					// and go clockwise... so reverse trig plane...
 					// so we need to flip just the y axis to fix it :)
-					towards_line = Vec2 {
-						x: towards_line.x,
-						y: -towards_line.y,
-					};
+					// NO LOGNER NEEDED FOR SOME REASON
+					// towards_line = Vec2 {
+					// 	x: towards_line.x,
+					// 	y: -towards_line.y,
+					// };
 
 					if towards_line.y == 0.0 && towards_line.x == 0.0 {
 						// if the vector is zero, then the added vectors are perfectly perpendicular.

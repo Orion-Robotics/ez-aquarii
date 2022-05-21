@@ -40,6 +40,8 @@ interface CameraConfig {
   thresholds: Thresholds[];
   camera: {
     saturation: number;
+    offset_x: number;
+    offset_y: number;
   };
   bypass: boolean;
 }
@@ -103,6 +105,8 @@ export const CameraView: Component<{
     ] as Thresholds[],
     camera: {
       saturation: 0,
+      offset_x: 0,
+      offset_y: 0,
     },
     bypass: false,
   });
@@ -115,6 +119,8 @@ export const CameraView: Component<{
       thresholds: number[][];
       camera: {
         saturation: number;
+        offset_x: number;
+        offset_y: number;
       };
       bypass: boolean;
     };
@@ -173,6 +179,40 @@ export const CameraView: Component<{
                 camera: {
                   ...config().camera,
                   saturation: ev.currentTarget.valueAsNumber,
+                },
+              })
+            }
+          />
+          <BaseSlider
+            label="Center Shift X"
+            min={-50}
+            max={50}
+            step={1}
+            class={styles.slider}
+            showValue
+            onInput={(ev) =>
+              setConfig({
+                ...config(),
+                camera: {
+                  ...config().camera,
+                  offset_x: ev.currentTarget.valueAsNumber,
+                },
+              })
+            }
+          />
+          <BaseSlider
+            label="Center Shift Y"
+            min={-50}
+            max={50}
+            step={1}
+            class={styles.slider}
+            showValue
+            onInput={(ev) =>
+              setConfig({
+                ...config(),
+                camera: {
+                  ...config().camera,
+                  offset_y: ev.currentTarget.valueAsNumber,
                 },
               })
             }

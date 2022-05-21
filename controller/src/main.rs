@@ -83,6 +83,7 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 		ref state_randomizer,
 		ref reader,
 		ref strategy,
+		..
 	} = cfg;
 
 	let mut new_modules: Vec<Box<dyn Module>> = Vec::new();

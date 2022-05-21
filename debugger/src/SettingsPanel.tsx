@@ -34,6 +34,13 @@ export const SettingsPanel: Component<{
           props.onChange(data);
         }}
         structure={{
+          motors: {
+            speed: {
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+          },
           line: {
             pickup_threshold: {
               min: 0,
@@ -51,7 +58,7 @@ export const SettingsPanel: Component<{
               step: 1,
             },
           },
-          camera: {
+          strategy: {
             orbit: {
               curve_steepness: {
                 min: 0,
@@ -59,7 +66,7 @@ export const SettingsPanel: Component<{
                 step: 0.01,
               },
               shift_x: {
-                min: 0,
+                min: -10,
                 max: 10,
                 step: 0.01,
               },
@@ -71,8 +78,8 @@ export const SettingsPanel: Component<{
             },
             dampen: {
               curve_steepness: {
-                min: 0,
-                max: 1,
+                min: 1,
+                max: 2,
                 step: 0.001,
               },
               shift_x: {

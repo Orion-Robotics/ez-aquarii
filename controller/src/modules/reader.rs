@@ -30,6 +30,9 @@ impl Reader {
 		}: config::Reader,
 	) -> Result<Self> {
 		let mut serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		tracing::info!("waiting for next packet to arrive");
+		tracing::info!("if you just powered the robot you probably need to calibrate the controller's compass.");
+
 		while tokio::io::AsyncReadExt::read_u8(&mut serial)
 			.await
 			.context("failed to find start of next message")?

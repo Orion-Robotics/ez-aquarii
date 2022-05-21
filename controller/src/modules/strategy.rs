@@ -43,6 +43,11 @@ impl Module for Strategy {
 		let strategy_config = state.config.strategy.as_ref().unwrap().to_owned();
 		match state.strategy {
 			Orbit(_) => {
+				if let Some(line_vector) = state.line_vector {
+					state.move_vector = Some(line_vector * -1.0);
+					return Ok(());
+				}
+
 				if let Some(Blob { angle, distance }) = state.camera_data.ball {
 					if distance < strategy_config.score_conditions.max_distance
 						&& true_angle(angle).abs() < strategy_config.score_conditions.angle_range
@@ -61,7 +66,9 @@ impl Module for Strategy {
 						orbit_state.orbit_angle = after_dampen;
 						orbit_state.ball_follow_vector = ball_location;
 					}
-					state.move_vector = Some(Vec2::from_rad(true_angle(after_dampen)));
+					state.move_vector = Some(Vec2::from_rad(after_dampen));
+				} else {
+					state.move_vector = None;
 				}
 				if let Some(initial_orientation) = state.initial_orientation {
 					state.rotation =
@@ -71,21 +78,20 @@ impl Module for Strategy {
 			Score => {
 				if let Some(Blob { angle, distance }) = state.camera_data.ball {
 					if distance > strategy_config.score_conditions.max_distance
-						|| true_angle(angle).abs() < strategy_config.score_conditions.angle_range
+						|| true_angle(angle).abs() > strategy_config.score_conditions.angle_range
 					{
 						state.strategy = Orbit(OrbitState::default());
 					}
 				}
 
-				if let Some(target_goal) = match team {
+				if let Some(target_angle) = match team {
 					Team::Blue => state.camera_data.blue_goal,
 					Team::Yellow => state.camera_data.yellow_goal,
-				} {
-					state.rotation =
-						get_centering_rotation(state.data.orientation, target_goal.angle);
-				} else if let Some(initial_orientation) = state.initial_orientation {
-					state.rotation =
-						get_centering_rotation(state.data.orientation, initial_orientation);
+				}
+				.map(|goal| goal.angle)
+				.or(state.initial_orientation)
+				{
+					state.rotation = get_centering_rotation(state.data.orientation, target_angle);
 				}
 			}
 			Test(TestState { rotation, vector }) => {
@@ -140,7 +146,8 @@ pub fn eval_orbit(
 	let before_dampen = angle + (orbit_offset * angle.signum());
 	let after_dampen = angle + (orbit_offset * dampen_amount * angle.signum());
 
-	// true_angle all of the angles because the orbit function uses the true angle plane
+	// true_angle all of the angles because the orbit function uses the true angle plane, brings it all
+	// back to trig plane.
 	(
 		true_angle(before_dampen),
 		true_angle(after_dampen),
@@ -169,6 +176,6 @@ fn orbit(angle: f64, curve_steepness: f64, shift_x: f64, shift_y: f64) -> f64 {
 /// - shift_y: how far to shift the orbit function up and down.
 fn dampen(distance: f64, curve_steepness: f64, shift_x: f64, shift_y: f64) -> f64 {
 	1.0f64
-		.min(curve_steepness.pow(shift_x + distance) - shift_y)
+		.min(curve_steepness.pow(shift_x + -distance) - shift_y)
 		.max(0.0f64)
 }
