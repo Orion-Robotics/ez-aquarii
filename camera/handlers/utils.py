@@ -9,61 +9,6 @@ from handlers.math_ext import similarity
 from .constants import *
 
 
-class clockwise_angle_and_distance:
-    """
-    A class to tell if point is clockwise from origin or not.
-    This helps if one wants to use sorted() on a list of points.
-
-    Parameters
-    ----------
-    point : ndarray or list, like [x, y]. The point "to where" we g0
-    self.origin : ndarray or list, like [x, y]. The center around which we go
-    refvec : ndarray or list, like [x, y]. The direction of reference
-
-    use:
-        instantiate with an origin, then call the instance during sort
-    reference:
-    https://stackoverflow.com/questions/41855695/sorting-list-of-two-dimensional-coordinates-by-clockwise-angle-using-python
-
-    Returns
-    -------
-    angle
-
-    distance
-
-
-    """
-
-    def __init__(self, origin):
-        self.origin = origin
-
-    def __call__(self, point, refvec=[0, 1]):
-        if self.origin is None:
-            raise NameError("clockwise sorting needs an origin. Please set origin.")
-        # Vector between point and the origin: v = p - o
-        vector = [point[0] - self.origin[0], point[1] - self.origin[1]]
-        # Length of vector: ||v||
-        lenvector = np.linalg.norm(vector[0] - vector[1])
-        # If length is zero there is no angle
-        if lenvector == 0:
-            return -pi, 0
-        # Normalize vector: v/||v||
-        normalized = [vector[0] / lenvector, vector[1] / lenvector]
-        dotprod = normalized[0] * refvec[0] + normalized[1] * refvec[1]  # x1*x2 + y1*y2
-        diffprod = (
-            refvec[1] * normalized[0] - refvec[0] * normalized[1]
-        )  # x1*y2 - y1*x2
-        angle = atan2(diffprod, dotprod)
-        # Negative angles represent counter-clockwise angles so we need to
-        # subtract them from 2*pi (360 degrees)
-        if angle < 0:
-            return 2 * pi + angle, lenvector
-        # I return first the angle because that's the primary sorting criterium
-        # but if two vectors have the same angle then the shorter distance
-        # should come first.
-        return angle, lenvector
-
-
 def adjust_gamma(image, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to
     # their adjusted gamma values
@@ -84,10 +29,8 @@ def crop_surroundings(im: np.ndarray):
 
 def draws(im: np.ndarray, target):
     bl = np.zeros(im.shape[:2], dtype="uint8")
-    upper = np.array([target[0], target[2], target[4]])
-    lower = np.array([target[1], target[3], target[5]])
-    mask = cv2.inRange(im, lower, upper)
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    m = mask(im, target, erode=True, bw=True)
+    contours, _ = cv2.findContours(m, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     cv2.drawContours(
         im,
         [contour for contour in contours if cv2.contourArea(contour) > 1000],
@@ -97,26 +40,16 @@ def draws(im: np.ndarray, target):
     )
 
 
-def fill(im: np.ndarray, target):
+def blackout(im: np.ndarray, target):
     bl = np.zeros(im.shape[:2], dtype="uint8")
-    upper = np.array([target[0], target[2], target[4]])
-    lower = np.array([target[1], target[3], target[5]])
-    mask = cv2.inRange(im, lower, upper)
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    origin = np.array(list_of_pts).mean(axis=0)  # get origin
-    clock_ang_dist = clockwise_angle_and_distance(origin)  # set origin
-    list_of_pts = []
-    for ctr in contours:
-        list_of_pts += [pt[0] for pt in ctr]
-    list_of_pts = sorted(list_of_pts, key=clock_ang_dist)  # use to sort
-    ctr = np.array(list_of_pts).reshape((-1, 1, 2)).astype(np.int32)
-    ctr = cv2.convexHull(ctr)  # done.
-    cv2.drawContours(bl, [ctr], 0, (255, 255, 255), cv2.FILLED)
-    cr = cv2.bitwise_and(im, im, mask=bl)
-    return cr
+    m = mask(im, target, erode=True, bw=True)
+    contours, _ = cv2.findContours(m, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    m = max(contours, key=cv2.contourArea)
+    cv2.drawContours(bl, [m], 0, (255, 255, 255), thickness=-1)
+    return cv2.bitwise_and(im, im, mask=bl)
 
 
-def mask(image, target, blur=False, erode=False):
+def mask(image, target, blur=False, erode=False, bw=False):
     upper = np.array([target[0], target[2], target[4]])
     lower = np.array([target[1], target[3], target[5]])
     # lower = np.absolute(np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF]))
@@ -125,7 +58,10 @@ def mask(image, target, blur=False, erode=False):
     if blur:
         mask = cv2.GaussianBlur(mask, (5, 5), 0)
     if erode:
-        mask = ed(mask, size=101)
+        mask = open(mask, size=7)
+        mask = close(mask, size=21)
+    if bw:
+        return mask
     return cv2.bitwise_and(image, image, mask=mask)
 
 
@@ -172,6 +108,18 @@ def ed(im: np.ndarray, size=5):
     e = cv2.erode(im, (size, size), iterations=3)
     d = cv2.dilate(e, (size, size), iterations=3)
     return d
+
+
+def open(im: np.ndarray, size: int):
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (size, size))
+    opening = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
+    return opening
+
+
+def close(im: np.ndarray, size: int):
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (size, size))
+    closing = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel)
+    return closing
 
 
 def exists(blob):
