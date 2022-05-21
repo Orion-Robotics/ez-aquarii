@@ -30,6 +30,9 @@ impl Reader {
 		}: config::Reader,
 	) -> Result<Self> {
 		let mut serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		tracing::info!("waiting for next packet to arrive");
+		tracing::info!("if you just powered the robot you probably need to calibrate the controller's compass.");
+
 		while tokio::io::AsyncReadExt::read_u8(&mut serial)
 			.await
 			.context("failed to find start of next message")?
@@ -51,7 +54,7 @@ impl Module for Reader {
 			let (angle, sensors) = res?;
 			let mut state = state.lock();
 			state.data.sensor_data = sensors;
-			state.data.orientation = angle;
+			state.data.orientation = angle as f64;
 			if state.initial_orientation.is_none() {
 				tracing::info!("initial orientation set to {}", angle);
 				state.initial_orientation = Some(angle.into());

@@ -40,6 +40,8 @@ class DisplayHandler(BaseFrameHandler):
             (255, 0, 255, 0, 255, 0),
             (255, 0, 255, 0, 255, 0),
         ]
+        self.mw = mw
+        self.mh = mh
         self.heuristics = [
             functools.partial(ball_heuristic, area_influence=0.4),
             functools.partial(ball_heuristic, area_influence=0.4),
@@ -55,6 +57,8 @@ class DisplayHandler(BaseFrameHandler):
         # 1 = yellow
         # 2 = blue
         self.thresholds = config.schema["thresholds"]
+        self.mw = (w // 2) + config.schema["camera"]["offset_x"]
+        self.mh = (h // 2) + config.schema["camera"]["offset_y"]
         self.page = config.page
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
@@ -83,7 +87,7 @@ class DisplayHandler(BaseFrameHandler):
 
         for (_, blob) in process_results:
             if blob is not None:
-                draw(im, blob)
+                draw(im, blob, (self.mw, self.mh))
 
         locations = [
             {
@@ -102,4 +106,5 @@ class DisplayHandler(BaseFrameHandler):
         if self.enable_window:
             cv2.imshow("meow", im)
             cv2.waitKey(1)
+
         return im

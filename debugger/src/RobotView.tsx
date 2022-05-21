@@ -257,6 +257,12 @@ export const RobotView: Component<{
           )}
         </For>
       </div>
+      <div class="absolute top-0 left-1/2 bg-black/80 p-3 rounded-b-4 transform -translate-x-1/2">
+        <h1 class="font-bold">
+          Current State:{" "}
+          <span class="text-green-400">{props.frame.strategy.type}</span>
+        </h1>
+      </div>
       <div class="absolute bottom-0 left-0 bg-black/80 p-3 rounded-tr-4 flex flex-col gap-2">
         <BaseSlider
           type="range"

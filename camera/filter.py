@@ -60,7 +60,6 @@ def refresh():
     # draw(m, b, center=(300, 300))
     hsvshow("mask", label(m, b))
     hsvshow("res", blackout(hsv, thresholds[current]))
-    print(loc(b, center=(300, 300)))
 
 
 def refreshslider():

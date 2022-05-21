@@ -1,5 +1,5 @@
 from math import atan2, pi, pow, sqrt
-from typing import Any, Callable
+from typing import Any, Callable, Tuple
 
 import cv2
 import numpy as np
@@ -85,7 +85,7 @@ def ball_heuristic(
     return area * roundness * squareness
 
 
-def find_optimal_blob(image: np.ndarray, target, heuristic: HeuristicFunc):
+def find_optimal_blob(image: np.ndarray, target, heuristic: HeuristicFunc, min_size=10):
     upper = np.array([target[0], target[2], target[4]])
     lower = np.array([target[1], target[3], target[5]])
     # lower = np.absolute(np.array([target[0] - HDIFF, target[1] - SDIFF, target[2] - VDIFF]))
@@ -93,9 +93,9 @@ def find_optimal_blob(image: np.ndarray, target, heuristic: HeuristicFunc):
     mask = cv2.inRange(image, lower, upper)
     # mask = cv2.GaussianBlur(mask, (5, 5), 0)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours = filter(lambda contour: cv2.contourArea(contour) > min_size, contours)
     try:
         blob = max(contours, key=lambda el: cv2.contourArea(el))
-        print(cv2.contourArea(blob))
         # for cont in contours:
         #     if cv2.contourArea(cont) > 200:
         #         print(cv2.contourArea(cont))
@@ -145,7 +145,7 @@ def loc(blob, center=(mw, mh)):
         return None
 
 
-def draw(image, blob, color=(255, 255, 255), center=(mw, mh)):
+def draw(image, blob, center: Tuple[int, int], color=(255, 255, 255)):
     result = loc(blob)
     if result is None:
         return

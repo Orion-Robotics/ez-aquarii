@@ -52,10 +52,6 @@ if __name__ == "__main__":
         config.add_listener(handler.handle_config_update)
         config.update()
         cam.run()
-        # joe = cv2.imread("cha.jpg")
-        # joe = cv2.resize(joe, (600, 600))
-        # while True:
-        #    handler.handle_frame(joe)
     except:
         traceback.print_exc()
         os._exit(0)

@@ -1,8 +1,12 @@
-use std::{f64::consts::PI, sync::Arc, time::Duration};
+use std::{f64::consts::PI, sync::Arc};
 
+use crate::{
+	config::Team,
+	modules::state::Strategy::{Orbit, Score, Test},
+};
 use anyhow::Result;
 use async_trait::async_trait;
-use futures::{future::select_all, select, FutureExt};
+use futures::{future::select_all, FutureExt};
 use num::traits::Pow;
 use parking_lot::Mutex;
 
@@ -15,7 +19,7 @@ use crate::{
 };
 
 use super::{
-	state::{self, Blob, CameraMessage, ModuleSync, State},
+	state::{self, Blob, ModuleSync, OrbitState, State, TestState},
 	Module,
 };
 
@@ -35,31 +39,62 @@ impl Module for Strategy {
 		])
 		.await;
 		let mut state = state.lock();
+		let team = state.config.team;
 		let strategy_config = state.config.strategy.as_ref().unwrap().to_owned();
 		match state.strategy {
-			state::Strategy::Orbit { .. } => {
-				if let Some(Blob { angle, distance }) = state.data.camera_data.locations[0] {
+			Orbit(_) => {
+				if let Some(line_vector) = state.line_vector {
+					state.move_vector = Some(line_vector * -1.0);
+					return Ok(());
+				}
+
+				if let Some(Blob { angle, distance }) = state.camera_data.ball {
+					if distance < strategy_config.score_conditions.max_distance
+						&& true_angle(angle).abs() < strategy_config.score_conditions.angle_range
+					{
+						state.strategy = Score;
+					}
+
 					let (before_dampen, after_dampen, ball_location) = eval_orbit(
 						angle,
 						distance,
 						strategy_config.orbit,
 						strategy_config.dampen,
 					);
-					state.strategy = state::Strategy::Orbit {
-						before_dampen_angle: before_dampen,
-						orbit_angle: after_dampen,
-						ball_follow_vector: ball_location,
-					};
-					state.move_vector = Some(Vec2::from_rad(true_angle(after_dampen)));
+					if let state::Strategy::Orbit(ref mut orbit_state) = state.strategy {
+						orbit_state.before_dampen_angle = before_dampen;
+						orbit_state.orbit_angle = after_dampen;
+						orbit_state.ball_follow_vector = ball_location;
+					}
+					state.move_vector = Some(Vec2::from_rad(after_dampen));
+				} else {
+					state.move_vector = None;
 				}
-				// state.move_vector = Some(Vec2 { x: 1.0, y: 1.0 });
 				if let Some(initial_orientation) = state.initial_orientation {
-					state.rotation = -make_bipolar(
-						((state.data.orientation as f64) - initial_orientation) % (2.0 * PI),
-					);
+					state.rotation =
+						get_centering_rotation(state.data.orientation, initial_orientation);
 				}
 			}
-			state::Strategy::Test { rotation, vector } => {
+			Score => {
+				if let Some(Blob { angle, distance }) = state.camera_data.ball {
+					if distance > strategy_config.score_conditions.max_distance
+						|| true_angle(angle).abs() > strategy_config.score_conditions.angle_range
+					{
+						state.strategy = Orbit(OrbitState::default());
+					}
+				}
+
+				if let Some(target_angle) = match team {
+					Team::Blue => state.camera_data.blue_goal,
+					Team::Yellow => state.camera_data.yellow_goal,
+				}
+				.map(|goal| goal.angle)
+				.or(state.initial_orientation)
+				{
+					state.rotation = get_centering_rotation(state.data.orientation, target_angle);
+				}
+			}
+			Test(TestState { rotation, vector }) => {
 				state.move_vector = Some(vector);
 				state.rotation = rotation;
 			}
@@ -74,6 +109,10 @@ impl Module for Strategy {
 	async fn stop(&mut self) -> Result<()> {
 		Ok(())
 	}
+}
+
+pub fn get_centering_rotation(current: f64, target: f64) -> f64 {
+	-make_bipolar(((current as f64) - target) % (2.0 * PI))
 }
 
 /// eval_orbit
@@ -107,12 +146,13 @@ pub fn eval_orbit(
 	let before_dampen = angle + (orbit_offset * angle.signum());
 	let after_dampen = angle + (orbit_offset * dampen_amount * angle.signum());
 
-	// true_angle all of the angles because the orbit function uses the true angle plane
-	return (
+	// true_angle all of the angles because the orbit function uses the true angle plane, brings it all
+	// back to trig plane.
+	(
 		true_angle(before_dampen),
 		true_angle(after_dampen),
 		Vec2::from_rad(true_angle(angle)) * distance,
-	);
+	)
 }
 
 /// Orbit contains the function that offsets the robot's angle by an amount depending on distance to an object.
@@ -136,6 +176,6 @@ fn orbit(angle: f64, curve_steepness: f64, shift_x: f64, shift_y: f64) -> f64 {
 /// - shift_y: how far to shift the orbit function up and down.
 fn dampen(distance: f64, curve_steepness: f64, shift_x: f64, shift_y: f64) -> f64 {
 	1.0f64
-		.min(curve_steepness.pow(shift_x + distance) - shift_y)
+		.min(curve_steepness.pow(shift_x + -distance) - shift_y)
 		.max(0.0f64)
 }

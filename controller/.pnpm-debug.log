@@ -1,0 +1,14 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 error pnpm": {
+    "code": "ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND",
+    "err": {
+      "name": "pnpm",
+      "message": "No package.json (or package.yaml, or package.json5) was found in \"/home/blusk/shulker/projects/ez-aquarii/controller\".",
+      "code": "ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND",
+      "stack": "pnpm: No package.json (or package.yaml, or package.json5) was found in \"/home/blusk/shulker/projects/ez-aquarii/controller\".\n    at readProjectManifest (/home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:19830:13)\n    at async Object.readProjectManifestOnly (/home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:19834:28)\n    at async readProjectManifestOnly (/home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:43827:24)\n    at async Object.handler (/home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:178338:24)\n    at async /home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:182614:21\n    at async run (/home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:182588:34)\n    at async runPnpm (/home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:182807:5)\n    at async /home/blusk/.nvm/versions/node/v18.0.0/lib/node_modules/pnpm/dist/pnpm.cjs:182799:7"
+    }
+  }
+}

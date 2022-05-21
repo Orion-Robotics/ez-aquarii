@@ -87,7 +87,6 @@ impl Module for Motors {
 				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
 		// self.serial.write_all(&[127, 127, 253, 127]).await?;
-		tracing::debug!("motor commands: {:?}", motor_commands);
 		self.serial.write_all(&motor_commands).await?;
 
 		self.serial.write_u8(255).await?;
