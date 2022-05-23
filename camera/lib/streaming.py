@@ -12,19 +12,6 @@ import cv2
 import numpy as np
 from handlers import BaseFrameHandler, constants
 
-PAGE = f"""\
-<html>
-<head>
-<title>Raspberry Pi - Surveillance Camera</title>
-</head>
-<body>
-<center><h1>Raspberry Pi - Surveillance Camera</h1></center>
-<center><img src="stream.mjpg" width="{constants.w}" height="{constants.h}"></center>
-</body>
-</html>
-"""
-
-
 class StreamingOutput(object):
     def __init__(self):
         self.frame = None
@@ -136,7 +123,7 @@ class StreamingFrameHandler(BaseFrameHandler):
 
     def handle_frame(self, frame: np.ndarray) -> np.ndarray:
         res = self.inner.handle_frame(frame)
-        scale = 0.4
+        scale = 0.05
         res = cv2.resize(res, None, fx=scale, fy=scale)
         res = cv2.flip(res, 0)
         _, encoded = cv2.imencode(".jpg", res)
