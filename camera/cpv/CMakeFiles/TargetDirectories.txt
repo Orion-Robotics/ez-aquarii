@@ -1,0 +1,3 @@
+/home/pythomancer/Documents/cpv/CMakeFiles/ez.dir
+/home/pythomancer/Documents/cpv/CMakeFiles/edit_cache.dir
+/home/pythomancer/Documents/cpv/CMakeFiles/rebuild_cache.dir
