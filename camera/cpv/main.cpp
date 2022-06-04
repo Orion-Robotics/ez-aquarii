@@ -30,7 +30,7 @@ int main(int argc, char** argv){
     //--- GRAB AND WRITE LOOP
     cout << "Start grabbing" << endl
         << "Press any key to terminate" << endl;
-    namedWindow("sus");
+    namedWindow("nya");
     for (;;)
     {
         // wait for a new frame from camera and store it into 'frame'

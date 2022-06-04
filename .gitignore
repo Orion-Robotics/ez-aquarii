@@ -1,3 +1,6 @@
 ez-aquarii
 __pycache__/
 camera/cpv/CMakeFiles
+camera/cpv/ez
+camera/cpv/cmake_install.cmake
+camera/cpv/CMakeCache.txt
