@@ -6,85 +6,69 @@
 #include <sys/types.h>
 
 static const char* socket_path = "/home/pythomancer/Documents/socket";
-static const unsigned int nIncomingConnections = 5;
+static const unsigned int s_recv_len = 200;
+static const unsigned int s_send_len = 100;
 
 int main()
 {
-	//create server side
-	int s = 0;
-	int s2 = 0;
-	struct sockaddr_un local, remote;
-	int len = 0;
+	int sock = 0;
+	int data_len = 0;
+	struct sockaddr_un remote;
+	char recv_msg[s_recv_len];
+	char send_msg[s_send_len];
 
-	s = socket(AF_UNIX, SOCK_STREAM, 0);
-	if( -1 == s )
+	memset(recv_msg, 0, s_recv_len*sizeof(char));
+	memset(send_msg, 0, s_send_len*sizeof(char));
+
+	if( (sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1  )
 	{
-		printf("Error on socket() call \n");
+		printf("Client: Error on socket() call \n");
 		return 1;
 	}
 
-	local.sun_family = AF_UNIX;
-	strcpy( local.sun_path, socket_path );
-	unlink(local.sun_path);
-	len = strlen(local.sun_path) + sizeof(local.sun_family);
-	if( bind(s, (struct sockaddr*)&local, len) != 0)
+	remote.sun_family = AF_UNIX;
+	strcpy( remote.sun_path, socket_path );
+	data_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+
+	printf("Client: Trying to connect... \n");
+	if( connect(sock, (struct sockaddr*)&remote, data_len) == -1 )
 	{
-		printf("Error on binding socket \n");
+		printf("Client: Error on connect call \n");
 		return 1;
 	}
 
-	if( listen(s, nIncomingConnections) != 0 )
-	{
-		printf("Error on listen call \n");
-	}
+	printf("Client: Connected \n");
 
-	bool bWaiting = true;
-	while (bWaiting)
+	while( printf(">"), fgets(send_msg, s_send_len, stdin), !feof(stdin))
 	{
-		unsigned int sock_len = 0;
-		printf("Waiting for connection.... \n");
-		if( (s2 = accept(s, (struct sockaddr*)&remote, &sock_len)) == -1 )
+		if( send(sock, send_msg, strlen(send_msg)*sizeof(char), 0 ) == -1 )
 		{
-			printf("Error on accept() call \n");
-			return 1;
+			printf("Client: Error on send() call \n");
 		}
+		memset(send_msg, 0, s_send_len*sizeof(char));
+		memset(recv_msg, 0, s_recv_len*sizeof(char));
 
-		printf("Server connected \n");
-
-		int data_recv = 0;
-		char recv_buf[100];
-		char send_buf[200];
-		do{
-			memset(recv_buf, 0, 100*sizeof(char));
-			memset(send_buf, 0, 200*sizeof(char));
-			data_recv = recv(s2, recv_buf, 100, 0);
-			if(data_recv > 0)
+		if( (data_len = recv(sock, recv_msg, s_recv_len, 0)) > 0 )
+		{
+			printf("Client: Data received: %s \n", recv_msg);
+		}
+		else
+		{
+			if(data_len < 0)
 			{
-				printf("Data received: %d : %s \n", data_recv, recv_buf);
-				strcpy(send_buf, "Got message: \n");
-				strcat(send_buf, recv_buf);
-
-				if(strstr(recv_buf, "quit")!=0)
-				{
-					printf("Exit command received -> quitting \n");
-					bWaiting = false;
-					break;
-				}
-
-				if( send(s2, send_buf, strlen(send_buf)*sizeof(char), 0) == -1 )
-				{
-					printf("Error on send() call \n");
-				}
+				printf("Client: Error on recv() call \n");
 			}
 			else
 			{
-				printf("Error on recv() call \n");
+				printf("Client: Server socket closed \n");
+				close(sock);
+				break;
 			}
-		}while(data_recv > 0);
 
-		close(s2);
+		}
 	}
 
+	printf("Client: bye! \n");
 
 	return 0;
 }
