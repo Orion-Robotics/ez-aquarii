@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( cffi )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable(cffi main.cpp )
+target_link_libraries( cffi ${OpenCV_LIBS})
