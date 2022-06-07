@@ -1,3 +1,0 @@
-/home/pythomancer/Documents/ez-aquarii/ffitest/cffi/CMakeFiles/cffi.dir
-/home/pythomancer/Documents/ez-aquarii/ffitest/cffi/CMakeFiles/edit_cache.dir
-/home/pythomancer/Documents/ez-aquarii/ffitest/cffi/CMakeFiles/rebuild_cache.dir
