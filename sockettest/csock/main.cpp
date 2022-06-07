@@ -4,6 +4,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
+#include <msgpack.hpp>
+#include <string>
+#include <iostream>
+#include <sstream>
 
 static const char* socket_path = "/home/pythomancer/Documents/socket";
 static const unsigned int nIncomingConnections = 5;
@@ -51,11 +55,19 @@ int main()
 
 		printf("Server connected \n");
 
-		char send_buf[200];			
-		memset(send_buf, 0, 200*sizeof(char));
+		// char send_buf[200];			
+		// memset(send_buf, 0, 200*sizeof(char));
+		msgpack::type::tuple<int, float, std::string> src(1, 0.675, "sus");
+		std::stringstream send_buf;
+		msgpack::pack(send_buf, src);
+		std::stringstream len_buf;
+		len_buf.put(strlen(send_buf.str().c_str())*sizeof(char));
+		
 		while (true){
-			strcpy(send_buf, "sussus amogus \n");
-			if( send(s2, send_buf, strlen(send_buf)*sizeof(char), 0) == -1 ) {
+			if( send(s2, len_buf.str().c_str(), strlen(len_buf.str().c_str())*sizeof(char), 0) == -1 ) {
+				printf("Error on send() call \n");
+			}
+			if( send(s2, send_buf.str().c_str(), strlen(send_buf.str().c_str())*sizeof(char), 0) == -1 ) {
 				printf("Error on send() call \n");
 			}
 		}
