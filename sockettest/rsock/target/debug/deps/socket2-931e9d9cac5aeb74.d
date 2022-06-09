@@ -1,0 +1,11 @@
+/home/pythomancer/Documents/ez-aquarii/sockettest/rsock/target/debug/deps/socket2-931e9d9cac5aeb74.rmeta: /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/lib.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockaddr.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/socket.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockref.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sys/unix.rs
+
+/home/pythomancer/Documents/ez-aquarii/sockettest/rsock/target/debug/deps/libsocket2-931e9d9cac5aeb74.rlib: /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/lib.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockaddr.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/socket.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockref.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sys/unix.rs
+
+/home/pythomancer/Documents/ez-aquarii/sockettest/rsock/target/debug/deps/socket2-931e9d9cac5aeb74.d: /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/lib.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockaddr.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/socket.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockref.rs /home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sys/unix.rs
+
+/home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/lib.rs:
+/home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockaddr.rs:
+/home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/socket.rs:
+/home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sockref.rs:
+/home/pythomancer/.cargo/registry/src/github.com-1ecc6299db9ec823/socket2-0.4.4/src/sys/unix.rs:

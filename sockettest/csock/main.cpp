@@ -12,6 +12,13 @@
 static const char* socket_path = "/home/pythomancer/Documents/socket";
 static const unsigned int nIncomingConnections = 5;
 
+struct packet {
+	int leInt;
+	float leFloat;
+	std::string leString;
+	MSGPACK_DEFINE (leInt, leFloat, leString);
+};
+
 int main()
 {
 	//create server side
@@ -55,21 +62,23 @@ int main()
 
 		printf("Server connected \n");
 
-		// char send_buf[200];			
-		// memset(send_buf, 0, 200*sizeof(char));
-		msgpack::type::tuple<int, float, std::string> src(1, 0.675, "sus");
+		packet src;
+		src.leFloat = 0.675;
+		src.leInt = 1;
+		src.leString = "sus";
 		std::stringstream send_buf;
 		msgpack::pack(send_buf, src);
-		std::stringstream len_buf;
-		len_buf.put(strlen(send_buf.str().c_str())*sizeof(char));
-		
+		unsigned long len_of_transmission = strlen(send_buf.str().c_str())*sizeof(char);
+		const char* str_len_of_transmission = std::to_string(len_of_transmission).c_str();
+
 		while (true){
-			if( send(s2, len_buf.str().c_str(), strlen(len_buf.str().c_str())*sizeof(char), 0) == -1 ) {
+			if( send(s2, str_len_of_transmission, strlen(str_len_of_transmission)*sizeof(char), 0) == -1 ) {
 				printf("Error on send() call \n");
 			}
-			if( send(s2, send_buf.str().c_str(), strlen(send_buf.str().c_str())*sizeof(char), 0) == -1 ) {
+			if( send(s2, send_buf.str().c_str(), len_of_transmission, 0) == -1 ) {
 				printf("Error on send() call \n");
 			}
+			std::cout << "amogus" << std::endl;
 		}
 		close(s2);
 	}

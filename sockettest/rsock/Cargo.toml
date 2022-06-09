@@ -9,3 +9,8 @@ edition = "2021"
 rmp-serde = "1.1.0"
 serde = "1.0.137"
 serde_derive = "1.0.137"
+anyhow = "1.0.57"
+tokio = { version = "1.19.2", features = ["full"] }
+tokio-serial = "5.4.2"
+tokio-util = { version = "0.7.2", features = ["codec"] }
+async-std = "0.99.2"
