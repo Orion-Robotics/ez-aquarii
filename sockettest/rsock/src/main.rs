@@ -19,6 +19,7 @@ pub struct Packet {
 
 pub async fn read<T: AsyncRead + Unpin>(mut input: T) -> Result<Take<T>> {
 	let length = input.read_i32_le().await?;
+    println!("got length");
 	Ok(input.take(length as u64))
 }
 
@@ -28,15 +29,19 @@ where
 	T: serde::de::DeserializeOwned,
 {
 	let mut buf = Vec::new();
-    println!("{:?}", buf);
+    println!("made vec");
 	read(input).await?.read_to_end(&mut buf).await?;
+    // println!("{:?}", buf);
+    println!("read vec");
 	Ok(rmp_serde::from_slice::<T>(&buf)?)
 }
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mut stream = UnixStream::connect("/home/pythomancer/Documents/socket").await?;
     loop {
+        println!("got loop");
         let p: Packet = read_msgpack(&mut stream).await?;
+        println!("got packet");
         println!("{}", p.float);
         // let mut len_response = vec![0u8; 4];
         // stream.read_exact(&mut len_response).expect("invalid len send");
