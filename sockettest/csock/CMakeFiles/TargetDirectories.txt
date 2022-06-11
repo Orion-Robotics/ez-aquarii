@@ -1,3 +1,0 @@
-/home/pythomancer/Documents/ez-aquarii/sockettest/csock/CMakeFiles/csock.dir
-/home/pythomancer/Documents/ez-aquarii/sockettest/csock/CMakeFiles/edit_cache.dir
-/home/pythomancer/Documents/ez-aquarii/sockettest/csock/CMakeFiles/rebuild_cache.dir
