@@ -1,20 +1,26 @@
 // use opencv::{prelude, core, highgui};
-use opencv::prelude::*;
+// use opencv::prelude::*;
 #[cxx::bridge]
 mod ffi {
+    pub struct ImagePacket {
+        integer: i32,
+        float: f32
+    }
     unsafe extern "C++" {
         include!("nffi/include/imageprovider.h");
+        // include!("/usr/include/opencv4/opencv2/");
 
         type ImagePacket;
 
         fn get_image_packet() -> UniquePtr<ImagePacket>;
+        fn get_number() -> u32;
 
     }
 }
 fn main() {
-    println!("Hello, Rust and C++!");
-    let client = ffi::get_image_packet();
-    let size = vec![3,3];
+    println!("Hello from Rust!");
+    let _client = ffi::get_image_packet();
+    println!("{}", ffi::get_number());
     // let mat = Mat::zeros_nd(&size, typ: i32);
     // highgui::imshow("sus", )
 }

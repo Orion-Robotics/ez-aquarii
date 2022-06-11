@@ -503,6 +503,7 @@ dependencies = [
  "image",
  "ndarray",
  "opencv",
+ "pkg-config",
 ]
 
 [[package]]
