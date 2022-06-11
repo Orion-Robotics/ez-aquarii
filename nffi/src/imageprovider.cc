@@ -1,5 +1,6 @@
 #include "nffi/include/imageprovider.h"
 #include <iostream>
+#include "nffi/include/raspicam/src/raspicam.h"
 // #include <opencv2/core.hpp>
 // #include <opencv2/imgcodecs.hpp>
 // #include <opencv2/highgui.hpp>
@@ -26,3 +27,4 @@ uint32_t display_image(std::string impath){
   // int k = waitKey(0);
   return 0;
 }
+

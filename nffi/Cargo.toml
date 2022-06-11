@@ -2,6 +2,7 @@
 name = "nffi"
 version = "0.1.0"
 edition = "2021"
+links = "raspicam"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html 
 
@@ -9,9 +10,10 @@ edition = "2021"
 cxx= "1.0"
 opencv = "0.65.0"
 anyhow = "1.0.57"
-image = "0.24.2"
 ndarray = "0.15.4"
 
 [build-dependencies]
 cxx-build = "1.0"
 pkg-config = "0.3.25"
+
+# [target.nightly-armv7-unknown-linux-gnueabihf]

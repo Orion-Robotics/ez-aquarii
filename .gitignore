@@ -9,5 +9,6 @@ rffi/target
 sockettest/rsock/target
 sockettest/csock/CMakeFiles
 sockettest/csock/CMakeCache.txt
+raspicam
 sockettest/csock/cmake_install.cmake
 sockettest/csock/csock
