@@ -1,3 +1,0 @@
-[submodule "nffi/raspicam"]
-	path = nffi/raspicam
-	url = https://github.com/cedricve/raspicam.git
