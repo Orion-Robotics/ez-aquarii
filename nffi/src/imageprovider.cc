@@ -7,6 +7,16 @@
 
 ImagePacket::ImagePacket() {}
 
+
+Cam::Cam() {
+	raspicam::RaspiCam cam;
+	this->camera = cam;
+	this->num = 498;
+}
+Cam::~Cam() = default;
+raspicam::RaspiCam::~RaspiCam() = default;
+raspicam::RaspiCam::RaspiCam() = default;
+
 std::unique_ptr<ImagePacket> get_image_packet() {
   std::cout << "Hello from C++!" << std::endl;
   return std::unique_ptr<ImagePacket>(new ImagePacket());
@@ -17,14 +27,15 @@ uint32_t get_number(){
 }
 
 uint32_t display_image(std::string impath){
-  // Mat img = imread(impath, IMREAD_COLOR);
-  // if(img.empty())
-  // {
-  //   std::cout << "Could not read the image: " << image_path << std::endl;
-  //   return 1;
-  // }
-  // imshow("nya", img);
-  // int k = waitKey(0);
   return 0;
+}
+
+std::unique_ptr<Cam> get_camera(){
+	// Cam lecamera;
+	return std::unique_ptr<Cam>(new Cam());
+}
+
+uint32_t get_number_from_camera(std::unique_ptr<Cam> camera){
+	return camera->num;
 }
 

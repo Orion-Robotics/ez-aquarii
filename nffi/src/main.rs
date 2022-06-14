@@ -11,9 +11,12 @@ mod ffi {
         // include!("/usr/include/opencv4/opencv2/");
 
         type ImagePacket;
+        type Cam;
 
         fn get_image_packet() -> UniquePtr<ImagePacket>;
         fn get_number() -> u32;
+        fn get_camera() -> UniquePtr<Cam>;
+        fn get_number_from_camera(cam: UniquePtr<Cam>) -> u32;
 
     }
 }
@@ -21,6 +24,8 @@ fn main() {
     println!("Hello from Rust!");
     let _client = ffi::get_image_packet();
     println!("{}", ffi::get_number());
+    let camera = ffi::get_camera();    
+    println!("{}", ffi::get_number_from_camera(camera));
     // let mat = Mat::zeros_nd(&size, typ: i32);
     // highgui::imshow("sus", )
 }
