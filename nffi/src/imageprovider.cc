@@ -1,41 +1,33 @@
 #include "nffi/include/imageprovider.h"
 #include <iostream>
-#include "nffi/include/raspicam/src/raspicam.h"
+#include "raspicam/raspicam.h"
 // #include <opencv2/core.hpp>
 // #include <opencv2/imgcodecs.hpp>
 // #include <opencv2/highgui.hpp>
 
-ImagePacket::ImagePacket() {}
 
-
+ImagePacket::ImagePacket(uint8_t* data, size_t len) {
+	this->data = data;
+	this->len = len;
+}
 Cam::Cam() {
 	raspicam::RaspiCam cam;
 	this->camera = cam;
-	this->num = 498;
 }
 Cam::~Cam() = default;
-raspicam::RaspiCam::~RaspiCam() = default;
-raspicam::RaspiCam::RaspiCam() = default;
+// raspicam::RaspiCam::~RaspiCam() = default;
+// raspicam::RaspiCam::RaspiCam() = default;
+Cam* globalCamera = NULL;
 
-std::unique_ptr<ImagePacket> get_image_packet() {
-  std::cout << "Hello from C++!" << std::endl;
-  return std::unique_ptr<ImagePacket>(new ImagePacket());
+ImagePacket get_image_packet() {
+	raspicam::RaspiCam cam = globalCamera->camera;
+	cam.grab();
+	auto len = cam.getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB);
+    unsigned char *data = new unsigned char[len];
+    cam.retrieve (data, raspicam::RASPICAM_FORMAT_RGB);
+
+    auto img = ImagePacket(data, len);
+
+    return img;
 }
-
-uint32_t get_number(){
-  return 727;
-}
-
-uint32_t display_image(std::string impath){
-  return 0;
-}
-
-std::unique_ptr<Cam> get_camera(){
-	// Cam lecamera;
-	return std::unique_ptr<Cam>(new Cam());
-}
-
-uint32_t get_number_from_camera(std::unique_ptr<Cam> camera){
-	return camera->num;
-}
-
+ 

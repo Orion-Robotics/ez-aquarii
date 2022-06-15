@@ -1,31 +1,32 @@
 // use opencv::{prelude, core, highgui};
 // use opencv::prelude::*;
+
 #[cxx::bridge]
 mod ffi {
-    pub struct ImagePacket {
-        integer: i32,
-        float: f32
+    struct ImagePacket {
+         len: usize,
+         data: *const u8,
     }
+
     unsafe extern "C++" {
         include!("nffi/include/imageprovider.h");
+        include!("raspicam/raspicam.h");
         // include!("/usr/include/opencv4/opencv2/");
 
-        type ImagePacket;
         type Cam;
+        type ImagePacket;
 
-        fn get_image_packet() -> UniquePtr<ImagePacket>;
-        fn get_number() -> u32;
-        fn get_camera() -> UniquePtr<Cam>;
-        fn get_number_from_camera(cam: UniquePtr<Cam>) -> u32;
-
+        fn get_image_packet() -> ImagePacket;
+        // fn get_image(cam: UniquePtr<Cam>) -> *mut u8;
     }
 }
 fn main() {
     println!("Hello from Rust!");
-    let _client = ffi::get_image_packet();
-    println!("{}", ffi::get_number());
-    let camera = ffi::get_camera();    
-    println!("{}", ffi::get_number_from_camera(camera));
+    let pkt = ffi::get_image_packet();
+    // let imslice = unsafe {
+    	// slice::from_raw_parts(ffi::get_image(&camera), 200)
+   	// };
+    // println!("{}", ffi::get_image(camera));
     // let mat = Mat::zeros_nd(&size, typ: i32);
     // highgui::imshow("sus", )
 }
