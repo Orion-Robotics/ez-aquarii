@@ -1,11 +1,12 @@
 // use opencv::{prelude, core, highgui};
 // use opencv::prelude::*;
+use std::slice;
 
 #[cxx::bridge]
 mod ffi {
     struct ImagePacket {
-         len: usize,
          data: *const u8,
+         len: usize,
     }
 
     unsafe extern "C++" {
@@ -17,12 +18,18 @@ mod ffi {
         type ImagePacket;
 
         fn get_image_packet() -> ImagePacket;
+        fn initialize_camera() -> ();
         // fn get_image(cam: UniquePtr<Cam>) -> *mut u8;
     }
 }
 fn main() {
     println!("Hello from Rust!");
+    ffi::initialize_camera();
     let pkt = ffi::get_image_packet();
+    let imslice = unsafe {
+    	slice::from_raw_parts(pkt.data, pkt.len)
+    };
+    println!("{:?}", imslice)
     // let imslice = unsafe {
     	// slice::from_raw_parts(ffi::get_image(&camera), 200)
    	// };

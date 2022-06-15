@@ -2,6 +2,7 @@
 #include <memory>
 #include <iostream>
 #include <string>
+#include <array>
 #include "raspicam/raspicam.h"
 // #include <opencv2/core.hpp>
 // #include <opencv2/imgcodecs.hpp>
@@ -19,16 +20,19 @@ struct ImagePacket {
 	uint8_t* data;
 	size_t len;
 
-	ImagePacket(uint8_t* ptr, size_t len);
+	ImagePacket(uint8_t* ptr, uint32_t len);
 };
 
 class Cam {
 	public: 
-		raspicam::RaspiCam camera;
+		raspicam::RaspiCam* camera;
+		size_t frame_size;
+		uint8_t* frame;
 		Cam();
 		~Cam();
 };
 
 extern Cam* globalCamera;
 
+void initialize_camera();
 ImagePacket get_image_packet();
