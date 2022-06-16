@@ -1,11 +1,18 @@
 // use opencv::{prelude, core, highgui};
 // use opencv::prelude::*;
 use std::slice;
+use std::thread;
+use std::time::Duration;
+use anyhow::Result;
+use std::fs::OpenOptions;
+use std::io::Write;
+use opencv::core::{Mat, CV_8SC3};
+use std::ffi::c_void;
 
 #[cxx::bridge]
 mod ffi {
     struct ImagePacket {
-         data: *const u8,
+         data: *mut u8,
          len: usize,
     }
 
@@ -18,22 +25,21 @@ mod ffi {
         type ImagePacket;
 
         fn get_image_packet() -> ImagePacket;
-        fn initialize_camera() -> ();
+        fn initialize_camera(w: u32, h: u32) -> ();
         // fn get_image(cam: UniquePtr<Cam>) -> *mut u8;
     }
 }
-fn main() {
-    println!("Hello from Rust!");
-    ffi::initialize_camera();
+fn main() -> Result<()> {
+	let (w, h) = (720, 720);
+    ffi::initialize_camera(w, h);
+    thread::sleep(Duration::from_secs(3));
     let pkt = ffi::get_image_packet();
-    let imslice = unsafe {
-    	slice::from_raw_parts(pkt.data, pkt.len)
+    let mut imslice = unsafe {
+    	slice::from_raw_parts_mut(pkt.data, pkt.len)
     };
-    println!("{:?}", imslice)
-    // let imslice = unsafe {
-    	// slice::from_raw_parts(ffi::get_image(&camera), 200)
-   	// };
-    // println!("{}", ffi::get_image(camera));
+    let mat = unsafe { Mat::new_nd_with_data(&[w as i32, h as i32], CV_8SC3, imslice.as_mut_ptr() as *mut c_void, Some(&[1]))? };
+    opencv::imgcodecs::imwrite("bruh.png", &mat, &opencv::core::Vector::new());
+    Ok(())
     // let mat = Mat::zeros_nd(&size, typ: i32);
     // highgui::imshow("sus", )
 }

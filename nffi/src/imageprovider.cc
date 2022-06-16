@@ -12,10 +12,13 @@ ImagePacket::ImagePacket(uint8_t* data, size_t len) {
 	this->data = data;
 	this->len = len;
 }
-Cam::Cam() {
+Cam::Cam(uint32_t w, uint32_t h) {
 	this->camera = new raspicam::RaspiCam();
+	camera->setWidth(w);
+	camera->setHeight(h);
 	this->frame_size = this->camera->getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB);
 	this->frame = new uint8_t[this->frame_size];
+	this->camera->open();
 }
 Cam::~Cam() = default;
 // raspicam::RaspiCam::~RaspiCam() = default;
@@ -25,17 +28,11 @@ Cam* globalCamera = NULL;
 
 ImagePacket get_image_packet() {
 	auto cam = globalCamera->camera;
-	cout << "got cam" << endl;
 	cam->grab();
-	cout << "grabbed frame" << endl;
     cam->retrieve (globalCamera->frame, raspicam::RASPICAM_FORMAT_RGB);
-	cout << "received frame" << endl;
-	cout << "frame size" << globalCamera->frame_size << endl;
     return ImagePacket(globalCamera->frame, globalCamera->frame_size);
 }
  
-void initialize_camera() {
-	cout << "new cam" << endl;
-	globalCamera = new Cam();
-	cout << "exit initialize" << endl;
+void initialize_camera(uint32_t w, uint32_t h) {
+	globalCamera = new Cam(w, h);
 }

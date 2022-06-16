@@ -28,11 +28,11 @@ class Cam {
 		raspicam::RaspiCam* camera;
 		size_t frame_size;
 		uint8_t* frame;
-		Cam();
+		Cam(uint32_t w, uint32_t h);
 		~Cam();
 };
 
 extern Cam* globalCamera;
 
-void initialize_camera();
+void initialize_camera(uint32_t w, uint32_t h);
 ImagePacket get_image_packet();
