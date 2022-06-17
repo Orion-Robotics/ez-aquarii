@@ -7,6 +7,7 @@ use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::Write;
 use opencv::core::{Mat, CV_8SC3};
+use opencv::highgui;
 use std::ffi::c_void;
 
 #[cxx::bridge]
@@ -33,12 +34,18 @@ fn main() -> Result<()> {
 	let (w, h) = (720, 720);
     ffi::initialize_camera(w, h);
     thread::sleep(Duration::from_secs(3));
-    let pkt = ffi::get_image_packet();
-    let mut imslice = unsafe {
-    	slice::from_raw_parts_mut(pkt.data, pkt.len)
-    };
-    let mat = unsafe { Mat::new_nd_with_data(&[w as i32, h as i32], CV_8SC3, imslice.as_mut_ptr() as *mut c_void, Some(&[1]))? };
-    opencv::imgcodecs::imwrite("bruh.png", &mat, &opencv::core::Vector::new());
+    highgui::named_window("nya", highgui::WINDOW_AUTOSIZE).expect("could not create window");
+    loop {
+	    let pkt = ffi::get_image_packet();
+	    let mut imslice = unsafe {
+	    	slice::from_raw_parts_mut(pkt.data, pkt.len)
+	    };
+	    let mat = unsafe { Mat::new_nd_with_data(&[w as i32, h as i32], CV_8SC3, imslice.as_mut_ptr() as *mut c_void, Some(&[1]))? };
+	    highgui::imshow("nya", &mat);
+	    if highgui::wait_key(10).expect("uhhh") > -1{
+	    	break;
+	    }
+	}
     Ok(())
     // let mat = Mat::zeros_nd(&size, typ: i32);
     // highgui::imshow("sus", )
