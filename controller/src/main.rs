@@ -90,31 +90,31 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 
 	if let Some(camera) = camera {
 		new_modules.push(Box::new(
-			camera::Camera::new(camera)
+			camera::Camera::new(camera.clone())
 				.await
 				.context("camera creation")?,
 		));
 	}
 	if let Some(line) = line {
 		new_modules.push(Box::new(
-			line::Line::new(line).context("line creation")?,
+			line::Line::new(line.clone()).context("line creation")?,
 		));
 	}
 	if let Some(motors) = motors {
 		new_modules.push(Box::new(
-			Motors::new(motors).context("motors creation")?,
+			Motors::new(motors.clone()).context("motors creation")?,
 		));
 	}
 	if let Some(server) = server {
 		new_modules.push(Box::new(
-			StateRecorder::new(cfg, server)
+			StateRecorder::new(cfg.clone(), server.clone())
 				.await
 				.context("server creation")?,
 		));
 	}
 	if let Some(reader) = reader {
 		new_modules.push(Box::new(
-			Reader::new(reader)
+			Reader::new(reader.clone())
 				.await
 				.context("reader creation")?,
 		));
