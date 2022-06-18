@@ -4,37 +4,55 @@ use crate::{
 	config::{self},
 	modules,
 };
+use anyhow::Result;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use parking_lot::Mutex;
+use std::slice;
+use std::thread;
+use std::time::Duration;
 use tokio::fs::{File, OpenOptions};
-
-use crate::ipc;
+// use std::fs::OpenOptions;
+// use std::io::Write;
+use opencv::core::{Mat, CV_8SC3};
+use opencv::highgui;
+use std::ffi::c_void;
 
 use super::{
 	state::{ModuleSync, State},
 	Module,
 };
 
-pub struct Camera {
-	pub socket_file: File,
-}
+pub struct Camera {}
 
 impl Camera {
-	pub async fn new(config::Camera { path, .. }: config::Camera) -> Result<Self> {
-		Ok(Camera {
-			socket_file: OpenOptions::new()
-				.read(true)
-				.write(true)
-				.create(true)
-				.mode(0o600)
-				.open(path)
-				.await
-				.with_context(|| "failed to open file")?,
-		})
+	pub async fn new() -> Result<Self> {
+		let (w, h) = (720, 720);
+		ffi::initialize_camera(w, h);
+		thread::sleep(Duration::from_secs(3));
+		Ok(Camera {})
 	}
 }
+#[cxx::bridge]
+mod ffi {
+	struct ImagePacket {
+		data: *mut u8,
+		len: usize,
+	}
 
+	unsafe extern "C++" {
+		include!("nffi/include/imageprovider.h");
+		include!("raspicam/raspicam.h");
+		// include!("/usr/include/opencv4/opencv2/");
+
+		type Cam;
+		type ImagePacket;
+
+		fn get_image_packet() -> ImagePacket;
+		fn initialize_camera(w: u32, h: u32) -> ();
+		// fn get_image(cam: UniquePtr<Cam>) -> *mut u8;
+	}
+}
 #[async_trait]
 impl Module for Camera {
 	fn name(&self) -> &'static str {
@@ -42,11 +60,16 @@ impl Module for Camera {
 	}
 
 	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
-		let data = ipc::read_msgpack::<modules::state::CameraMessage, _>(&mut self.socket_file)
-			.await
-			.with_context(|| "failed to read packet")?;
-
-		let get_location = |i: usize| data.locations.get(i).and_then(|b| b.as_ref().copied());
+		let pkt = ffi::get_image_packet();
+		let imslice = unsafe { slice::from_raw_parts_mut(pkt.data, pkt.len) };
+		let mat = unsafe {
+			Mat::new_nd_with_data(
+				&[w as i32, h as i32],
+				CV_8SC3,
+				imslice.as_mut_ptr() as *mut c_void,
+				Some(&[1]),
+			)?
+		};
 
 		let mut state = state.lock();
 		state.camera_data.ball = get_location(0);

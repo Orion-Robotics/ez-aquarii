@@ -8,13 +8,20 @@ from picamera import PiCamera
 from picamera.array import PiRGBArray
 
 camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = 24
+s = (640, 480)
+camera.resolution = s
+camera.framerate = 90
+camera.sensor_mode=7
+rawCapture = PiRGBArray(camera, size=s)
 sleep(2)
-while True:
-    image = np.empty((480*640*3,), dtype=np.uint8)
-    camera.capture(image, 'bgr')
-    image = image.reshape((480, 640, 3))
-    cv2.imshow('s', image)
-    cv2.waitKey(0)
-cv2.destroyAllWindows()
+t = time()
+cv2.namedWindow("s")
+for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+    image = frame.array
+    cv2.imshow("frame", image)
+    key = cv2.waitKey(1) & 0xFF
+    rawCapture.truncate(0)
+    # print(1/(t-time()))
+    # t = time()
+    # if key == ord("q"):
+        # break

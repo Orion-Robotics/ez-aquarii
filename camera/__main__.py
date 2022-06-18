@@ -9,6 +9,7 @@ import numpy as np
 from config import Config
 from handlers import constants
 from handlers.display import DisplayHandler
+from handlers.detection import DetectionHandler
 from lib.camera import Camera
 from lib.ipc import new_fifo_ipc
 from lib.streaming import StreamingFrameHandler
@@ -17,7 +18,8 @@ if __name__ == "__main__":
     try:
         config = Config("camera.json")
         ipc = new_fifo_ipc("socket")
-        handler = DisplayHandler(ipc, False)
+        handler = DetectionHandler(ipc, False)
+        # handler = DisplayHandler()
         stream_handler = StreamingFrameHandler(
             handler,
             constants.SERVER_ADDRESS,

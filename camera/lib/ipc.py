@@ -26,6 +26,7 @@ def new_fifo_ipc(path: str):
         os.remove(path)
     mkfifo(path, 0o660)
     writer = open(path, "rb+", 0)
+    os.set_blocking(writer.fileno(), False)
     return IPC(writer)
 
 
