@@ -15,7 +15,7 @@ import {
   DataObject,
   DataSource,
   ServerSource,
-  TextSource,
+  TextSource
 } from "./data_sources";
 import { createStoredSignal } from "./helpers/createStoredSignal";
 import { RobotView } from "./RobotView";
@@ -162,10 +162,10 @@ const App: Component = () => {
         <div class="flex-1 flex-col flex">
           <Show when={started()}>
             <div class="bg-dark-300 p-2 flex gap-2">
-              <ShimmerButton onClick={() => source?.next()}>
+              <ShimmerButton onClick={() => source?.back()}>
                 <ArrowLeft />
               </ShimmerButton>
-              <ShimmerButton onClick={() => source?.back()}>
+              <ShimmerButton onClick={() => source?.next()}>
                 <ArrowRight />
               </ShimmerButton>
               <BaseSlider
