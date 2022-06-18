@@ -12,13 +12,8 @@ ImagePacket::ImagePacket(uint8_t* data, size_t len) {
 	this->data = data;
 	this->len = len;
 }
-Cam::Cam(uint32_t w, uint32_t h) {
+Cam::Cam() {
 	this->camera = new raspicam::RaspiCam();
-	camera->setWidth(w);
-	camera->setHeight(h);
-	this->frame_size = this->camera->getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB);
-	this->frame = new uint8_t[this->frame_size];
-	this->camera->open();
 }
 Cam::~Cam() = default;
 // raspicam::RaspiCam::~RaspiCam() = default;
@@ -29,10 +24,22 @@ Cam* globalCamera = NULL;
 ImagePacket get_image_packet() {
 	auto cam = globalCamera->camera;
 	cam->grab();
-    cam->retrieve (globalCamera->frame, raspicam::RASPICAM_FORMAT_RGB);
-    return ImagePacket(globalCamera->frame, globalCamera->frame_size);
+    return ImagePacket(cam->getImageBufferData(), cam->getImageBufferSize());
 }
  
-void initialize_camera(uint32_t w, uint32_t h) {
-	globalCamera = new Cam(w, h);
+void initialize_camera(uint32_t w, uint32_t h, uint32_t framerate, uint8_t sensor_mode, uint32_t shutter_speed) {
+	globalCamera = new Cam();
+	auto camera = globalCamera->camera;
+	camera->setWidth(w);
+	camera->setHeight(h);
+	camera->setFrameRate(framerate);
+	camera->setFormat(raspicam::RASPICAM_FORMAT_RGB);
+	camera->setSensorMode(sensor_mode);
+	camera->setShutterSpeed(shutter_speed);
+	camera->setAWB(raspicam::RASPICAM_AWB_OFF);
+	camera->setExposure(raspicam::RASPICAM_EXPOSURE_OFF);
+	camera->setISO(500);
+	camera->open();
 }
+
+
