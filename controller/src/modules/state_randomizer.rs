@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use rand::Rng;
 
 use crate::math::vec2::Vec2;
@@ -33,11 +33,11 @@ impl Module for StateRandomizer {
 
 	async fn tick(
 		&mut self,
-		state: &mut Arc<Mutex<State>>,
+		state: &mut Arc<RwLock<State>>,
 		sync: &mut ModuleSync,
 	) -> anyhow::Result<()> {
 		let mut rng = rand::thread_rng();
-		let mut state = state.lock();
+		let mut state = state.write();
 
 		state.data.sensor_data = vec![0; 46].iter().map(|_| rng.gen::<u8>()).collect();
 

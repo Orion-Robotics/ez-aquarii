@@ -1,4 +1,6 @@
 #![feature(trait_alias)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 pub mod config;
 pub mod ipc;
 pub mod math;
@@ -18,6 +20,7 @@ pub mod ffi {
 		pub type Cam;
 		pub type ImagePacket;
 
+		#[must_use]
 		pub fn get_image_packet() -> ImagePacket;
 		pub fn initialize_camera(
 			w: u32,

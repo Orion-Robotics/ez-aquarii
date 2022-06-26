@@ -13,7 +13,7 @@ use controller::{
 	},
 };
 use futures::future::join_all;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::{sync::Notify, time::interval};
 use tracing_subscriber::EnvFilter;
@@ -34,9 +34,9 @@ async fn main() -> Result<()> {
 	for module in modules.iter_mut() {
 		module.start().await?;
 	}
-	let robot_state = Arc::new(Mutex::new(state::State::default()));
+	let robot_state = Arc::new(RwLock::new(state::State::default()));
 	let module_sync = ModuleSync::default();
-	robot_state.lock().config = config.clone();
+	robot_state.write().config = config.clone();
 	let pre_tick_rates: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
 	let futures = modules
 		.into_iter()
@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
 	loop {
 		interval.tick().await;
 		let mut pre_tick_rates = pre_tick_rates.lock();
-		robot_state.lock().tick_rates = pre_tick_rates.clone();
+		robot_state.write().tick_rates = pre_tick_rates.clone();
 		let mut formatted = pre_tick_rates.iter().collect::<Vec<_>>();
 		formatted.sort_by(|(name, _), (name1, _)| name1.cmp(name));
 		tracing::info!("tick rates: {:?}", formatted);

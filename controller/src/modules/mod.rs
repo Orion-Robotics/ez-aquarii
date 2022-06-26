@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 
 use self::state::{ModuleSync, State};
 
@@ -20,7 +20,7 @@ pub mod strategy;
 #[async_trait]
 pub trait Module: Send {
 	fn name(&self) -> &'static str;
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()>;
+	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()>;
 	async fn start(&mut self) -> Result<()>;
 	async fn stop(&mut self) -> Result<()>;
 }
