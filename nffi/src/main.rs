@@ -4,11 +4,12 @@ use std::slice;
 use std::thread;
 use std::time::Duration;
 use anyhow::Result;
-use std::fs::OpenOptions;
-use std::io::Write;
-use opencv::core::{Mat, CV_8SC3};
+// use std::fs::OpenOptions;
+// use std::io::Write;
+use opencv::core::{Mat, CV_8UC3};
 use opencv::highgui;
 use std::ffi::c_void;
+use std::time::Instant;
 
 #[cxx::bridge]
 mod ffi {
@@ -26,39 +27,35 @@ mod ffi {
         type ImagePacket;
 
         fn get_image_packet() -> ImagePacket;
-        fn initialize_camera(w: u32, h: u32) -> ();
+        fn initialize_camera(w: u32, h: u32, framerate: u32) -> ();
         // fn get_image(cam: UniquePtr<Cam>) -> *mut u8;
     }
 }
 fn main() -> Result<()> {
 	let (w, h) = (720, 720);
-    ffi::initialize_camera(w, h);
+    ffi::initialize_camera(w, h, 100);
     thread::sleep(Duration::from_secs(3));
     highgui::named_window("nya", highgui::WINDOW_AUTOSIZE).expect("could not create window");
+    let (mut frames, mut last_measure) = (0, Instant::now());
+
     loop {
+        frames += 1;
+		if last_measure.elapsed() > Duration::from_millis(1000) {
+			last_measure = Instant::now();
+			println!("{} FPS", frames);
+			frames = 0;
+		}
+    
 	    let pkt = ffi::get_image_packet();
 	    let mut imslice = unsafe {
-	    	slice::from_raw_parts_mut(pkt.data, pkt.len)
+	    	slice::from_raw_parts_mut(pkt.data, pkt.len).to_owned().clone()
 	    };
-	    let mat = unsafe { Mat::new_nd_with_data(&[w as i32, h as i32], CV_8SC3, imslice.as_mut_ptr() as *mut c_void, Some(&[1]))? };
-	    highgui::imshow("nya", &mat);
-	    if highgui::wait_key(10).expect("uhhh") > -1{
+	    let mat = unsafe { Mat::new_nd_with_data(&[w as i32, h as i32], CV_8UC3, imslice.as_mut_ptr() as *mut c_void, None)? };
+	    highgui::imshow("nya", &mat).expect("could not display image");
+	    if highgui::wait_key(1).expect("failed to wait for keystroke") > -1{
 	    	break;
 	    }
+	    // opencv::imgcodecs::imwrite("bruh.png", &mat, &opencv::core::Vector::new());
 	}
     Ok(())
-    // let mat = Mat::zeros_nd(&size, typ: i32);
-    // highgui::imshow("sus", )
 }
-// // use anyhow::anyhow;
-// use anyhow::Result;
-// // use image::RgbImage;
-// // use ndarray::{Array1, ArrayView1, ArrayView3};
-// use opencv::{self as cv, prelude::*};
-// fn main() -> Result<()> {
-//     // Read image
-//     let img = cv::imgcodecs::imread("madeline.png", cv::imgcodecs::IMREAD_COLOR)?;
-//     cv::highgui::imshow("sus", &img).expect("weirdchamp");
-//     let key = cv::highgui::wait_key(0)?;
-//     Ok(())
-// }
