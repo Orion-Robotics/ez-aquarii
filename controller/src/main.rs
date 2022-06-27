@@ -15,7 +15,7 @@ use controller::{
 use futures::future::join_all;
 use parking_lot::{Mutex, RwLock};
 use std::{collections::HashMap, sync::Arc, time::Duration};
-use tokio::{sync::Notify, time::interval};
+use tokio::time::interval;
 use tracing_subscriber::EnvFilter;
 
 const CONFIG_FILE: &str = "./config.yaml";

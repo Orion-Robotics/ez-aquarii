@@ -29,9 +29,9 @@ impl Motors {
 			uart_path,
 			..
 		}: config::Motors,
-	) -> Result<Motors> {
+	) -> Result<Self> {
 		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
-		Ok(Motors { serial })
+		Ok(Self { serial })
 	}
 }
 
@@ -45,7 +45,7 @@ impl Module for Motors {
 				speed,
 				rotation_scalar,
 				..
-			} = state.config.motors.as_ref().unwrap().to_owned();
+			} = state.config.motors.as_ref().unwrap().clone();
 
 			// the rotation is in range -180 to 180
 			// this will scale it to -1 to 1
@@ -75,7 +75,7 @@ impl Module for Motors {
 
 			// motor power optimization
 			let max_power = *powers
-				.map(|power| power.abs())
+				.map(f64::abs)
 				.iter()
 				.min_by(|a, b| a.partial_cmp(b).unwrap())
 				.unwrap();
