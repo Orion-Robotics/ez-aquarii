@@ -28,6 +28,16 @@ rand = "0.8.5"
 rmp-serde = "1.1.0"
 serde = { version = "1.0.136", features = ["derive"] }
 tokio-util = { version = "0.7.2", features = ["codec"] }
+<<<<<<< HEAD
+cxx= "1.0"
+opencv = "0.65.0"
+ndarray = "0.15.4"
+
+[build-dependencies]
+cxx-build = "1.0.68"
+pkg-config = "0.3.25"
+prost-build = "0.9.0"
+=======
 cxx = "1.0"
 opencv = "0.65.0"
 async-stream = "0.3.3"
@@ -35,3 +45,4 @@ tokio-stream = { version = "0.1.9", features = ['sync'] }
 
 [build-dependencies]
 cxx-build = "1.0.68"
+>>>>>>> 6bfd327c1df3ae04044f3a8d9348e83fed4ba557

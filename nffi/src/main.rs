@@ -4,6 +4,8 @@ use std::slice;
 use std::thread;
 use std::time::Duration;
 use anyhow::Result;
+// use std::fs::OpenOptions;
+// use std::io::Write;
 use opencv::core::{Mat, CV_8UC3};
 use opencv::highgui;
 use std::ffi::c_void;
@@ -47,7 +49,7 @@ fn main() -> Result<()> {
     
 	    let pkt = ffi::get_image_packet();
 	    let mut imslice = unsafe {
-	    	slice::from_raw_parts_mut(pkt.data, pkt.len)
+	    	slice::from_raw_parts_mut(pkt.data, pkt.len).to_owned().clone()
 	    };
 	    let mut mat = unsafe { Mat::new_nd_with_data(&[w as i32, h as i32], CV_8UC3, imslice.as_mut_ptr() as *mut c_void, None)? };
 	    opencv::imgproc::put_text(
