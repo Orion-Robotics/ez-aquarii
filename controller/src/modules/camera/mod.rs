@@ -46,29 +46,28 @@ impl Module for Camera {
 			.recv()
 			.await
 			.ok_or(anyhow::anyhow!("no frame"))?;
-		// let ball = find_best_contour(
-		// 	&mat,
-		// 	[0.0, 0.0, 0.0],
-		// 	[0.0, 0.0, 0.0],
-		// 	ball_heuristic(0.5, 0.5),
-		// )?;
-		// let yellow_goal = find_best_contour(
-		// 	&mat,
-		// 	[0.0, 0.0, 0.0],
-		// 	[0.0, 0.0, 0.0],
-		// 	ball_heuristic(1.0, 0.5),
-		// )?;
-		// let blue_goal = find_best_contour(
-		// 	&mat,
-		// 	[0.0, 0.0, 0.0],
-		// 	[0.0, 0.0, 0.0],
-		// 	ball_heuristic(1.0, 0.5),
-		// )?;
-		// sync.camera_notify.notify_waiters();
+		let ball = find_best_contour(
+			&mat,
+			[0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0],
+			ball_heuristic(0.5, 0.5),
+		)?;
+		let yellow_goal = find_best_contour(
+			&mat,
+			[0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0],
+			ball_heuristic(1.0, 0.5),
+		)?;
+		let blue_goal = find_best_contour(
+			&mat,
+			[0.0, 0.0, 0.0],
+			[0.0, 0.0, 0.0],
+			ball_heuristic(1.0, 0.5),
+		)?;
 		{
 			let mut frame = sync.frame.lock();
-			frame.0 = mat;
-			frame.1 = false;
+			*frame = mat;
+			sync.camera_notify.notify_waiters();
 		}
 		Ok(())
 	}

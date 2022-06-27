@@ -1,16 +1,27 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{config::Config, math::vec2::Vec2};
-use parking_lot::Mutex;
+use opencv::prelude::Mat;
+use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
-use tokio::sync::Notify;
+use tokio::sync::{watch, Notify};
 
 #[derive(Debug, Clone, Default)]
 pub struct ModuleSync {
 	pub reader_notify: Arc<Notify>,
 	pub camera_notify: Arc<Notify>,
-	pub frame: Arc<Mutex<(opencv::core::Mat, bool)>>,
+	pub frame: Arc<Mutex<Mat>>,
 }
+
+// impl Default for ModuleSync {
+// 	fn default() -> Self {
+// 		Self {
+// 			reader_notify: Default::default(),
+// 			camera_notify: Default::default(),
+// 			frame: Arc::new(Mutex::new(Mat::default())),
+// 		}
+// 	}
+// }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Copy, Default)]
 pub struct OrbitState {

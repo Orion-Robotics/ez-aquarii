@@ -1,4 +1,5 @@
 use std::{
+	borrow::Borrow,
 	net::SocketAddr,
 	pin::Pin,
 	sync::Arc,
@@ -24,10 +25,13 @@ use axum::{
 	routing::get,
 	Json, Router,
 };
-use futures::{stream::StreamExt, SinkExt, TryStreamExt};
+use futures::{future, stream::StreamExt, SinkExt, TryStreamExt};
 use opencv::{core::Size, imgcodecs, imgproc, prelude::Mat};
 use parking_lot::RwLock;
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::{
+	sync::{broadcast, mpsc, oneshot},
+	time::{interval, Interval},
+};
 use tower_http::cors::{Any, CorsLayer};
 
 async fn websocket_handler(
@@ -90,9 +94,12 @@ async fn stream_mjpeg(
 				.concat()
 			})
 		})
-		.map_err(|e| {
-			tracing::debug!("error receiving image: {:?}", e);
-			e
+		.filter_map(|res| async move {
+			if res.is_err() {
+				None
+			} else {
+				Some(res)
+			}
 		});
 	// this can only fail if the builder response was misconfigured
 	Response::builder()
@@ -117,7 +124,7 @@ pub struct StateRecorder {
 	image_chan: (broadcast::Sender<Vec<u8>>, broadcast::Receiver<Vec<u8>>),
 	addr: SocketAddr,
 	config: Config,
-	last_state_change: Instant,
+	state_interval: Interval,
 }
 
 impl StateRecorder {
@@ -137,7 +144,7 @@ impl StateRecorder {
 			image_chan: broadcast::channel(1),
 			addr,
 			config,
-			last_state_change: Instant::now(),
+			state_interval: interval(Duration::from_millis(10)),
 		})
 	}
 }
@@ -160,22 +167,6 @@ impl Module for StateRecorder {
 			)))
 			.layer(Extension(self.config.clone()))
 			.layer(Extension(self.image_chan.0.clone()));
-
-		{
-			let c = self.image_chan.0.clone();
-			tokio::spawn(async move {
-				let mut r = c.subscribe();
-				loop {
-					tracing::debug!("receiving from broadcast");
-					let result = r.recv().await;
-					tracing::debug!(
-						"recv result: {:?}, {:?} subscribers",
-						result,
-						c.receiver_count()
-					);
-				}
-			});
-		}
 
 		let kill_receiver = self.kill_receiver.take().unwrap();
 		let addr = self.addr;
@@ -203,30 +194,19 @@ impl Module for StateRecorder {
 	}
 
 	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
-		self.image_chan.0.send(vec![])?;
-		if let Ok(msg) = self.client_message_receiver.try_recv() {
-			state.write().config = msg;
-		}
-		if !sync.frame.lock().1 {
+		tokio::select! {
+				  Some(msg) = self.client_message_receiver.recv() => state.write().config = msg,
+				_ = sync.camera_notify.notified() => {
 			let mut buf = opencv::core::Vector::new();
-			sync.frame.lock().1 = true;
 			let mut scaled = Mat::default();
-			imgproc::resize(
-				&sync.frame.lock().0,
-				&mut scaled,
-				Size::default(),
-				0.25,
-				0.25,
-				0,
-			)?;
+			imgproc::resize(&sync.frame.lock().clone(), &mut scaled, Size::default(), 0.25, 0.25, 0)?;
 			imgcodecs::imencode(".jpg", &scaled, &mut buf, &opencv::core::Vector::new())?;
 			self.image_chan.0.send(buf.into())?;
-			tracing::debug!("sent image over channel");
+				}
+		  _ = self.state_interval.tick() => {
+		  let _err = self.state_sender.send(state.read().clone());
 		}
-		if self.last_state_change.elapsed() > Duration::from_millis(10) {
-			let _err = self.state_sender.send(state.read().clone());
-			self.last_state_change = Instant::now();
-		}
+		  }
 		Ok(())
 	}
 }
