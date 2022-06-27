@@ -2,7 +2,7 @@ use std::{f32::consts::PI, sync::Arc};
 
 use anyhow::Result;
 use async_trait::async_trait;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 
 use crate::{
 	config,
@@ -38,16 +38,16 @@ impl Line {
 
 #[async_trait]
 impl Module for Line {
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
 		sync.reader_notify.notified().await;
 		let config::Line {
 			pickup_threshold,
 			pickup_sensor_count,
 			trigger_threshold,
 			..
-		} = state.lock().config.line.as_ref().unwrap().to_owned();
+		} = state.read().config.line.as_ref().unwrap().to_owned();
 
-		let mut state = state.lock();
+		let mut state = state.write();
 
 		state.line_detections = state
 			.data

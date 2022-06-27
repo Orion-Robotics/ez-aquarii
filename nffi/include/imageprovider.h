@@ -3,10 +3,7 @@
 #include <iostream>
 #include <string>
 #include <array>
-#include "raspicam/raspicam.h"
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
+#include <raspicam/raspicam.h>
 
 // class ImagePacket {
     // public:
@@ -29,10 +26,8 @@ class Cam {
 		size_t frame_size;
 		uint8_t* frame;
 		Cam(uint32_t w, uint32_t h, uint32_t framerate);
-		~Cam();
 };
 
 extern Cam* globalCamera;
-
-void initialize_camera(uint32_t w, uint32_t h, uint32_t framerate);
+void initialize_camera(uint32_t w, uint32_t h, uint32_t framerate, uint8_t sensor_mode, uint32_t shutter_speed);
 ImagePacket get_image_packet();

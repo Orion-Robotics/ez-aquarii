@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use byteorder::ReadBytesExt;
 use bytes::BytesMut;
 use futures::StreamExt;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use tokio::io::AsyncReadExt;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 use tokio_util::codec::{Decoder, Framed};
@@ -49,10 +49,10 @@ impl Module for Reader {
 		"reader"
 	}
 
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
 		if let Some(res) = self.codec.next().await {
 			let (angle, sensors) = res?;
-			let mut state = state.lock();
+			let mut state = state.write();
 			state.data.sensor_data = sensors;
 			state.data.orientation = angle as f64;
 			if state.initial_orientation.is_none() {

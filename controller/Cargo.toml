@@ -2,16 +2,13 @@
 name = "controller"
 version = "0.1.0"
 edition = "2021"
+links = "controller"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-toml = "0.5.8"
-notify = "5.0.0-pre.13"
 parking_lot = "0.11.2"
 byteorder = "1.4.3"
-prost = "0.9"
-prost-types = "0.9"
 anyhow = "1.0.51"
 bytes = "1.1.0"
 serde_yaml = "0.8.21"
@@ -22,10 +19,8 @@ futures = "0.3.19"
 tracing-subscriber = { version = "0.3.5", features = ["env-filter"] }
 async-recursion = "1.0.0"
 serde_json = "1.0.74"
-arrayvec = { version = "0.7.2", features = ['serde'] }
 num = "0.4.0"
 test-case = "1.2.3"
-cached = "0.30.0"
 tokio-serial = "5.4.2"
 axum = { version = "0.5.0", features = ["ws"] }
 tower-http = { version = "0.2.5", features = ["cors"] }
@@ -33,6 +28,7 @@ rand = "0.8.5"
 rmp-serde = "1.1.0"
 serde = { version = "1.0.136", features = ["derive"] }
 tokio-util = { version = "0.7.2", features = ["codec"] }
+<<<<<<< HEAD
 cxx= "1.0"
 opencv = "0.65.0"
 ndarray = "0.15.4"
@@ -41,3 +37,12 @@ ndarray = "0.15.4"
 cxx-build = "1.0.68"
 pkg-config = "0.3.25"
 prost-build = "0.9.0"
+=======
+cxx = "1.0"
+opencv = "0.65.0"
+async-stream = "0.3.3"
+tokio-stream = { version = "0.1.9", features = ['sync'] }
+
+[build-dependencies]
+cxx-build = "1.0.68"
+>>>>>>> 6bfd327c1df3ae04044f3a8d9348e83fed4ba557

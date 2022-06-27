@@ -12,3 +12,4 @@ sockettest/csock/CMakeCache.txt
 raspicam
 sockettest/csock/cmake_install.cmake
 sockettest/csock/csock
+camex/target

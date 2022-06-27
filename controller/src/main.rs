@@ -13,7 +13,7 @@ use controller::{
 	},
 };
 use futures::future::join_all;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::{sync::Notify, time::interval};
 use tracing_subscriber::EnvFilter;
@@ -34,9 +34,9 @@ async fn main() -> Result<()> {
 	for module in modules.iter_mut() {
 		module.start().await?;
 	}
-	let robot_state = Arc::new(Mutex::new(state::State::default()));
+	let robot_state = Arc::new(RwLock::new(state::State::default()));
 	let module_sync = ModuleSync::default();
-	robot_state.lock().config = config.clone();
+	robot_state.write().config = config.clone();
 	let pre_tick_rates: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
 	let futures = modules
 		.into_iter()
@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
 	loop {
 		interval.tick().await;
 		let mut pre_tick_rates = pre_tick_rates.lock();
-		robot_state.lock().tick_rates = pre_tick_rates.clone();
+		robot_state.write().tick_rates = pre_tick_rates.clone();
 		let mut formatted = pre_tick_rates.iter().collect::<Vec<_>>();
 		formatted.sort_by(|(name, _), (name1, _)| name1.cmp(name));
 		tracing::info!("tick rates: {:?}", formatted);
@@ -90,31 +90,31 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 
 	if let Some(camera) = camera {
 		new_modules.push(Box::new(
-			camera::Camera::new(camera)
+			camera::Camera::new(camera.clone())
 				.await
 				.context("camera creation")?,
 		));
 	}
 	if let Some(line) = line {
 		new_modules.push(Box::new(
-			line::Line::new(line).context("line creation")?,
+			line::Line::new(line.clone()).context("line creation")?,
 		));
 	}
 	if let Some(motors) = motors {
 		new_modules.push(Box::new(
-			Motors::new(motors).context("motors creation")?,
+			Motors::new(motors.clone()).context("motors creation")?,
 		));
 	}
 	if let Some(server) = server {
 		new_modules.push(Box::new(
-			StateRecorder::new(cfg, server)
+			StateRecorder::new(cfg.clone(), server.clone())
 				.await
 				.context("server creation")?,
 		));
 	}
 	if let Some(reader) = reader {
 		new_modules.push(Box::new(
-			Reader::new(reader)
+			Reader::new(reader.clone())
 				.await
 				.context("reader creation")?,
 		));

@@ -8,7 +8,7 @@ use crate::{
 		Module,
 	},
 };
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use test_case::test_case;
 use tokio::sync::Notify;
 
@@ -38,17 +38,17 @@ use tokio::sync::Notify;
 )]
 #[tokio::test]
 pub async fn test_flips(first: &[bool], second: &[bool], flip: bool) {
-	let mutex = Arc::new(Mutex::new(State::default()));
+	let mutex = Arc::new(RwLock::new(State::default()));
 	let mut sync = ModuleSync::default();
 	let mut line = Line::default();
-	mutex.lock().line_detections = Vec::from(first);
+	mutex.write().line_detections = Vec::from(first);
 	line.tick(&mut Arc::clone(&mutex), &mut sync).await.unwrap();
-	mutex.lock().print_state();
-	mutex.lock().line_detections = Vec::from(second);
+	mutex.write().print_state();
+	mutex.write().line_detections = Vec::from(second);
 	line.tick(&mut Arc::clone(&mutex), &mut sync).await.unwrap();
-	mutex.lock().print_state();
+	mutex.write().print_state();
 
-	assert_eq!(mutex.lock().line_flipped, flip);
+	assert_eq!(mutex.write().line_flipped, flip);
 }
 
 #[test_case(Vec2::new(-0.1, 0.0), Vec2::new(0.1, 0.0), true; "crosses line when crosses axis")]

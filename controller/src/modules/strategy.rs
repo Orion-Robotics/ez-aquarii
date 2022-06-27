@@ -8,7 +8,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use futures::{future::select_all, FutureExt};
 use num::traits::Pow;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 
 use crate::{
 	config::{self, DampenConfig, OrbitConfig},
@@ -31,14 +31,14 @@ impl Module for Strategy {
 		"strategy"
 	}
 
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
 		// sync.reader_notify.notified().await;
 		select_all(vec![
 			sync.camera_notify.notified().boxed(),
 			sync.reader_notify.notified().boxed(),
 		])
 		.await;
-		let mut state = state.lock();
+		let mut state = state.write();
 		let team = state.config.team;
 		let strategy_config = state.config.strategy.as_ref().unwrap().to_owned();
 		match state.strategy {

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{config::Config, math::vec2::Vec2};
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 
@@ -8,6 +9,7 @@ use tokio::sync::Notify;
 pub struct ModuleSync {
 	pub reader_notify: Arc<Notify>,
 	pub camera_notify: Arc<Notify>,
+	pub frame: Arc<Mutex<(opencv::core::Mat, bool)>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Copy, Default)]
@@ -73,6 +75,7 @@ pub struct State {
 
 	#[serde(skip_serializing)]
 	pub config: Config,
+
 	// raw sensor data, not to be used by actual program logic
 	pub data: RawData,
 	pub camera_data: CameraData,

@@ -14,7 +14,7 @@ use super::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use tokio::io::AsyncWriteExt;
 use tokio_serial::{self, SerialPortBuilderExt};
 
@@ -37,9 +37,9 @@ impl Motors {
 
 #[async_trait]
 impl Module for Motors {
-	async fn tick(&mut self, state: &mut Arc<Mutex<State>>, sync: &mut ModuleSync) -> Result<()> {
+	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
 		let motor_commands = {
-			let state = state.lock();
+			let state = state.write();
 			let config::Motors {
 				motor_offset,
 				speed,
