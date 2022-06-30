@@ -5,8 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::{
 	f64::consts::E,
 	fs::{self, read_to_string},
-	path::PathBuf,
 };
+
+use crate::modules::camera::cv::{ColorBound, ColorRange};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct OrbitConfig {
@@ -23,12 +24,20 @@ pub struct DampenConfig {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct Thresholds {
+	pub ball: ColorRange,
+	pub yellow: ColorRange,
+	pub blue: ColorRange,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Camera {
 	pub width: u32,
 	pub height: u32,
 	pub framerate: u32,
 	pub sensor_mode: u8,
 	pub shutter_speed: u32,
+	pub thresholds: Thresholds,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -101,6 +110,11 @@ impl Default for Config {
 				width: 480,
 				sensor_mode: 7,
 				shutter_speed: 15000,
+				thresholds: Thresholds {
+					ball: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
+					yellow: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
+					blue: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
+				},
 			}),
 			line: Some(Line {
 				pickup_threshold: 24,

@@ -3,16 +3,19 @@ use std::f64::consts::PI;
 use anyhow::Result;
 use num::pow;
 use opencv::{
-	core::{in_range, Moments, Point, Point2d},
+	core::{in_range, no_array, Moments, Point, Point2d, Scalar, Vector},
 	imgproc::{
-		arc_length, contour_area, find_contours, is_contour_convex, CHAIN_APPROX_SIMPLE, RETR_TREE,
+		self, arc_length, contour_area, find_contours, is_contour_convex, CHAIN_APPROX_SIMPLE,
+		RETR_TREE,
 	},
 	prelude::Mat,
 	types::{VectorOfPoint, VectorOfVectorOfPoint},
 };
 
-type ColorBound = [f64; 3];
+pub type ColorBound = [f64; 3];
+pub type ColorRange = (ColorBound, ColorBound);
 
+#[must_use]
 pub fn get_blob_centroid(moments: Moments) -> Point2d {
 	Point2d::new(moments.m10 / moments.m00, moments.m01 / moments.m00)
 }
@@ -29,7 +32,7 @@ pub fn mask(img: &Mat, lower_bound: ColorBound, upper_bound: ColorBound) -> Resu
 }
 
 pub fn find_best_contour<F>(
-	img: &Mat,
+	img: &mut Mat,
 	lower: ColorBound,
 	upper: ColorBound,
 	heuristic_fn: F,
@@ -58,6 +61,18 @@ where
 			.partial_cmp(&heuristic_fn(b).unwrap_or(0.0))
 			.unwrap()
 	});
+
+	imgproc::draw_contours(
+		img,
+		&VectorOfVectorOfPoint::from(contours.clone()),
+		-1,
+		Scalar::new(255.0, 0.0, 0.0, 0.0),
+		1,
+		-1,
+		&no_array(),
+		0,
+		Point::default(),
+	)?;
 
 	Ok(contours.first().cloned())
 }

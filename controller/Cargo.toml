@@ -30,8 +30,9 @@ serde = { version = "1.0.136", features = ["derive"] }
 tokio-util = { version = "0.7.2", features = ["codec"] }
 cxx = "1.0"
 opencv = "0.65.0"
-async-stream = "0.3.3"
 tokio-stream = { version = "0.1.9", features = ['sync'] }
+rayon = "1.5.3"
+flume = "0.10.13"
 
 [build-dependencies]
 cxx-build = "1.0.68"

@@ -1,17 +1,19 @@
 pub mod cv;
-use crate::{config, ffi};
+use crate::{
+	config::{self, Thresholds},
+	ffi,
+};
 use anyhow::Result;
 use async_trait::async_trait;
 use cv::{ball_heuristic, find_best_contour};
-use opencv::{
-	core::CV_8UC3,
-	prelude::{Mat, MatTraitConstManual},
-};
+use opencv::{core::CV_8UC3, prelude::Mat, types::VectorOfPoint};
 use parking_lot::RwLock;
-use std::{ffi::c_void, slice, sync::Arc, time::Duration};
+use std::{ffi::c_void, slice, sync::Arc};
 use tokio::sync::mpsc;
 // use std::fs::OpenOptions;
 // use std::io::Write;
+
+use self::cv::ColorBound;
 
 use super::{
 	state::{ModuleSync, State},
@@ -25,10 +27,9 @@ pub struct Camera {
 
 impl Camera {
 	pub async fn new(cfg: config::Camera) -> Result<Self> {
-		tokio::time::sleep(Duration::from_secs(3)).await;
 		Ok(Camera {
 			cfg,
-			frame_chan: mpsc::unbounded_channel::<Mat>(),
+			frame_chan: mpsc::unbounded_channel(),
 		})
 	}
 }
@@ -40,33 +41,58 @@ impl Module for Camera {
 	}
 
 	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
+		let Thresholds { ball, yellow, blue } =
+			state.read().config.camera.as_ref().unwrap().thresholds;
+
 		let mat = self
 			.frame_chan
 			.1
 			.recv()
 			.await
-			.ok_or(anyhow::anyhow!("no frame"))?;
-		let ball = find_best_contour(
-			&mat,
-			[0.0, 0.0, 0.0],
-			[0.0, 0.0, 0.0],
-			ball_heuristic(0.5, 0.5),
+			.ok_or_else(|| anyhow::anyhow!("no frame"))?;
+
+		let (ball, yellow, blue) = futures::try_join!(
+			{
+				let mut mat = mat.clone();
+				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
+					let result =
+						find_best_contour(&mut mat, ball.0, ball.1, ball_heuristic(0.5, 0.5))?;
+					Ok((mat, result))
+				})
+			},
+			{
+				let mut mat = mat.clone();
+				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
+					let result =
+						find_best_contour(&mut mat, yellow.0, yellow.1, ball_heuristic(0.5, 0.5))?;
+					Ok((mat, result))
+				})
+			},
+			{
+				let mut mat = mat.clone();
+				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
+					let result =
+						find_best_contour(&mut mat, blue.0, blue.1, ball_heuristic(0.5, 0.5))?;
+					Ok((mat, result))
+				})
+			},
 		)?;
-		let yellow_goal = find_best_contour(
-			&mat,
-			[0.0, 0.0, 0.0],
-			[0.0, 0.0, 0.0],
-			ball_heuristic(1.0, 0.5),
-		)?;
-		let blue_goal = find_best_contour(
-			&mat,
-			[0.0, 0.0, 0.0],
-			[0.0, 0.0, 0.0],
-			ball_heuristic(1.0, 0.5),
-		)?;
+		let ((ball_mat, ball_contours), (yellow_mat, yellow_contours), (blue_mat, blue_contours)) =
+			(ball?, yellow?, blue?);
+
+		// convenience function that or's two mats into one
+		let or = |src1: Mat, src2: Mat| -> Result<_> {
+			let mut output = Mat::default();
+			opencv::core::bitwise_or(&src1, &src2, &mut output, &Mat::default())?;
+			Ok(output)
+		};
+
+		let masked = or(ball_mat, yellow_mat)?;
+		let masked = or(masked, blue_mat)?;
+
 		{
 			let mut frame = sync.frame.lock();
-			*frame = mat;
+			*frame = masked;
 			sync.camera_notify.notify_waiters();
 		}
 		Ok(())
@@ -74,11 +100,11 @@ impl Module for Camera {
 
 	async fn start(&mut self) -> Result<()> {
 		let cfg = self.cfg.clone();
-		let sender = self.frame_chan.0.clone();
 
 		// spin up a new thread for the camera processing
 		// because if you do it in the main tick task it will block everything
 		// and won't be good for the health of the overall system.
+		let sender = self.frame_chan.0.clone();
 		std::thread::spawn(move || {
 			unsafe {
 				ffi::initialize_camera(

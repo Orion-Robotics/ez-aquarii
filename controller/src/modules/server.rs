@@ -1,10 +1,4 @@
-use std::{
-	borrow::Borrow,
-	net::SocketAddr,
-	pin::Pin,
-	sync::Arc,
-	time::{Duration, Instant},
-};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use super::{
 	state::{ModuleSync, State},
@@ -12,7 +6,6 @@ use super::{
 };
 use crate::config::{self, Config};
 use anyhow::Result;
-use async_stream::AsyncStream;
 use async_trait::async_trait;
 use axum::{
 	body::StreamBody,
@@ -25,7 +18,7 @@ use axum::{
 	routing::get,
 	Json, Router,
 };
-use futures::{future, stream::StreamExt, SinkExt, TryStreamExt};
+use futures::{stream::StreamExt, SinkExt};
 use opencv::{core::Size, imgcodecs, imgproc, prelude::Mat};
 use parking_lot::RwLock;
 use tokio::{
