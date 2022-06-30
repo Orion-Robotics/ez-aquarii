@@ -154,7 +154,7 @@ export const CameraView: Component<{
     <div class="h-full w-full flex justify-center">
       <img
         class="object-contain h-full max-w-full max-h-full"
-        src={`http://${props.host}/stream.mjpg`}
+        src={`http://${props.host}/camera`}
       />
       <div class="absolute left-0 bottom-0 p-3 bg-black/90 rounded-tr-4 flex flex-col gap-2">
         <span class="text-sm uppercase">{pages[page()]}</span>

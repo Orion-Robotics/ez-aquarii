@@ -16,10 +16,10 @@ void applyCommands() {
   input.update();
   if ((millis() - last_received) > TIMEOUT) {
     for (auto& pin : DIR_PINS) {
-      analogWrite(pin, 0);
+      analogWrite(pin, 255);
     }
     for (auto& pin : MOVE_PINS) {
-      analogWrite(pin, 0);
+      analogWrite(pin, 255);
     }
   }
   // for (auto i = 0; i < input.data().size(); i++) {
@@ -40,7 +40,7 @@ void applyCommands() {
     const auto value = data[i];
     const auto forward = value > 127 ? true : false;
     const auto speed_command = abs(value - 127);
-    analogWrite(MOVE_PINS[i], speed_command);
+    analogWrite(MOVE_PINS[i], 255-speed_command);
     analogWrite(DIR_PINS[i], forward ? 255 : 0);
   }
 }
@@ -69,7 +69,8 @@ void setup() {
   }
 
   for (auto pin : MOVE_PINS) {
-    analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
+    analogWrite(pin, 255);
+    // analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
                                        // TO ACHIEVE INNER HARMONY
                                        // WITH THE UNIVERSE
                                        // anything between
