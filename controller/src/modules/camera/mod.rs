@@ -3,7 +3,7 @@ use crate::{
 	config::{self, Thresholds},
 	ffi,
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use cv::{ball_heuristic, find_best_contour};
 use opencv::{core::CV_8UC3, prelude::Mat, types::VectorOfPoint};
@@ -77,13 +77,17 @@ impl Module for Camera {
 				})
 			},
 		)?;
-		let ((ball_mat, ball_contours), (yellow_mat, yellow_contours), (blue_mat, blue_contours)) =
-			(ball?, yellow?, blue?);
+		let ((ball_mat, ball_contours), (yellow_mat, yellow_contours), (blue_mat, blue_contours)) = (
+			ball.context("failed to get ball contour")?,
+			yellow.context("failed to get yellow contour")?,
+			blue.context("failed to get blue contour")?,
+		);
 
 		// convenience function that or's two mats into one
 		let or = |src1: Mat, src2: Mat| -> Result<_> {
 			let mut output = Mat::default();
-			opencv::core::bitwise_or(&src1, &src2, &mut output, &Mat::default())?;
+			opencv::core::bitwise_or(&src1, &src2, &mut output, &Mat::default())
+				.context("failed to bitwise or")?;
 			Ok(output)
 		};
 

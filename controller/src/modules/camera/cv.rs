@@ -1,12 +1,12 @@
 use std::f64::consts::PI;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use num::pow;
 use opencv::{
 	core::{in_range, no_array, Moments, Point, Point2d, Scalar, Vector},
 	imgproc::{
-		self, arc_length, contour_area, find_contours, is_contour_convex, CHAIN_APPROX_SIMPLE,
-		RETR_TREE,
+		self, arc_length, contour_area, find_contours, is_contour_convex, CHAIN_APPROX_NONE,
+		CHAIN_APPROX_SIMPLE, LINE_AA, RETR_TREE,
 	},
 	prelude::Mat,
 	types::{VectorOfPoint, VectorOfVectorOfPoint},
@@ -40,15 +40,16 @@ pub fn find_best_contour<F>(
 where
 	F: Fn(&VectorOfPoint) -> Result<f64>,
 {
-	let masked = mask(img, lower, upper)?;
+	let masked = mask(img, lower, upper).context("failed to mask image")?;
 	let mut contours = VectorOfVectorOfPoint::default();
 	find_contours(
 		&masked,
 		&mut contours,
 		RETR_TREE,
-		CHAIN_APPROX_SIMPLE,
+		CHAIN_APPROX_NONE,
 		Point::default(),
-	)?;
+	)
+	.context("failed to find contours")?;
 
 	let mut contours: Vec<_> = contours
 		.iter()
@@ -68,12 +69,14 @@ where
 		-1,
 		Scalar::new(255.0, 0.0, 0.0, 0.0),
 		1,
-		-1,
+		LINE_AA,
 		&no_array(),
 		0,
 		Point::default(),
-	)?;
+	)
+	.context("failed to draw contours")?;
 
+	// select only the biggest contour
 	Ok(contours.first().cloned())
 }
 
