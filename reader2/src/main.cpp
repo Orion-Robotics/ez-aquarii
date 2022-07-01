@@ -22,10 +22,10 @@ void applyCommands() {
       analogWrite(pin, 255);
     }
   }
-  // for (auto i = 0; i < input.data().size(); i++) {
-  //   Serial.printf("%d ", input.data()[i]);
-  // }
-  // Serial.println();
+  for (auto i = 0; i < input.data().size(); i++) {
+    Serial.printf("%d ", input.data()[i]);
+  }
+  Serial.println();
   if (!input.complete()) {
     return;
   }
@@ -40,8 +40,8 @@ void applyCommands() {
     const auto value = data[i];
     const auto forward = value > 127 ? true : false;
     const auto speed_command = abs(value - 127);
-    analogWrite(MOVE_PINS[i], 255-speed_command);
-    analogWrite(DIR_PINS[i], forward ? 255 : 0);
+    // analogWrite(MOVE_PINS[i], 255-speed_command);
+    // analogWrite(DIR_PINS[i], forward ? 255 : 0);
   }
 }
 
@@ -49,26 +49,8 @@ void setup() {
   CONTROLLER_PORT.begin(CONTROLLER_BAUD);
   Serial.begin(9600);
   while (!CONTROLLER_PORT) continue;
-
-  if (!bno.begin()) {
-    Serial.println("<!> BNO055 not found");
-    while (1) continue;
-  }
-  bno.setExtCrystalUse(true);
-  uint8_t system, gyro, accel, mag;
-  while (mag != 3) {
-    Serial.printf("It's not fully calibrated : %d, %d, %d %d\r\n", system, gyro, accel, mag);
-    bno.getCalibration(&system, &gyro, &accel, &mag);
-    delay(100);
-  }
-
-  for (int i = 0; i < LINE_ADC_PINS.size(); i++) {
-    // (sck, mosi, miso, cs);
-    const auto cs = LINE_ADC_PINS[i];
-    adcs[i].begin(LINE_SCK, LINE_MOSI, LINE_MISO, cs);
-  }
-
   for (auto pin : MOVE_PINS) {
+    pinMode(pin, OUTPUT);
     analogWrite(pin, 255);
     // analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
                                        // TO ACHIEVE INNER HARMONY
@@ -76,12 +58,51 @@ void setup() {
                                        // anything between
                                        // 20000 and 19000 seems to work well
   }
+  if (!bno.begin()) {
+    Serial.println("<!> BNO055 not found");
+    while (1) continue;
+  }
+  bno.setExtCrystalUse(true);
+  uint8_t system, gyro, accel, mag;
+  uint8_t status, test, error;
+  while (mag != 3) {
+    Serial.printf("It's not fully calibrated : %d, %d, %d %d\r\n", system, gyro, accel, mag);
+    bno.getCalibration(&system, &gyro, &accel, &mag);
+    Serial.printf("It's not fully calibrated : %d, %d, %d\r\n", status, test, error);
+    bno.getSystemStatus(&status, &test, &error);
+    delay(200);
+    Serial.println("a");
+  }
+
+  for (int i = 0; i < LINE_ADC_PINS.size(); i++) {
+    // (sck, mosi, miso, cs);
+    const auto cs = LINE_ADC_PINS[i];
+    adcs[i].begin(LINE_SCK, LINE_MOSI, LINE_MISO, cs);
+  }
+  Serial.println("b");
+
+  // for (auto pin : MOVE_PINS) {
+  //   analogWrite(pin, 255);
+  //   // analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
+  //                                      // TO ACHIEVE INNER HARMONY
+  //                                      // WITH THE UNIVERSE
+  //                                      // anything between
+  //                                      // 20000 and 19000 seems to work well
+  // }
 }
 
 int last_freq_update = millis();
 
 void loop() {
   applyCommands();
+  //   for (auto pin : MOVE_PINS) {
+  //   analogWrite(pin, 0);
+  //   // analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
+  //                                      // TO ACHIEVE INNER HARMONY
+  //                                      // WITH THE UNIVERSE
+  //                                      // anything between
+  //                                      // 20000 and 19000 seems to work well
+  // }
   sensors_event_t ev;
   bno.getEvent(&ev);
   auto rotation = ev.orientation.roll * (M_PI / 180);
@@ -95,8 +116,10 @@ void loop() {
       const auto magnitude = (uint8_t)((value / 2048.0) * 255);
       CONTROLLER_PORT.printf("%d ", magnitude);
       Serial.printf("%4d ", value);
+      // Serial.println("as");
     }
   }
   Serial.println();
   CONTROLLER_PORT.println();
+  Serial.println("s");
 }
