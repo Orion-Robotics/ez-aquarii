@@ -1,4 +1,4 @@
-import { Component, For, Match, Show, Switch } from "solid-js";
+import { Component, For, Index, Match, Show, Switch } from "solid-js";
 import { BaseCheckBox } from "./Base/BaseCheckBox";
 import { BaseInput } from "./Base/BaseInput";
 import { BaseSlider } from "./Base/BaseSlider";
@@ -25,7 +25,11 @@ export const JSONEditor: Component<{
   onChange: (path: (string | number)[], value: json) => void;
 }> = (props) => {
   if (props.data === undefined || props.data === null) {
-    return <h1>H</h1>;
+    return (
+      <span class="text-gray-400 text-sm">
+        {props.path.join("/")}: <i>{JSON.stringify(props.data)}</i>
+      </span>
+    );
   }
 
   return (
@@ -57,19 +61,24 @@ export const JSONEditor: Component<{
                   </>
                 }
               >
-                <For each={props.data as json[]}>
-                  {(item, i) => (
-                    <JSONEditor
-                      name={i().toString()}
-                      data={item}
-                      path={[...props.path, i()]}
-                      onChange={props.onChange}
-                      structure={
-                        (props.structure as structure[] | undefined)?.[0]
-                      }
-                    />
-                  )}
-                </For>
+                <Index each={props.data as json[]}>
+                  {(item, i) => {
+                    console.log(item);
+                    return (
+                      <>
+                        <JSONEditor
+                          name={i.toString()}
+                          data={item()}
+                          path={[...props.path, i]}
+                          onChange={props.onChange}
+                          structure={
+                            (props.structure as structure[] | undefined)?.[0]
+                          }
+                        />
+                      </>
+                    );
+                  }}
+                </Index>
               </Show>
             </div>
           </>
@@ -96,19 +105,21 @@ export const JSONEditor: Component<{
                     | SliderOptions
                     | undefined;
                   return (
-                    <BaseSlider
-                      class="w-full"
-                      min={structure?.min}
-                      max={structure?.max}
-                      step={structure?.step}
-                      value={props.data as number}
-                      onInput={(ev) =>
-                        props.onChange(
-                          props.path,
-                          ev.currentTarget.valueAsNumber
-                        )
-                      }
-                    />
+                    <>
+                      <BaseSlider
+                        class="w-full"
+                        min={structure?.min}
+                        max={structure?.max}
+                        step={structure?.step}
+                        value={props.data as number}
+                        onInput={(ev) =>
+                          props.onChange(
+                            props.path,
+                            ev.currentTarget.valueAsNumber
+                          )
+                        }
+                      />
+                    </>
                   );
                 }}
                 <BaseInput

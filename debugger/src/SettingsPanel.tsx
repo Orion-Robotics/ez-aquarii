@@ -4,6 +4,25 @@ import ArrowLeft from "~icons/mdi/arrow-left";
 import { IconButton } from "./components/Base/IconButton";
 import { JSONEditor } from "./components/JSONEditor";
 
+const ColorParamSlider = Object.freeze({
+  min: 0,
+  max: 255,
+  step: 1,
+});
+
+const ColorBound = Object.freeze({
+  lower: {
+    hue: ColorParamSlider,
+    saturation: ColorParamSlider,
+    value: ColorParamSlider,
+  },
+  upper: {
+    hue: ColorParamSlider,
+    saturation: ColorParamSlider,
+    value: ColorParamSlider,
+  },
+});
+
 export const SettingsPanel: Component<{
   onBack: () => void;
   onChange: (value: any) => void;
@@ -34,6 +53,13 @@ export const SettingsPanel: Component<{
           props.onChange(data);
         }}
         structure={{
+          camera: {
+            thresholds: {
+              ball: ColorBound,
+              yellow: ColorBound,
+              blue: ColorBound,
+            },
+          },
           motors: {
             speed: {
               min: 0,

@@ -1,3 +1,0 @@
-discord.py==1.7.3
-pyngrok==5.1.0
-python-dotenv==0.19.2

@@ -15,7 +15,7 @@ import {
   DataObject,
   DataSource,
   ServerSource,
-  TextSource
+  TextSource,
 } from "./data_sources";
 import { createStoredSignal } from "./helpers/createStoredSignal";
 import { RobotView } from "./RobotView";
@@ -43,10 +43,6 @@ const App: Component = () => {
   const [serverAddress, setServerAddress] = createStoredSignal(
     "0.0.0.0:7272",
     "serverAddress"
-  );
-  const [cameraAddress, setCameraAddress] = createStoredSignal(
-    "0.0.0.0:7272",
-    "cameraAddress"
   );
   const [textData, setTextData] = createStoredSignal("", "textData");
   const [sourceType, setSourceType] = createStoredSignal<"server" | "text">(
@@ -130,12 +126,6 @@ const App: Component = () => {
                     onInput={(ev) => setServerAddress(ev.currentTarget.value)}
                     value={serverAddress()}
                   />
-                  <Label>Camera Address</Label>
-                  <BaseInput
-                    label="0.0.0.0:7273"
-                    onInput={(ev) => setCameraAddress(ev.currentTarget.value)}
-                    value={cameraAddress()}
-                  />
                 </Match>
                 <Match when={sourceType() === "text"}>
                   <Label>Text Input</Label>
@@ -200,7 +190,7 @@ const App: Component = () => {
                     </Match>
                   </Show>
                   <Match when={view() === View.Camera}>
-                    <CameraView host={cameraAddress()} />
+                    <CameraView host={serverAddress()} />
                   </Match>
                 </Switch>
                 <div class="absolute top-0 right-0 flex flex-col gap-2 bg-black/90 p-3 rounded-bl-4">

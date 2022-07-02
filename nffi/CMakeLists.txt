@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-project( csock )
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-add_executable(csock main.cpp )
-target_link_libraries( csock ${OpenCV_LIBS})
