@@ -7,8 +7,6 @@ use std::{
 	fs::{self, read_to_string},
 };
 
-use crate::modules::camera::cv::{ColorBound, ColorRange};
-
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct OrbitConfig {
 	pub curve_steepness: f64,
@@ -21,6 +19,25 @@ pub struct DampenConfig {
 	pub curve_steepness: f64,
 	pub shift_x: f64,
 	pub shift_y: f64,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default, Copy)]
+pub struct ColorThreshold {
+	pub hue: u8,
+	pub saturation: u8,
+	pub value: u8,
+}
+
+impl ColorThreshold {
+	pub fn to_array(&self) -> [u8; 3] {
+		[self.hue, self.saturation, self.value]
+	}
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default, Copy)]
+pub struct ColorRange {
+	pub lower: ColorThreshold,
+	pub upper: ColorThreshold,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -111,9 +128,9 @@ impl Default for Config {
 				sensor_mode: 7,
 				shutter_speed: 15000,
 				thresholds: Thresholds {
-					ball: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
-					yellow: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
-					blue: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
+					ball: ColorRange::default(),
+					yellow: ColorRange::default(),
+					blue: ColorRange::default(),
 				},
 			}),
 			line: Some(Line {

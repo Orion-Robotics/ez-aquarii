@@ -55,24 +55,36 @@ impl Module for Camera {
 			{
 				let mut mat = mat.clone();
 				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
-					let result =
-						find_best_contour(&mut mat, ball.0, ball.1, ball_heuristic(0.5, 0.5))?;
+					let result = find_best_contour(
+						&mut mat,
+						ball.lower.to_array(),
+						ball.upper.to_array(),
+						ball_heuristic(0.5, 0.5),
+					)?;
 					Ok((mat, result))
 				})
 			},
 			{
 				let mut mat = mat.clone();
 				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
-					let result =
-						find_best_contour(&mut mat, yellow.0, yellow.1, ball_heuristic(0.5, 0.5))?;
+					let result = find_best_contour(
+						&mut mat,
+						yellow.lower.to_array(),
+						yellow.upper.to_array(),
+						ball_heuristic(0.5, 0.5),
+					)?;
 					Ok((mat, result))
 				})
 			},
 			{
 				let mut mat = mat.clone();
 				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
-					let result =
-						find_best_contour(&mut mat, blue.0, blue.1, ball_heuristic(0.5, 0.5))?;
+					let result = find_best_contour(
+						&mut mat,
+						blue.lower.to_array(),
+						blue.upper.to_array(),
+						ball_heuristic(0.5, 0.5),
+					)?;
 					Ok((mat, result))
 				})
 			},
@@ -126,7 +138,7 @@ impl Module for Camera {
 					Mat::new_nd_with_data(
 						&[cfg.width as i32, cfg.height as i32],
 						CV_8UC3,
-						imslice.as_mut_ptr() as *mut c_void,
+						imslice.as_mut_ptr().cast::<std::ffi::c_void>(),
 						None,
 					)
 				} {

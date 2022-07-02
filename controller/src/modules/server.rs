@@ -50,7 +50,7 @@ async fn websocket(
 		loop {
 			if let Ok(state) = subscriber.recv().await {
 				if let Ok(message) = serde_json::to_string(&state) {
-					let _ = tx.send(Message::Text(message)).await;
+					let _err = tx.send(Message::Text(message)).await;
 				}
 			}
 		}
