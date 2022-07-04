@@ -192,7 +192,7 @@ impl Module for StateRecorder {
 				_ = sync.camera_notify.notified() => {
 			let mut buf = opencv::core::Vector::new();
 			let mut scaled = Mat::default();
-			imgproc::resize(&sync.frame.lock().clone(), &mut scaled, Size::default(), 0.25, 0.25, 0)?;
+			imgproc::resize(&sync.frame.lock().clone(), &mut scaled, Size::default(), 1.0, 1.0, 0)?;
 			imgcodecs::imencode(".jpg", &scaled, &mut buf, &opencv::core::Vector::new())?;
 			self.image_chan.0.send(buf.into())?;
 				}

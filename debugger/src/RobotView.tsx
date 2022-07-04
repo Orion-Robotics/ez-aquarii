@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { D3ZoomEvent } from "d3";
 import { Component, For, JSX, onMount, Show } from "solid-js";
 import { BaseSlider } from "./components/Base/BaseSlider";
-import { DataObject } from "./data_sources";
+import { CameraBlob, DataObject } from "./data_sources";
 import { createStoredSignal } from "./helpers/createStoredSignal";
 
 const Line: Component<
@@ -60,11 +60,13 @@ const Angle: Component<{
 const gridSize = 60;
 const gridDotSize = 5;
 
-const angles: {
+interface AnglePreference {
   color: string;
   label: string;
   distance: number;
-}[] = [
+}
+
+const angles: AnglePreference[] = [
   {
     label: "Ball",
     color: "#ff8800",
@@ -81,6 +83,26 @@ const angles: {
     distance: 1.5,
   },
 ];
+
+const BlobComponent: Component<{
+  blob?: CameraBlob;
+  angleOptions: AnglePreference;
+  scale: number;
+}> = (props) => {
+  const angle = props.blob?.angle;
+  const distance = props.blob?.distance;
+  return (
+    <Show when={props.blob}>
+      <Angle
+        angle={angle!}
+        color={props.angleOptions.color}
+        label={props.angleOptions.label}
+        radius={distance! * props.angleOptions.distance * props.scale}
+        thickness={3}
+      />
+    </Show>
+  );
+};
 
 export const RobotView: Component<{
   frame: DataObject;
@@ -146,25 +168,21 @@ export const RobotView: Component<{
             stroke-width={radius() * 0.03}
             fill={"transparent"}
           />
-          <For each={props.frame.data.camera_data.locations}>
-            {(blob, i) => (
-              <Show when={blob}>
-                {() => {
-                  const { angle, distance } = blob;
-                  const data = angles[i()];
-                  return (
-                    <Angle
-                      angle={angle}
-                      color={data.color}
-                      label={data.label}
-                      radius={distance * distanceScale() * data.distance}
-                      thickness={3}
-                    />
-                  );
-                }}
-              </Show>
-            )}
-          </For>
+          <BlobComponent
+            blob={props.frame.camera_data.ball!}
+            angleOptions={angles[0]}
+            scale={distanceScale()}
+          />
+          <BlobComponent
+            blob={props.frame.camera_data.yellow_goal!}
+            angleOptions={angles[1]}
+            scale={distanceScale()}
+          />
+          <BlobComponent
+            blob={props.frame.camera_data.blue_goal!}
+            angleOptions={angles[2]}
+            scale={distanceScale()}
+          />
           <For each={props.frame.line_detections}>
             {(line_detection, i) => {
               const circleSize = () => radius() * 0.05;

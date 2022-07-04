@@ -1,13 +1,10 @@
-export interface Blob {
+export interface CameraBlob {
   angle: number;
   distance: number;
 }
 
 export interface Data {
   sensor_data: number[];
-  camera_data: {
-    locations: Blob[];
-  };
   orientation: number;
 }
 
@@ -25,6 +22,11 @@ export interface DataObject {
   previous_vec?: Vec2;
   initial_orientation?: number;
   rotation: number;
+  camera_data: {
+    ball?: CameraBlob;
+    yellow_goal?: CameraBlob;
+    blue_goal?: CameraBlob;
+  };
   strategy: {
     type: "Orbit";
     before_dampen_angle: number;

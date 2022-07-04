@@ -60,15 +60,9 @@ pub struct Blob {
 	pub distance: f64,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, Default)]
-pub struct CameraMessage {
-	pub locations: Vec<Option<Blob>>,
-}
-
 #[derive(Serialize, Default, Clone, Debug)]
 pub struct RawData {
 	pub sensor_data: Vec<u8>,
-	pub camera_data: CameraMessage,
 	pub orientation: f64,
 }
 

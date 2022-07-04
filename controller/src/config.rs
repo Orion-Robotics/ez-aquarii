@@ -40,20 +40,22 @@ pub struct ColorRange {
 	pub upper: ColorThreshold,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Copy)]
 pub struct Thresholds {
 	pub ball: ColorRange,
 	pub yellow: ColorRange,
 	pub blue: ColorRange,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-pub struct Camera {
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Copy)]
+pub struct CameraConfig {
 	pub width: u32,
 	pub height: u32,
 	pub framerate: u32,
 	pub sensor_mode: u8,
 	pub shutter_speed: u32,
+	pub bypass: bool,
+	pub saturation: f32,
 	pub thresholds: Thresholds,
 }
 
@@ -107,7 +109,7 @@ pub enum Team {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
-	pub camera: Option<Camera>,
+	pub camera: Option<CameraConfig>,
 	pub line: Option<Line>,
 	pub server: Option<Server>,
 	pub motors: Option<Motors>,
@@ -121,12 +123,14 @@ impl Default for Config {
 	fn default() -> Self {
 		Self {
 			team: Team::Yellow,
-			camera: Some(Camera {
+			camera: Some(CameraConfig {
 				framerate: 90,
 				height: 480,
 				width: 480,
 				sensor_mode: 7,
 				shutter_speed: 15000,
+				bypass: false,
+				saturation: 0.5,
 				thresholds: Thresholds {
 					ball: ColorRange::default(),
 					yellow: ColorRange::default(),

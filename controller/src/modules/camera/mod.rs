@@ -1,32 +1,36 @@
 pub mod cv;
 use crate::{
-	config::{self, Thresholds},
+	config::{self, CameraConfig, Thresholds},
 	ffi,
 };
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use cv::{ball_heuristic, find_best_contour};
-use opencv::{core::CV_8UC3, prelude::Mat, types::VectorOfPoint};
+use opencv::{
+	core::CV_8UC3,
+	prelude::{Mat, MatTraitConstManual},
+	types::VectorOfPoint,
+};
 use parking_lot::RwLock;
 use std::{ffi::c_void, slice, sync::Arc};
 use tokio::sync::mpsc;
 // use std::fs::OpenOptions;
 // use std::io::Write;
 
-use self::cv::ColorBound;
+use self::cv::{loc, ColorBound};
 
 use super::{
-	state::{ModuleSync, State},
+	state::{Blob, ModuleSync, State},
 	Module,
 };
 
 pub struct Camera {
-	cfg: config::Camera,
+	cfg: config::CameraConfig,
 	frame_chan: (mpsc::UnboundedSender<Mat>, mpsc::UnboundedReceiver<Mat>),
 }
 
 impl Camera {
-	pub async fn new(cfg: config::Camera) -> Result<Self> {
+	pub async fn new(cfg: config::CameraConfig) -> Result<Self> {
 		Ok(Camera {
 			cfg,
 			frame_chan: mpsc::unbounded_channel(),
@@ -41,8 +45,13 @@ impl Module for Camera {
 	}
 
 	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
-		let Thresholds { ball, yellow, blue } =
-			state.read().config.camera.as_ref().unwrap().thresholds;
+		let CameraConfig {
+			bypass,
+			saturation,
+			thresholds,
+			..
+		} = state.read().config.camera.as_ref().unwrap().clone();
+		let Thresholds { ball, yellow, blue } = thresholds;
 
 		let mat = self
 			.frame_chan
@@ -51,45 +60,55 @@ impl Module for Camera {
 			.await
 			.ok_or_else(|| anyhow::anyhow!("no frame"))?;
 
+		let size = mat.size()?;
+		let cx = (size.width / 2) as f64;
+		let cy = (size.height / 2) as f64;
+
 		let (ball, yellow, blue) = futures::try_join!(
 			{
 				let mut mat = mat.clone();
-				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
+				tokio::task::spawn_blocking::<_, Result<(Mat, Option<Mat>)>>(move || {
 					let result = find_best_contour(
 						&mut mat,
 						ball.lower.to_array(),
 						ball.upper.to_array(),
+						10.0,
 						ball_heuristic(0.5, 0.5),
+						(235.0, 131.0, 52.0),
 					)?;
 					Ok((mat, result))
 				})
 			},
 			{
 				let mut mat = mat.clone();
-				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
+				tokio::task::spawn_blocking::<_, Result<(Mat, Option<Mat>)>>(move || {
 					let result = find_best_contour(
 						&mut mat,
 						yellow.lower.to_array(),
 						yellow.upper.to_array(),
+						10.0,
 						ball_heuristic(0.5, 0.5),
+						(230.0, 225.0, 73.0),
 					)?;
 					Ok((mat, result))
 				})
 			},
 			{
 				let mut mat = mat.clone();
-				tokio::task::spawn_blocking::<_, Result<(Mat, Option<VectorOfPoint>)>>(move || {
+				tokio::task::spawn_blocking::<_, Result<(Mat, Option<Mat>)>>(move || {
 					let result = find_best_contour(
 						&mut mat,
 						blue.lower.to_array(),
 						blue.upper.to_array(),
+						10.0,
 						ball_heuristic(0.5, 0.5),
+						(73.0, 128.0, 230.0),
 					)?;
 					Ok((mat, result))
 				})
 			},
 		)?;
-		let ((ball_mat, ball_contours), (yellow_mat, yellow_contours), (blue_mat, blue_contours)) = (
+		let ((ball_mat, ball_contour), (yellow_mat, yellow_contour), (blue_mat, blue_contour)) = (
 			ball.context("failed to get ball contour")?,
 			yellow.context("failed to get yellow contour")?,
 			blue.context("failed to get blue contour")?,
@@ -103,8 +122,25 @@ impl Module for Camera {
 			Ok(output)
 		};
 
-		let masked = or(ball_mat, yellow_mat)?;
-		let masked = or(masked, blue_mat)?;
+		let masked = if bypass {
+			mat
+		} else {
+			let masked = or(ball_mat, yellow_mat)?;
+			or(masked, blue_mat)?
+		};
+
+		if let Some(ball_contour) = ball_contour {
+			let blob = loc(ball_contour, (cx, cy))?;
+			state.write().camera_data.ball = Some(blob)
+		}
+		if let Some(yellow_contour) = yellow_contour {
+			let blob = loc(yellow_contour, (cx, cy))?;
+			state.write().camera_data.yellow_goal = Some(blob)
+		}
+		if let Some(blue_contour) = blue_contour {
+			let blob = loc(blue_contour, (cx, cy))?;
+			state.write().camera_data.blue_goal = Some(blob)
+		}
 
 		{
 			let mut frame = sync.frame.lock();
