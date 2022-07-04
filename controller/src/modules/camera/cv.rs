@@ -1,4 +1,4 @@
-use std::f64::consts::PI;
+use std::{f64::consts::PI, time::Instant};
 
 use anyhow::{Context, Result};
 use num::pow;
@@ -6,10 +6,10 @@ use opencv::{
 	core::{in_range, no_array, Moments, Point, Point2d, VecN, BORDER_CONSTANT, CV_8UC1},
 	imgproc::{
 		self, arc_length, contour_area, find_contours, is_contour_convex, moments,
-		CHAIN_APPROX_NONE, CHAIN_APPROX_SIMPLE, FILLED, LINE_4, RETR_TREE,
+		CHAIN_APPROX_NONE, FILLED, LINE_4, RETR_TREE,
 	},
 	prelude::{Mat, MatTraitConstManual},
-	types::{VectorOfMat, VectorOfPoint, VectorOfVectorOfPoint},
+	types::VectorOfMat,
 };
 
 use crate::modules::state::Blob;
@@ -43,30 +43,30 @@ pub fn mask(
 		&Mat::from_slice(&upper_bound)?,
 		&mut mask,
 	)?;
-	let mut mask = if erode {
-		let mut eroded = Mat::default();
-		opencv::imgproc::dilate(
-			&mask,
-			&mut eroded,
-			&Mat::ones(10, 10, CV_8UC1)?,
-			Point::new(-1, -1),
-			3,
-			BORDER_CONSTANT,
-			VecN::default(),
-		)?;
-		opencv::imgproc::erode(
-			&mask,
-			&mut eroded,
-			&Mat::ones(10, 10, CV_8UC1)?,
-			Point::new(-1, -1),
-			3,
-			BORDER_CONSTANT,
-			VecN::default(),
-		)?;
-		eroded
-	} else {
-		mask
-	};
+	// let mut mask = if erode {
+	// 	let mut eroded = Mat::default();
+	// 	opencv::imgproc::dilate(
+	// 		&mask,
+	// 		&mut eroded,
+	// 		&Mat::ones(10, 10, CV_8UC1)?,
+	// 		Point::new(-1, -1),
+	// 		3,
+	// 		BORDER_CONSTANT,
+	// 		VecN::default(),
+	// 	)?;
+	// 	opencv::imgproc::erode(
+	// 		&mask,
+	// 		&mut eroded,
+	// 		&Mat::ones(10, 10, CV_8UC1)?,
+	// 		Point::new(-1, -1),
+	// 		3,
+	// 		BORDER_CONSTANT,
+	// 		VecN::default(),
+	// 	)?;
+	// 	eroded
+	// } else {
+	// 	mask
+	// };
 	Ok(mask)
 }
 
@@ -81,8 +81,11 @@ pub fn find_best_contour<F>(
 where
 	F: Fn(&Mat) -> Result<f64>,
 {
+	let start = Instant::now();
 	let masked = mask(img, lower, upper, true).context("failed to mask image")?;
+	tracing::debug!("masking took {:?}", Instant::now().duration_since(start));
 
+	let start = Instant::now();
 	let mut contours: Vec<_> = {
 		let mut raw_contours = VectorOfMat::default();
 		find_contours(
@@ -101,6 +104,10 @@ where
 			})
 			.collect()
 	};
+	tracing::debug!(
+		"finding contours took {:?}",
+		Instant::now().duration_since(start)
+	);
 
 	contours.sort_by(|a, b| {
 		let first = heuristic_fn(a).unwrap_or(0.0);

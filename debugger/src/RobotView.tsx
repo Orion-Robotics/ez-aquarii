@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { D3ZoomEvent } from "d3";
 import { Component, For, JSX, onMount, Show } from "solid-js";
 import { BaseSlider } from "./components/Base/BaseSlider";
+import { MotorCommand } from "./components/MotorCommand";
 import { CameraBlob, DataObject } from "./data_sources";
 import { createStoredSignal } from "./helpers/createStoredSignal";
 
@@ -89,15 +90,15 @@ const BlobComponent: Component<{
   angleOptions: AnglePreference;
   scale: number;
 }> = (props) => {
-  const angle = props.blob?.angle;
-  const distance = props.blob?.distance;
+  const angle = () => props.blob?.angle;
+  const distance = () => props.blob?.distance;
   return (
     <Show when={props.blob}>
       <Angle
-        angle={angle!}
+        angle={angle()!}
         color={props.angleOptions.color}
         label={props.angleOptions.label}
-        radius={distance! * props.angleOptions.distance * props.scale}
+        radius={distance()! * props.angleOptions.distance * props.scale}
         thickness={3}
       />
     </Show>
@@ -274,6 +275,13 @@ export const RobotView: Component<{
             </div>
           )}
         </For>
+      </div>
+      <div class="absolute bottom-0 right-0 bg-black/80 p-3 rounded-tl-4 w-60 flex flex-col items-center">
+        <p class="text-sm uppercase">Motor Commands</p>
+        <MotorCommand command={props.frame.motor_commands[0]} />
+        <MotorCommand command={props.frame.motor_commands[1]} />
+        <MotorCommand command={props.frame.motor_commands[2]} />
+        <MotorCommand command={props.frame.motor_commands[3]} />
       </div>
       <div class="absolute top-0 left-1/2 bg-black/80 p-3 rounded-b-4 transform -translate-x-1/2">
         <h1 class="font-bold">

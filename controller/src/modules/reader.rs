@@ -30,6 +30,7 @@ impl Reader {
 		}: config::Reader,
 	) -> Result<Self> {
 		let mut serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		serial.set_exclusive(false)?;
 		tracing::info!("waiting for next packet to arrive");
 		tracing::info!("if you just powered the robot you probably need to calibrate the controller's compass.");
 

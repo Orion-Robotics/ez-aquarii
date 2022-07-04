@@ -5,6 +5,7 @@ use opencv::prelude::Mat;
 use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{watch, Notify};
+use tokio_serial::SerialStream;
 
 #[derive(Debug, Clone, Default)]
 pub struct ModuleSync {
@@ -97,7 +98,7 @@ pub struct State {
 	pub before_line_vector: Option<Vec2>,
 
 	pub move_vector: Option<Vec2>,
-	pub motor_powers: Vec<f32>,
+	pub motor_commands: Vec<u8>,
 }
 
 impl State {

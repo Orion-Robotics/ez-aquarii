@@ -35,7 +35,7 @@ export interface DataObject {
   };
   before_line_vector?: Vec2;
   move_vector?: Vec2;
-  motor_powers: number[];
+  motor_commands: number[];
   tick_rates: Record<string, number>;
 }
 

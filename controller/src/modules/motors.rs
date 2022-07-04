@@ -30,7 +30,8 @@ impl Motors {
 			..
 		}: config::Motors,
 	) -> Result<Self> {
-		let serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		let mut serial = tokio_serial::new(uart_path, baud_rate).open_native_async()?;
+		serial.set_exclusive(false)?;
 		Ok(Self { serial })
 	}
 }
@@ -55,7 +56,7 @@ impl Module for Motors {
 				tracing::error!("speeds are from 0 to 1!");
 			}
 
-			let powers = match state.move_vector {
+			let powers = match Some(Vec2::new(0.0, 1.0)) {
 				Some(vec) => {
 					let move_angle = vec.angle_rad();
 					let left_offset = move_angle - motor_offset;
@@ -69,8 +70,8 @@ impl Module for Motors {
 					]
 				}
 				None => [0.0, 0.0, 0.0, 0.0],
-			}
-			.map(|power| power + scaled_rotation);
+			};
+			// .map(|power| power + scaled_rotation);
 			// .map(|power| power.max(-1.0).min(1.0));
 
 			// motor power optimization
@@ -81,15 +82,14 @@ impl Module for Motors {
 				.unwrap();
 
 			// let percentages = powers.map(|power| power / max_power);
-
 			powers
 				.map(|x| x * speed)
 				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
 		// self.serial.write_all(&[127, 127, 253, 127]).await?;
 		self.serial.write_all(&motor_commands).await?;
-
 		self.serial.write_u8(255).await?;
+		state.write().motor_commands = Vec::from(motor_commands);
 
 		Ok(())
 	}
