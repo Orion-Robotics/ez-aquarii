@@ -1,4 +1,4 @@
-#include <Adafruit_BNO055.h>
+ #include <Adafruit_BNO055.h>
 #include <Adafruit_MCP3008.h>
 #include <Arduino.h>
 #include <Wire.h>
@@ -40,12 +40,13 @@ void applyCommands() {
     const auto value = data[i];
     const auto forward = value > 127 ? true : false;
     const auto speed_command = abs(value - 127);
-    // analogWrite(MOVE_PINS[i], 255-speed_command);
-    // analogWrite(DIR_PINS[i], forward ? 255 : 0);
+    analogWrite(MOVE_PINS[i], 255-(2*speed_command));
+    analogWrite(DIR_PINS[i], forward ? 255 : 0);
   }
 }
 
 void setup() {
+  delay(1000);
   CONTROLLER_PORT.begin(CONTROLLER_BAUD);
   Serial.begin(9600);
   while (!CONTROLLER_PORT) continue;
@@ -64,12 +65,9 @@ void setup() {
   }
   bno.setExtCrystalUse(true);
   uint8_t system, gyro, accel, mag;
-  uint8_t status, test, error;
   while (mag != 3) {
     Serial.printf("It's not fully calibrated : %d, %d, %d %d\r\n", system, gyro, accel, mag);
     bno.getCalibration(&system, &gyro, &accel, &mag);
-    Serial.printf("It's not fully calibrated : %d, %d, %d\r\n", status, test, error);
-    bno.getSystemStatus(&status, &test, &error);
     delay(200);
     Serial.println("a");
   }
@@ -80,6 +78,7 @@ void setup() {
     adcs[i].begin(LINE_SCK, LINE_MOSI, LINE_MISO, cs);
   }
   Serial.println("b");
+  CONTROLLER_PORT.println();
 
   // for (auto pin : MOVE_PINS) {
   //   analogWrite(pin, 255);
@@ -94,6 +93,7 @@ void setup() {
 int last_freq_update = millis();
 
 void loop() {
+  delay(10);
   applyCommands();
   //   for (auto pin : MOVE_PINS) {
   //   analogWrite(pin, 0);

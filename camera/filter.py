@@ -88,16 +88,20 @@ def label(im, *blobs):
             fontScale=2,
             thickness=2,
         )
+        rect = cv2.minAreaRect(blob)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        cv2.drawContours(out,[box],0,(0,0,255),2)
     return out
 
 
 def CE(val):
     global current
-    current = val
+    current = val,
     refreshslider()
 
 
-joe = cv2.imread("fshot.png")
+joe = cv2.imread("gaming.png")
 joe = cv2.resize(joe, (600, 600))
 hsv = cv2.cvtColor(joe, cv2.COLOR_BGR2HSV)
 hsv = cv2.GaussianBlur(hsv, (5, 5), 0)
