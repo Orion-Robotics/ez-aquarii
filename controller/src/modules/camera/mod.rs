@@ -166,6 +166,7 @@ impl Module for Camera {
 					cfg.sensor_mode,
 					cfg.shutter_speed,
 				);
+				ffi::set_awb(cfg.balance_red, cfg.balance_green);
 			}
 			loop {
 				let pkt = unsafe { ffi::get_image_packet() };

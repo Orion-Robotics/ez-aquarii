@@ -54,6 +54,8 @@ pub struct CameraConfig {
 	pub framerate: u32,
 	pub sensor_mode: u8,
 	pub shutter_speed: u32,
+	pub balance_red: f32,
+	pub balance_green: f32,
 	pub bypass: bool,
 	pub saturation: f32,
 	pub thresholds: Thresholds,
@@ -131,6 +133,8 @@ impl Default for Config {
 				shutter_speed: 15000,
 				bypass: false,
 				saturation: 0.5,
+				balance_green: 0.5,
+				balance_red: 0.5,
 				thresholds: Thresholds {
 					ball: ColorRange::default(),
 					yellow: ColorRange::default(),
@@ -169,6 +173,13 @@ impl Default for Config {
 				baud_rate: 500000,
 			}),
 		}
+	}
+}
+
+impl Config {
+	pub async fn save(&self, path: &str) -> Result<()> {
+		tokio::fs::write(&path, serde_yaml::to_string(&self)?).await?;
+		Ok(())
 	}
 }
 

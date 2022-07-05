@@ -34,6 +34,10 @@ ImagePacket get_image_packet() {
   return ImagePacket(cam->getImageBufferData(), cam->getImageBufferSize());
 }
 
+void set_awb(float r, float b) {
+  globalCamera->camera->setAWB_RB(r, b);
+}
+
 void initialize_camera(uint32_t w, uint32_t h, uint32_t framerate, uint8_t sensor_mode, uint32_t shutter_speed) {
   globalCamera = new Cam();
   auto camera = globalCamera->camera;

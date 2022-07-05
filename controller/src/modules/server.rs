@@ -188,7 +188,10 @@ impl Module for StateRecorder {
 
 	async fn tick(&mut self, state: &mut Arc<RwLock<State>>, sync: &mut ModuleSync) -> Result<()> {
 		tokio::select! {
-				  Some(msg) = self.client_message_receiver.recv() => state.write().config = msg,
+				  Some(msg) = self.client_message_receiver.recv() => {
+			state.write().config = msg.clone();
+			msg.save("./config.yaml").await?;
+		  },
 				_ = sync.camera_notify.notified() => {
 			let mut buf = opencv::core::Vector::new();
 			let mut scaled = Mat::default();

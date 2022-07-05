@@ -23,6 +23,7 @@ pub mod ffi {
 
 		#[must_use]
 		pub fn get_image_packet() -> ImagePacket;
+		pub fn set_awb(r: f32, b: f32) -> ();
 		pub fn initialize_camera(
 			w: u32,
 			h: u32,

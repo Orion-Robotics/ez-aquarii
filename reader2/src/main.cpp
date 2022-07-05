@@ -1,4 +1,4 @@
- #include <Adafruit_BNO055.h>
+#include <Adafruit_BNO055.h>
 #include <Adafruit_MCP3008.h>
 #include <Arduino.h>
 #include <Wire.h>
@@ -14,6 +14,7 @@ int last_received = 0;
 
 void applyCommands() {
   input.update();
+  // stop the motors if theres no data for long enough
   if ((millis() - last_received) > TIMEOUT) {
     for (auto& pin : DIR_PINS) {
       analogWrite(pin, 255);
@@ -38,9 +39,12 @@ void applyCommands() {
       continue;
     }
     const auto value = data[i];
-    const auto forward = value > 127 ? true : false;
+    auto forward = value > 127 ? true : false;
+    if (!MOTOR_DIRECTIONS[i]) {
+      forward = !forward;
+    }
     const auto speed_command = abs(value - 127);
-    analogWrite(MOVE_PINS[i], 255-(2*speed_command));
+    analogWrite(MOVE_PINS[i], 255 - (2 * speed_command));
     analogWrite(DIR_PINS[i], forward ? 255 : 0);
   }
 }
@@ -54,10 +58,10 @@ void setup() {
     pinMode(pin, OUTPUT);
     analogWrite(pin, 255);
     // analogWriteFrequency(pin, 19500);  // THE ONE TRUE FREQUENCY
-                                       // TO ACHIEVE INNER HARMONY
-                                       // WITH THE UNIVERSE
-                                       // anything between
-                                       // 20000 and 19000 seems to work well
+    // TO ACHIEVE INNER HARMONY
+    // WITH THE UNIVERSE
+    // anything between
+    // 20000 and 19000 seems to work well
   }
   if (!bno.begin()) {
     Serial.println("<!> BNO055 not found");
@@ -93,7 +97,6 @@ void setup() {
 int last_freq_update = millis();
 
 void loop() {
-  delay(10);
   applyCommands();
   //   for (auto pin : MOVE_PINS) {
   //   analogWrite(pin, 0);

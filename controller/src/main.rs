@@ -18,7 +18,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::time::interval;
 use tracing_subscriber::EnvFilter;
 
-const CONFIG_FILE: &str = "./config.yaml";
+pub const CONFIG_FILE: &str = "./config.yaml";
 
 #[tokio::main]
 async fn main() -> Result<()> {

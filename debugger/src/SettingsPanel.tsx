@@ -54,6 +54,16 @@ export const SettingsPanel: Component<{
         }}
         structure={{
           camera: {
+            balance_red: {
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
+            balance_green: {
+              min: 0,
+              max: 4,
+              step: 0.01,
+            },
             thresholds: {
               ball: ColorBound,
               yellow: ColorBound,

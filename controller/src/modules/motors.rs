@@ -56,17 +56,17 @@ impl Module for Motors {
 				tracing::error!("speeds are from 0 to 1!");
 			}
 
-			let powers = match Some(Vec2::new(0.0, 1.0)) {
+			let powers = match state.move_vector {
 				Some(vec) => {
 					let move_angle = vec.angle_rad();
 					let left_offset = move_angle - motor_offset;
 					let right_offset = move_angle + motor_offset;
 
 					[
-						-right_offset.sin(),
+						-left_offset.sin(),
 						right_offset.sin(),
 						left_offset.sin(),
-						-left_offset.sin(),
+						-right_offset.sin(),
 					]
 				}
 				None => [0.0, 0.0, 0.0, 0.0],
@@ -86,7 +86,7 @@ impl Module for Motors {
 				.map(|x| x * speed)
 				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
-		// self.serial.write_all(&[127, 127, 253, 127]).await?;
+		// self.serial.write_all(&[127, 127, 127, 253]).await?;
 		self.serial.write_all(&motor_commands).await?;
 		self.serial.write_u8(255).await?;
 		state.write().motor_commands = Vec::from(motor_commands);

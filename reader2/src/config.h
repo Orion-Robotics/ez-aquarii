@@ -18,14 +18,22 @@ const auto LINE_ADC_PINS = std::array<int, 6>{
     15,
 };
 const auto DIR_PINS = std::array<int, 4>{
-    23,
     20,
+    23,
     16,
     4,
 };
 const auto MOVE_PINS = std::array<int, 4>{
-    9,
     22,
+    9,
     17,
     3,
+};
+
+// forward is true
+const auto MOTOR_DIRECTIONS = std::array<bool, 4>{
+    false,
+    false,
+    false,
+    false,
 };
