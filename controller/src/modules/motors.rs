@@ -63,15 +63,15 @@ impl Module for Motors {
 					let right_offset = move_angle + motor_offset;
 
 					[
-						-left_offset.sin(),
-						right_offset.sin(),
 						left_offset.sin(),
 						-right_offset.sin(),
+						-left_offset.sin(),
+						right_offset.sin(),
 					]
 				}
 				None => [0.0, 0.0, 0.0, 0.0],
-			};
-			// .map(|power| power + scaled_rotation);
+			}
+			.map(|power| power + scaled_rotation);
 			// .map(|power| power.max(-1.0).min(1.0));
 
 			// motor power optimization
@@ -86,8 +86,12 @@ impl Module for Motors {
 				.map(|x| x * speed)
 				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
-		// self.serial.write_all(&[127, 127, 127, 253]).await?;
-		self.serial.write_all(&motor_commands).await?;
+		// self.serial.write_all(&[0, 127, 253, 253]).await?;
+		if state.read().paused {
+			self.serial.write_all(&[127, 127, 127, 127]).await?;
+		} else {
+			self.serial.write_all(&motor_commands).await?;
+		}
 		self.serial.write_u8(255).await?;
 		state.write().motor_commands = Vec::from(motor_commands);
 

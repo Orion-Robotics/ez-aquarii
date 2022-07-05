@@ -82,6 +82,8 @@ pub struct State {
 	#[serde(skip_serializing)]
 	pub config: Config,
 
+	pub paused: bool,
+
 	// raw sensor data, not to be used by actual program logic
 	pub data: RawData,
 	pub camera_data: CameraData,

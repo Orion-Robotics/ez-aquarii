@@ -9,7 +9,6 @@ use cv::{ball_heuristic, find_best_contour};
 use opencv::{
 	core::CV_8UC3,
 	prelude::{Mat, MatTraitConstManual},
-	types::VectorOfPoint,
 };
 use parking_lot::RwLock;
 use std::{ffi::c_void, slice, sync::Arc};
@@ -73,7 +72,7 @@ impl Module for Camera {
 						ball.lower.to_array(),
 						ball.upper.to_array(),
 						10.0,
-						ball_heuristic(0.5, 0.5),
+						ball_heuristic(1.0, 0.5),
 						(235.0, 131.0, 52.0),
 					)?;
 					Ok((mat, result))
@@ -129,18 +128,21 @@ impl Module for Camera {
 			or(masked, blue_mat)?
 		};
 
-		if let Some(ball_contour) = ball_contour {
-			let blob = loc(ball_contour, (cx, cy))?;
-			state.write().camera_data.ball = Some(blob)
-		}
-		if let Some(yellow_contour) = yellow_contour {
-			let blob = loc(yellow_contour, (cx, cy))?;
-			state.write().camera_data.yellow_goal = Some(blob)
-		}
-		if let Some(blue_contour) = blue_contour {
-			let blob = loc(blue_contour, (cx, cy))?;
-			state.write().camera_data.blue_goal = Some(blob)
-		}
+		state.write().camera_data.ball = if let Some(ball_contour) = ball_contour {
+			Some(loc(ball_contour, (cx, cy))?)
+		} else {
+			None
+		};
+		state.write().camera_data.yellow_goal = if let Some(yellow_contour) = yellow_contour {
+			Some(loc(yellow_contour, (cx, cy))?)
+		} else {
+			None
+		};
+		state.write().camera_data.blue_goal = if let Some(blue_contour) = blue_contour {
+			Some(loc(blue_contour, (cx, cy))?)
+		} else {
+			None
+		};
 
 		{
 			let mut frame = sync.frame.lock();

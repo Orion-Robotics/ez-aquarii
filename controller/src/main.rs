@@ -14,6 +14,7 @@ use controller::{
 };
 use futures::future::join_all;
 use parking_lot::{Mutex, RwLock};
+use rppal::gpio::{Gpio, Level, Trigger};
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::time::interval;
 use tracing_subscriber::EnvFilter;
@@ -30,12 +31,30 @@ async fn main() -> Result<()> {
 		.init();
 
 	let config = read_config(CONFIG_FILE).await?;
+	let robot_state = Arc::new(RwLock::new(state::State::default()));
+	let module_sync = ModuleSync::default();
+	let gpio = Gpio::new()?;
+	let mut initialize_pin = gpio
+		.get(config.software_switch_initialize_pin)?
+		.into_input();
+	let mut toggle_pin = gpio.get(config.software_switch_toggle_pin)?.into_input();
+	{
+		let robot_state = Arc::clone(&robot_state);
+		initialize_pin.set_async_interrupt(Trigger::RisingEdge, move |_| {
+			robot_state.write().initial_orientation = None;
+		})?;
+	}
+	{
+		let robot_state = Arc::clone(&robot_state);
+		toggle_pin.set_async_interrupt(Trigger::Both, move |lvl| {
+			robot_state.write().paused = lvl == Level::High;
+		})?;
+	}
+
 	let mut modules: Vec<AnyModule> = handle_config_change(config.clone()).await?;
 	for module in modules.iter_mut() {
 		module.start().await?;
 	}
-	let robot_state = Arc::new(RwLock::new(state::State::default()));
-	let module_sync = ModuleSync::default();
 	robot_state.write().config = config.clone();
 	let pre_tick_rates: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
 	let futures = modules

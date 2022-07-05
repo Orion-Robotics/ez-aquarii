@@ -145,7 +145,10 @@ export class ServerSource extends BasicDataSource {
       this.frames.push(JSON.parse(ev.data));
       this.handler?.(this.next());
     });
-    ws.addEventListener("close", (ev) => console.log(ev));
+    ws.addEventListener("close", (ev) => {
+      console.log(ev);
+      alert("controller connection closed");
+    });
   }
 
   async currentConfig() {

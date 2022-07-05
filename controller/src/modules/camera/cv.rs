@@ -25,7 +25,7 @@ pub fn loc(contour: Mat, center: (f64, f64)) -> Result<Blob> {
 	let centroid = get_blob_centroid(moments(&contour, false)?);
 	let dist_x = centroid.x - center.0;
 	let dist_y = centroid.y - center.1;
-	let angle = f64::atan2(dist_y, dist_x);
+	let angle = f64::atan2(-dist_y, -dist_x);
 	let distance = f64::sqrt(dist_x.powi(2) + dist_y.powi(2));
 	Ok(Blob { distance, angle })
 }

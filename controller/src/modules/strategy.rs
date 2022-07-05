@@ -112,7 +112,7 @@ impl Module for Strategy {
 }
 
 pub fn get_centering_rotation(current: f64, target: f64) -> f64 {
-	-make_bipolar(((current as f64) - target) % (2.0 * PI))
+	-make_bipolar((target - (current as f64)) % (2.0 * PI))
 }
 
 /// eval_orbit
@@ -157,7 +157,7 @@ pub fn eval_orbit(
 
 /// Orbit contains the function that offsets the robot's angle by an amount depending on distance to an object.
 /// https://www.desmos.com/calculator/c6d8zvyw5z
-/// - angle: the angle of the ball (in trig plane)
+/// - angle: the angle of the ball (bipolar, true-angled)
 /// - curve_steepness: the exponent that makes the slope of the orbit steeper.
 /// - shift_x: how far to shift the orbit function left of right.
 /// - shift_y: how far to shift the orbit function up and down.

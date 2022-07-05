@@ -33,6 +33,7 @@ opencv = "0.65.0"
 tokio-stream = { version = "0.1.9", features = ['sync'] }
 rayon = "1.5.3"
 flume = "0.10.13"
+rppal = "0.13.1"
 
 [build-dependencies]
 cxx-build = "1.0.68"

@@ -119,11 +119,15 @@ pub struct Config {
 	pub strategy: Option<Strategy>,
 	pub state_randomizer: bool,
 	pub team: Team,
+	pub software_switch_initialize_pin: u8,
+	pub software_switch_toggle_pin: u8,
 }
 
 impl Default for Config {
 	fn default() -> Self {
 		Self {
+			software_switch_initialize_pin: 23,
+			software_switch_toggle_pin: 24,
 			team: Team::Yellow,
 			camera: Some(CameraConfig {
 				framerate: 90,
