@@ -75,7 +75,6 @@ async fn stream_mjpeg(
 	let stream = tokio_stream::wrappers::BroadcastStream::new(receiver)
 		.map(|result| {
 			result.map(|bytes| {
-				tracing::debug!("successfully received image over channel");
 				[
 					b"--FRAME\r\nContent-Type: image/jpeg\r\nContent-Length: ",
 					bytes.len().to_string().as_bytes(),

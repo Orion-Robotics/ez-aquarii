@@ -12,14 +12,14 @@ const ColorParamSlider = Object.freeze({
 
 const ColorBound = Object.freeze({
   lower: {
-    hue: ColorParamSlider,
-    saturation: ColorParamSlider,
-    value: ColorParamSlider,
+    blue: ColorParamSlider,
+    green: ColorParamSlider,
+    red: ColorParamSlider,
   },
   upper: {
-    hue: ColorParamSlider,
-    saturation: ColorParamSlider,
-    value: ColorParamSlider,
+    blue: ColorParamSlider,
+    green: ColorParamSlider,
+    red: ColorParamSlider,
   },
 });
 
@@ -54,6 +54,11 @@ export const SettingsPanel: Component<{
         }}
         structure={{
           camera: {
+            saturation: {
+              min: -100,
+              max: 100,
+              step: 1,
+            },
             balance_red: {
               min: 0,
               max: 4,

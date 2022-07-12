@@ -112,7 +112,7 @@ impl Module for Strategy {
 }
 
 pub fn get_centering_rotation(current: f64, target: f64) -> f64 {
-	-make_bipolar((target - (current as f64)) % (2.0 * PI))
+	-make_bipolar((target - (current as f64)).rem_euclid(2.0 * PI))
 }
 
 /// eval_orbit

@@ -22,6 +22,7 @@ export interface DataObject {
   previous_vec?: Vec2;
   initial_orientation?: number;
   rotation: number;
+  scaled_rotation: number;
   camera_data: {
     ball?: CameraBlob;
     yellow_goal?: CameraBlob;

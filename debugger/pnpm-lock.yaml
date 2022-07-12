@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@esbuild-plugins/node-globals-polyfill': ^0.1.1
   '@iconify/json': ^2.1.33
   '@types/babel__core': ^7.1.19
   '@types/d3': ^7.1.0
@@ -37,6 +38,7 @@ dependencies:
   split.js: 1.6.5
 
 devDependencies:
+  '@esbuild-plugins/node-globals-polyfill': 0.1.1
   '@iconify/json': 2.1.33
   '@types/babel__core': 7.1.19
   '@types/d3': 7.1.0
@@ -487,6 +489,12 @@ packages:
     dependencies:
       postcss: 8.4.14
       postcss-selector-parser: 6.0.10
+    dev: true
+
+  /@esbuild-plugins/node-globals-polyfill/0.1.1:
+    resolution: {integrity: sha512-MR0oAA+mlnJWrt1RQVQ+4VYuRJW/P2YmRTv1AsplObyvuBMnPHiizUF95HHYiSsMGLhyGtWufaq2XQg6+iurBg==}
+    peerDependencies:
+      esbuild: '*'
     dev: true
 
   /@iconify/json/2.1.33:

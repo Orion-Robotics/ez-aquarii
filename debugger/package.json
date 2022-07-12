@@ -10,6 +10,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
     "@iconify/json": "^2.1.33",
     "@types/babel__core": "^7.1.19",
     "@types/d3": "^7.1.0",

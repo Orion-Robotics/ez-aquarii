@@ -72,7 +72,7 @@ impl Module for Camera {
 						ball.lower.to_array(),
 						ball.upper.to_array(),
 						10.0,
-						ball_heuristic(1.0, 0.5),
+						ball_heuristic(0.1, 1.0),
 						(235.0, 131.0, 52.0),
 					)?;
 					Ok((mat, result))
@@ -167,8 +167,13 @@ impl Module for Camera {
 					cfg.framerate,
 					cfg.sensor_mode,
 					cfg.shutter_speed,
+					cfg.balance_red,
+					cfg.balance_blue,
+					cfg.saturation,
+					cfg.brightness,
+					cfg.exposure,
+					cfg.iso,
 				);
-				ffi::set_awb(cfg.balance_red, cfg.balance_green);
 			}
 			loop {
 				let pkt = unsafe { ffi::get_image_packet() };

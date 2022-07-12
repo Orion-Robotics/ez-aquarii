@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { D3ZoomEvent } from "d3";
 import { Component, For, JSX, onMount, Show } from "solid-js";
 import { BaseSlider } from "./components/Base/BaseSlider";
-import { MotorCommand } from "./components/MotorCommand";
+import { MotorCommand, RotationDisplay } from "./components/MagnitudeDisplay";
 import { CameraBlob, DataObject } from "./data_sources";
 import { createStoredSignal } from "./helpers/createStoredSignal";
 
@@ -187,12 +187,15 @@ export const RobotView: Component<{
           <For each={props.frame.line_detections}>
             {(line_detection, i) => {
               const circleSize = () => radius() * 0.05;
-              const angle = () =>
-                Math.PI * 2 * (i() / props.frame.line_detections.length);
+              const angle = () => {
+                const trig_angle =
+                  Math.PI * 2 * (i() / props.frame.line_detections.length);
+                return trig_angle - Math.PI;
+              };
               const fillColor = () => (line_detection ? "#ff3d3d" : "#737373");
               return (
                 <circle
-                  cx={radius() * Math.cos(angle())}
+                  cx={-radius() * Math.cos(angle())}
                   cy={-radius() * -Math.sin(angle())}
                   r={circleSize()}
                   fill={fillColor()}
@@ -276,12 +279,14 @@ export const RobotView: Component<{
           )}
         </For>
       </div>
-      <div class="absolute bottom-0 right-0 bg-black/80 p-3 rounded-tl-4 w-60 flex flex-col items-center">
+      <div class="absolute bottom-0 right-0 bg-black/80 p-3 rounded-tl-4 w-60 flex flex-col items-center gap-2">
         <p class="text-sm uppercase">Motor Commands</p>
         <MotorCommand command={props.frame.motor_commands[0]} />
         <MotorCommand command={props.frame.motor_commands[1]} />
         <MotorCommand command={props.frame.motor_commands[2]} />
         <MotorCommand command={props.frame.motor_commands[3]} />
+        <p class="text-sm uppercase">Rotation</p>
+        <RotationDisplay magnitude={props.frame.scaled_rotation} />
       </div>
       <div class="absolute top-0 left-1/2 bg-black/80 p-3 rounded-b-4 transform -translate-x-1/2">
         <h1 class="font-bold">

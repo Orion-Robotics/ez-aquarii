@@ -91,6 +91,10 @@ impl Module for Line {
 					// 	x: towards_line.x,
 					// 	y: -towards_line.y,
 					// };
+					// towards_line = Vec2 {
+					// 	x: -towards_line.x,
+					// 	y: towards_line.y,
+					// };
 
 					if towards_line.y == 0.0 && towards_line.x == 0.0 {
 						// if the vector is zero, then the added vectors are perfectly perpendicular.
@@ -101,6 +105,11 @@ impl Module for Line {
 					if let Some(previous_vec) = state.previous_vec {
 						if did_cross_line(towards_line, previous_vec) {
 							state.line_flipped = !state.line_flipped;
+							tracing::debug!(
+								"crossed line {} {:?}",
+								state.line_flipped,
+								towards_line
+							);
 						}
 					}
 					let koiged_vec = if state.line_flipped {
@@ -114,6 +123,7 @@ impl Module for Line {
 				}
 			}
 			(false, _) => {
+				tracing::debug!("line no longer flipped, since shouldn't run");
 				state.line_flipped = false;
 				state.previous_vec = None;
 				state.line_vector = None;
@@ -180,42 +190,35 @@ pub fn should_run(triggers: &[bool], pointing_out: bool) -> (bool, usize) {
 ///
 /// It should return (0, 3), because it forms a perfect angle of 180 degrees, which is the most perpendicular.  
 pub fn get_farthest_detections(detections: &[bool]) -> Option<(usize, usize)> {
-	let mut first_detection = 0;
-	let mut second_detection = 0;
+	let mut first_detection: Option<usize> = None;
+	let mut second_detection: Option<usize> = None;
 	let mut closest_angle = 2.0 * PI;
 
-	let triggered_only = detections
+	let triggered_only: Vec<_> = detections
 		.iter()
 		.enumerate()
 		.filter(|(_, &x)| x)
-		.map(|(i, _)| i); // iterator of only triggered sensors
+		.map(|(i, _)| i)
+		.collect(); // iterator of only triggered sensors
 
-	if triggered_only.size_hint().1 == Some(0) {
+	if triggered_only.is_empty() {
 		return None;
 	}
 
-	for i in triggered_only.clone() {
-		for j in triggered_only.clone() {
+	for &i in &triggered_only {
+		for &j in &triggered_only {
 			let angle_1 = angle_for_sensor(i, detections.len());
 			let angle_2 = angle_for_sensor(j, detections.len());
 			let diff = distance(angle_1, angle_2);
 			if PI - diff < closest_angle {
 				closest_angle = PI - diff;
-				first_detection = i;
-				second_detection = j;
+				first_detection = Some(i);
+				second_detection = Some(j);
 			}
 		}
 	}
 	Some((
-		if first_detection == 0 {
-			second_detection
-		} else {
-			first_detection
-		},
-		if second_detection == 0 {
-			first_detection
-		} else {
-			second_detection
-		},
+		first_detection.or(second_detection).unwrap(),
+		second_detection.or(first_detection).unwrap(),
 	))
 }

@@ -101,6 +101,7 @@ pub struct State {
 
 	pub move_vector: Option<Vec2>,
 	pub motor_commands: Vec<u8>,
+	pub scaled_rotation: f64,
 }
 
 impl State {

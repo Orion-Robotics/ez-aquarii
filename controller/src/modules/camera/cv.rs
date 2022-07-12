@@ -48,18 +48,18 @@ pub fn mask(
 	// 	opencv::imgproc::dilate(
 	// 		&mask,
 	// 		&mut eroded,
-	// 		&Mat::ones(10, 10, CV_8UC1)?,
+	// 		&Mat::ones(5, 5, CV_8UC1)?,
 	// 		Point::new(-1, -1),
-	// 		3,
+	// 		2,
 	// 		BORDER_CONSTANT,
 	// 		VecN::default(),
 	// 	)?;
 	// 	opencv::imgproc::erode(
 	// 		&mask,
 	// 		&mut eroded,
-	// 		&Mat::ones(10, 10, CV_8UC1)?,
+	// 		&Mat::ones(3, 3, CV_8UC1)?,
 	// 		Point::new(-1, -1),
-	// 		3,
+	// 		2,
 	// 		BORDER_CONSTANT,
 	// 		VecN::default(),
 	// 	)?;
@@ -83,7 +83,7 @@ where
 {
 	let start = Instant::now();
 	let masked = mask(img, lower, upper, true).context("failed to mask image")?;
-	tracing::debug!("masking took {:?}", Instant::now().duration_since(start));
+	// tracing::debug!("masking took {:?}", Instant::now().duration_since(start));
 
 	let start = Instant::now();
 	let mut contours: Vec<_> = {
@@ -104,10 +104,10 @@ where
 			})
 			.collect()
 	};
-	tracing::debug!(
-		"finding contours took {:?}",
-		Instant::now().duration_since(start)
-	);
+	// tracing::debug!(
+	// 	"finding contours took {:?}",
+	// 	Instant::now().duration_since(start)
+	// );
 
 	contours.sort_by(|a, b| {
 		let first = heuristic_fn(a).unwrap_or(0.0);
@@ -139,7 +139,7 @@ where
 
 	let biggest_contour = contours.last().cloned();
 
-	if let Some(contour) = biggest_contour {
+	if let Some(contour) = biggest_contour.clone() {
 		let size = img.size()?;
 		let centroid = get_blob_centroid(moments(&contour, false)?);
 		imgproc::line(
@@ -155,7 +155,7 @@ where
 
 	*img = out;
 	// select only the biggest contour
-	Ok(contours.first().cloned())
+	Ok(biggest_contour)
 }
 
 pub trait Heuristic = Fn(&Mat) -> Result<f64>;

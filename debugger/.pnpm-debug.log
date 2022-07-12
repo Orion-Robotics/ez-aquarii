@@ -2,22 +2,21 @@
   "0 debug pnpm:scope": {
     "selected": 1
   },
-  "1 info pnpm": {
-    "err": {
-      "name": "Error",
-      "message": "not found: o",
-      "code": "ENOENT",
-      "stack": "Error: not found: o\n    at getNotFoundError (/snapshot/dist/pnpm.cjs)\n    at Function.whichSync [as sync] (/snapshot/dist/pnpm.cjs)\n    at getCommandAbsolutePathSync (/snapshot/dist/pnpm.cjs)\n    at default_1 (/snapshot/dist/pnpm.cjs)\n    at /snapshot/dist/pnpm.cjs"
-    }
-  },
-  "2 error pnpm": {
-    "code": "ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL",
-    "prefix": "/home/pythomancer/Documents/ez-aquarii/debugger",
+  "1 error pnpm": {
+    "code": "ELIFECYCLE",
+    "errno": "ENOENT",
+    "syscall": "spawn",
+    "file": "sh",
+    "pkgid": "vite-template-solid@0.0.0",
+    "stage": "dev",
+    "script": "vite",
+    "pkgname": "vite-template-solid",
     "err": {
       "name": "pnpm",
-      "message": "not found: o",
-      "code": "ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL",
-      "stack": "Error: not found: o\n    at getNotFoundError (/snapshot/dist/pnpm.cjs)\n    at Function.whichSync [as sync] (/snapshot/dist/pnpm.cjs)\n    at getCommandAbsolutePathSync (/snapshot/dist/pnpm.cjs)\n    at default_1 (/snapshot/dist/pnpm.cjs)\n    at /snapshot/dist/pnpm.cjs"
+      "message": "vite-template-solid@0.0.0 dev: `vite`\nspawn ENOENT",
+      "code": "ELIFECYCLE",
+      "stack": "pnpm: vite-template-solid@0.0.0 dev: `vite`\nspawn ENOENT\n    at ChildProcess.<anonymous> (/home/blusk/.nvm/versions/node/v18.0.0/pnpm-global/5/node_modules/.pnpm/pnpm@7.1.7/node_modules/pnpm/dist/pnpm.cjs:93511:22)\n    at ChildProcess.emit (node:events:527:28)\n    at maybeClose (node:internal/child_process:1090:16)\n    at ChildProcess._handle.onexit (node:internal/child_process:302:5)"
     }
-  }
+  },
+  "2 warn pnpm:global": " Local package.json exists, but node_modules missing, did you mean to install?"
 }

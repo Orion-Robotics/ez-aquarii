@@ -23,13 +23,18 @@ pub mod ffi {
 
 		#[must_use]
 		pub fn get_image_packet() -> ImagePacket;
-		pub fn set_awb(r: f32, b: f32) -> ();
 		pub fn initialize_camera(
 			w: u32,
 			h: u32,
 			framerate: u32,
 			sensor_mode: u8,
 			shutter_speed: u32,
+			awb_r: f32,
+			awb_b: f32,
+			saturation: i32,
+			brightness: u32,
+			exposure: i32,
+			iso: i32,
 		) -> ();
 	}
 }

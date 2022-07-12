@@ -85,9 +85,9 @@ export const JSONEditor: Component<{
         }
       >
         {/* if it is a fundamental data type */}
-        <div class="flex flex-col gap-2">
-          <span class="text-sm w-8 text-ellipsis">{props.name}</span>
-          <div class="flex gap-2 items-center">
+        <div class="flex gap-2 items-center">
+          <span class="text-sm text-ellipsis">{props.name}</span>
+          <div class="flex gap-2 items-center flex-1">
             <Switch fallback={<p>unhandled type {typeof props.data}</p>}>
               <Match when={typeof props.data === "string"}>
                 <BaseInput

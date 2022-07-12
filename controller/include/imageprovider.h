@@ -34,11 +34,18 @@ ImagePacket get_image_packet() {
   return ImagePacket(cam->getImageBufferData(), cam->getImageBufferSize());
 }
 
-void set_awb(float r, float b) {
-  globalCamera->camera->setAWB_RB(r, b);
-}
-
-void initialize_camera(uint32_t w, uint32_t h, uint32_t framerate, uint8_t sensor_mode, uint32_t shutter_speed) {
+void initialize_camera(
+    uint32_t w,
+    uint32_t h,
+    uint32_t framerate,
+    uint8_t sensor_mode,
+    uint32_t shutter_speed,
+    float awb_r,
+    float awb_b,
+    int32_t saturation,
+    uint32_t brightness,
+    int32_t exposure,
+    int32_t iso) {
   globalCamera = new Cam();
   auto camera = globalCamera->camera;
   camera->setWidth(w);
@@ -49,6 +56,10 @@ void initialize_camera(uint32_t w, uint32_t h, uint32_t framerate, uint8_t senso
   camera->setShutterSpeed(shutter_speed);
   camera->setAWB(raspicam::RASPICAM_AWB_OFF);
   camera->setExposure(raspicam::RASPICAM_EXPOSURE_OFF);
-  camera->setISO(500);
+  camera->setISO(iso);
+  camera->setSaturation(saturation);
+  camera->setExposureCompensation(exposure);
+  camera->setAWB_RB(awb_r, awb_b);
+  camera->setBrightness(brightness);
   camera->open();
 }

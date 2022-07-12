@@ -23,14 +23,14 @@ pub struct DampenConfig {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default, Copy)]
 pub struct ColorThreshold {
-	pub hue: u8,
-	pub saturation: u8,
-	pub value: u8,
+	pub blue: u8,
+	pub green: u8,
+	pub red: u8,
 }
 
 impl ColorThreshold {
 	pub fn to_array(&self) -> [u8; 3] {
-		[self.hue, self.saturation, self.value]
+		[self.blue, self.green, self.red]
 	}
 }
 
@@ -55,9 +55,12 @@ pub struct CameraConfig {
 	pub sensor_mode: u8,
 	pub shutter_speed: u32,
 	pub balance_red: f32,
-	pub balance_green: f32,
+	pub balance_blue: f32,
 	pub bypass: bool,
-	pub saturation: f32,
+	pub saturation: i32,
+	pub brightness: u32,
+	pub exposure: i32,
+	pub iso: i32,
 	pub thresholds: Thresholds,
 }
 
@@ -86,6 +89,8 @@ pub struct Motors {
 	pub baud_rate: u32,
 	pub motor_offset: f64,
 	pub speed: f64,
+	/// https://www.desmos.com/calculator/fabhqfn5qz
+	pub rotation_slope: f64,
 	pub rotation_scalar: f64,
 }
 
@@ -136,9 +141,12 @@ impl Default for Config {
 				sensor_mode: 7,
 				shutter_speed: 15000,
 				bypass: false,
-				saturation: 0.5,
-				balance_green: 0.5,
-				balance_red: 0.5,
+				saturation: 0,
+				balance_blue: 1.4,
+				balance_red: 1.6,
+				brightness: 72,
+				exposure: 2,
+				iso: 500,
 				thresholds: Thresholds {
 					ball: ColorRange::default(),
 					yellow: ColorRange::default(),
