@@ -77,6 +77,7 @@ pub fn find_best_contour<F>(
 	min_size: f64,
 	heuristic_fn: F,
 	color: (f64, f64, f64),
+	center: (f64, f64),
 ) -> Result<Option<Mat>>
 where
 	F: Fn(&Mat) -> Result<f64>,
@@ -144,7 +145,7 @@ where
 		let centroid = get_blob_centroid(moments(&contour, false)?);
 		imgproc::line(
 			&mut out,
-			Point::new(size.width / 2, size.height / 2),
+			Point::new(center.0 as i32, center.1 as i32),
 			Point::new(centroid.x as i32, centroid.y as i32),
 			opencv::core::Scalar::new(color.2, color.1, color.0, 0.0),
 			LINE_4,

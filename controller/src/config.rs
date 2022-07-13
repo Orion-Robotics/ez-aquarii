@@ -51,6 +51,8 @@ pub struct Thresholds {
 pub struct CameraConfig {
 	pub width: u32,
 	pub height: u32,
+	pub center_x: f64,
+	pub center_y: f64,
 	pub framerate: u32,
 	pub sensor_mode: u8,
 	pub shutter_speed: u32,
@@ -138,6 +140,8 @@ impl Default for Config {
 				framerate: 90,
 				height: 480,
 				width: 480,
+				center_x: 240.0,
+				center_y: 240.0,
 				sensor_mode: 7,
 				shutter_speed: 15000,
 				bypass: false,

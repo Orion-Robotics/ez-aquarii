@@ -48,6 +48,8 @@ impl Module for Camera {
 			bypass,
 			saturation,
 			thresholds,
+			center_x,
+			center_y,
 			..
 		} = state.read().config.camera.as_ref().unwrap().clone();
 		let Thresholds { ball, yellow, blue } = thresholds;
@@ -60,8 +62,6 @@ impl Module for Camera {
 			.ok_or_else(|| anyhow::anyhow!("no frame"))?;
 
 		let size = mat.size()?;
-		let cx = (size.width / 2) as f64;
-		let cy = (size.height / 2) as f64;
 
 		let (ball, yellow, blue) = futures::try_join!(
 			{
@@ -74,6 +74,7 @@ impl Module for Camera {
 						10.0,
 						ball_heuristic(0.1, 1.0),
 						(235.0, 131.0, 52.0),
+						(center_x, center_y),
 					)?;
 					Ok((mat, result))
 				})
@@ -88,6 +89,7 @@ impl Module for Camera {
 						10.0,
 						ball_heuristic(0.5, 0.5),
 						(230.0, 225.0, 73.0),
+						(center_x, center_y),
 					)?;
 					Ok((mat, result))
 				})
@@ -102,6 +104,7 @@ impl Module for Camera {
 						10.0,
 						ball_heuristic(0.5, 0.5),
 						(73.0, 128.0, 230.0),
+						(center_x, center_y),
 					)?;
 					Ok((mat, result))
 				})
@@ -129,17 +132,17 @@ impl Module for Camera {
 		};
 
 		state.write().camera_data.ball = if let Some(ball_contour) = ball_contour {
-			Some(loc(ball_contour, (cx, cy))?)
+			Some(loc(ball_contour, (center_x, center_y))?)
 		} else {
 			None
 		};
 		state.write().camera_data.yellow_goal = if let Some(yellow_contour) = yellow_contour {
-			Some(loc(yellow_contour, (cx, cy))?)
+			Some(loc(yellow_contour, (center_x, center_y))?)
 		} else {
 			None
 		};
 		state.write().camera_data.blue_goal = if let Some(blue_contour) = blue_contour {
-			Some(loc(blue_contour, (cx, cy))?)
+			Some(loc(blue_contour, (center_x, center_y))?)
 		} else {
 			None
 		};
