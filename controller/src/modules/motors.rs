@@ -50,7 +50,10 @@ impl Module for Motors {
 
 			// the rotation is in range -180 to 180
 			// this will scale it to -1 to 1
-			let scaled_rotation = rotation_slope * (state.read().rotation / PI).sqrt();
+			let scaled_rotation = state.read().rotation / PI;
+			// scale it to a rotation curve
+			let scaled_rotation =
+				scaled_rotation.signum() * rotation_slope * scaled_rotation.abs().sqrt();
 			state.write().scaled_rotation = scaled_rotation;
 
 			if speed > 1.0 {
@@ -87,12 +90,13 @@ impl Module for Motors {
 				.map(|x| x * speed)
 				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
-		// self.serial.write_all(&[191, 253, 0, 63]).await?;
-		if state.read().paused {
-			self.serial.write_all(&[127, 127, 127, 127]).await?;
+		let motor_commands = if state.read().paused {
+			[127, 127, 127, 127]
 		} else {
-			self.serial.write_all(&motor_commands).await?;
-		}
+			motor_commands
+		};
+		// self.serial.write_all(&[191, 253, 0, 63]).await?;
+		self.serial.write_all(&motor_commands).await?;
 		self.serial.write_u8(255).await?;
 		state.write().motor_commands = Vec::from(motor_commands);
 
