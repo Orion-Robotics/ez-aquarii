@@ -99,7 +99,7 @@ pub struct State {
 	pub rotation: f64,
 	pub before_line_vector: Option<Vec2>,
 
-	pub move_vector: Option<Vec2>,
+	pub move_vector: Option<(Vec2, bool)>,
 	pub motor_commands: Vec<u8>,
 	pub scaled_rotation: f64,
 }

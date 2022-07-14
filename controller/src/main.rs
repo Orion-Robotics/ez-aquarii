@@ -138,8 +138,10 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 				.context("reader creation")?,
 		));
 	}
-	if strategy.is_some() {
-		new_modules.push(Box::new(Strategy {}));
+	if let Some(strategy) = strategy {
+		new_modules.push(Box::new(
+			Strategy::new(strategy.clone()).context("strategy creation")?,
+		));
 	}
 	if *state_randomizer {
 		new_modules.push(Box::new(state_randomizer::StateRandomizer::new()));

@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, sync::Arc};
+use std::{f64::consts::PI, sync::Arc, time::Instant};
 
 use crate::{
 	config::Team,
@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use futures::{future::select_all, FutureExt};
 use num::traits::Pow;
 use parking_lot::{Mutex, RwLock};
+use rppal::gpio::{Gpio, OutputPin};
 
 use crate::{
 	config::{self, DampenConfig, OrbitConfig},
@@ -19,11 +20,22 @@ use crate::{
 };
 
 use super::{
+	kicker::Kicker,
 	state::{self, Blob, ModuleSync, OrbitState, State, TestState},
 	Module,
 };
 
-pub struct Strategy {}
+pub struct Strategy {
+	kicker: Kicker,
+}
+
+impl Strategy {
+	pub fn new(config: config::Strategy) -> Result<Self> {
+		Ok(Self {
+			kicker: Kicker::new(config.kicker_pin)?,
+		})
+	}
+}
 
 #[async_trait]
 impl Module for Strategy {
@@ -44,7 +56,7 @@ impl Module for Strategy {
 		match state.strategy {
 			Orbit(_) => {
 				if let Some(line_vector) = state.line_vector {
-					state.move_vector = Some(line_vector * -1.0);
+					state.move_vector = Some((line_vector * -1.0, true));
 					return Ok(());
 				}
 
@@ -66,7 +78,7 @@ impl Module for Strategy {
 						orbit_state.orbit_angle = after_dampen;
 						orbit_state.ball_follow_vector = ball_location;
 					}
-					state.move_vector = Some(Vec2::from_rad(after_dampen));
+					state.move_vector = Some((Vec2::from_rad(after_dampen), false));
 				} else {
 					state.move_vector = None;
 				}
@@ -93,9 +105,16 @@ impl Module for Strategy {
 				{
 					state.rotation = get_centering_rotation(state.data.orientation, target_angle);
 				}
+
+				if state.rotation.abs() < strategy_config.score_conditions.score_goal_angle_range {
+					state.move_vector = Some((Vec2::new(0.0, 1.0), true));
+					self.kicker.kick();
+				} else {
+					state.move_vector = Some((Vec2::new(0.0, 0.0), false));
+				}
 			}
 			Test(TestState { rotation, vector }) => {
-				state.move_vector = Some(vector);
+				state.move_vector = Some((vector, false));
 				state.rotation = rotation;
 			}
 		}

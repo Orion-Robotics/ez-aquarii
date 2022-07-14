@@ -60,8 +60,15 @@ impl Module for Motors {
 				tracing::error!("speeds are from 0 to 1!");
 			}
 
+			// determines if you should be going full speed
+			let go_full_speed = state
+				.read()
+				.move_vector
+				.map(|(_, go_full_speed)| go_full_speed)
+				.unwrap_or(false);
+
 			let powers = match state.read().move_vector {
-				Some(vec) => {
+				Some((vec, _)) => {
 					let move_angle = vec.angle_rad();
 					let left_offset = move_angle - motor_offset;
 					let right_offset = move_angle + motor_offset;
@@ -86,9 +93,12 @@ impl Module for Motors {
 			// 	.unwrap();
 
 			// let percentages = powers.map(|power| power / max_power);
-			powers
-				.map(|x| x * speed)
-				.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
+			let powers = if go_full_speed {
+				powers
+			} else {
+				powers.map(|x| x * speed)
+			};
+			powers.map(|x| x.map_range((-1.0, 1.0), (0.0, 253.0)) as u8)
 		};
 		let motor_commands = if state.read().paused {
 			[127, 127, 127, 127]

@@ -7,6 +7,7 @@ use parking_lot::{Mutex, RwLock};
 use self::state::{ModuleSync, State};
 
 pub mod camera;
+pub mod kicker;
 pub mod line;
 #[cfg(test)]
 pub mod line_test;

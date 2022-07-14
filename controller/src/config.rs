@@ -100,6 +100,7 @@ pub struct Motors {
 pub struct ScoreConditions {
 	pub max_distance: f64,
 	pub angle_range: f64,
+	pub score_goal_angle_range: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -107,6 +108,7 @@ pub struct Strategy {
 	pub orbit: OrbitConfig,
 	pub dampen: DampenConfig,
 	pub score_conditions: ScoreConditions,
+	pub kicker_pin: u8,
 }
 
 #[derive(Debug, Clone, Default, Copy, Serialize, Deserialize)]
@@ -179,7 +181,9 @@ impl Default for Config {
 				score_conditions: ScoreConditions {
 					max_distance: 0.5,
 					angle_range: 0.5,
+					score_goal_angle_range: 0.5,
 				},
+				kicker_pin: 25,
 			}),
 			motors: None,
 			state_randomizer: false,

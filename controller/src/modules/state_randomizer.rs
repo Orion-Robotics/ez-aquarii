@@ -53,7 +53,7 @@ impl Module for StateRandomizer {
 		};
 
 		state.line_vector = Some(random_vec());
-		state.move_vector = Some(random_vec());
+		state.move_vector = Some((random_vec(), false));
 
 		Ok(())
 	}
