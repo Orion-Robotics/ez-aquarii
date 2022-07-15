@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, sync::Arc, time::Instant};
+\use std::{f64::consts::PI, sync::Arc, time::Instant};
 
 use crate::{
 	config::Team,
@@ -56,7 +56,7 @@ impl Module for Strategy {
 		match state.strategy {
 			Orbit(_) => {
 				if let Some(line_vector) = state.line_vector {
-					state.move_vector = Some((line_vector * -1.0, true));
+					state.move_vector = Some((line_vector * -1.0, false));
 					return Ok(());
 				}
 
