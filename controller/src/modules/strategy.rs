@@ -1,4 +1,4 @@
-\use std::{f64::consts::PI, sync::Arc, time::Instant};
+use std::{f64::consts::PI, sync::Arc, time::Instant};
 
 use crate::{
 	config::Team,
@@ -61,9 +61,12 @@ impl Module for Strategy {
 				}
 
 				if let Some(Blob { angle, distance }) = state.camera_data.ball {
-					if distance < strategy_config.score_conditions.max_distance
-						&& true_angle(angle).abs() < strategy_config.score_conditions.angle_range
-					{
+					if should_transition_to_score(
+						angle,
+						distance,
+						strategy_config.score_conditions.max_distance,
+						strategy_config.score_conditions.angle_range,
+					) {
 						state.strategy = Score;
 					}
 
@@ -89,9 +92,12 @@ impl Module for Strategy {
 			}
 			Score => {
 				if let Some(Blob { angle, distance }) = state.camera_data.ball {
-					if distance > strategy_config.score_conditions.max_distance
-						|| true_angle(angle).abs() > strategy_config.score_conditions.angle_range
-					{
+					if !should_transition_to_score(
+						angle,
+						distance,
+						strategy_config.score_conditions.max_distance,
+						strategy_config.score_conditions.angle_range,
+					) {
 						state.strategy = Orbit(OrbitState::default());
 					}
 				}
@@ -128,6 +134,15 @@ impl Module for Strategy {
 	async fn stop(&mut self) -> Result<()> {
 		Ok(())
 	}
+}
+
+pub fn should_transition_to_score(
+	ball_angle: f64,
+	ball_distance: f64,
+	max_distance: f64,
+	max_angle: f64,
+) -> bool {
+	ball_distance < max_distance && make_bipolar(true_angle(ball_angle)).abs() < max_angle
 }
 
 pub fn get_centering_rotation(current: f64, target: f64) -> f64 {
