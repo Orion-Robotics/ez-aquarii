@@ -19,9 +19,11 @@ impl Kicker {
 	}
 
 	pub fn kick(&mut self) {
-		if Instant::now().duration_since(self.last_kick) > Duration::from_millis(500) {
+		if Instant::now().duration_since(self.last_kick) > Duration::from_millis(2000) {
 			self.kicker_pin.set_high();
 			self.last_kick = Instant::now();
+		} else if Instant::now().duration_since(self.last_kick) > Duration::from_millis(500) {
+			self.kicker_pin.set_low();
 		}
 	}
 }

@@ -124,6 +124,7 @@ impl Module for Strategy {
 				state.rotation = rotation;
 			}
 		}
+		self.kicker.kick();
 		Ok(())
 	}
 
