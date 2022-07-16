@@ -127,6 +127,7 @@ pub struct Config {
 	pub reader: Option<Reader>,
 	pub strategy: Option<Strategy>,
 	pub state_randomizer: bool,
+	pub racing: bool,
 	pub team: Team,
 	pub software_switch_initialize_pin: u8,
 	pub software_switch_toggle_pin: u8,
@@ -187,6 +188,7 @@ impl Default for Config {
 			}),
 			motors: None,
 			state_randomizer: false,
+			racing: false,
 			reader: Some(Reader {
 				uart_path: "/dev/ttyAMA0".to_string(),
 				line_sensor_count: 46,

@@ -12,6 +12,7 @@ pub mod line;
 #[cfg(test)]
 pub mod line_test;
 pub mod motors;
+pub mod racing;
 pub mod reader;
 pub mod server;
 pub mod state;

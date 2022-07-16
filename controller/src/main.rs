@@ -4,6 +4,7 @@ use controller::{
 	modules::{
 		camera, line,
 		motors::Motors,
+		racing::Racing,
 		reader::Reader,
 		server::StateRecorder,
 		state::{self, ModuleSync},
@@ -100,6 +101,7 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 		ref motors,
 		ref server,
 		ref state_randomizer,
+		ref racing,
 		ref reader,
 		ref strategy,
 		..
@@ -145,6 +147,10 @@ async fn handle_config_change(cfg: Config) -> Result<Vec<AnyModule>> {
 	}
 	if *state_randomizer {
 		new_modules.push(Box::new(state_randomizer::StateRandomizer::new()));
+	}
+
+	if *racing {
+		new_modules.push(Box::new(Racing {}));
 	}
 
 	Ok(new_modules)
